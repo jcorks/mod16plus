@@ -1,0 +1,20 @@
+Sprite Entertaininment System
+-----------------------------
+
+The SES is a development kit and system to produce and play games 
+with the look and feel of early generations of game consoles.
+
+
+It is split into 3 parts:
+
+ses developer:  The UI that generates and modifies ROMs.
+ses: The player that, when given a ROM, allows for playing it 
+ses debug: Similar to ses, but enables debugging features, which
+makes it convenient to debug ROMs.
+
+
+ROMS consist of different segments of binary data:
+- Game bytecode that controls the game's logic
+- Audio waveform data for audio samples
+- Initial image data 
+- Initial palette data
