@@ -7,7 +7,7 @@
 @:ses_native__tile_attrib = getExternalFunction(name:"ses_native__tile_attrib");
 @:ses_native__input_attrib = getExternalFunction(name:"ses_native__input_attrib");
 @:ses_native__audio_attrib = getExternalFunction(name:"ses_native__audio_attrib");
-
+@:ses_native__bg_attrib = getExternalFunction(name:"ses_native__bg_attrib");
 
 // query functions are necessary because they are (can be) pre-populated by the ROM.
 @:ses_native_palette_query = getExternalFunction(name:"ses_native__palette_query");
@@ -294,8 +294,7 @@
             ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONY, c:0);
             ses_native__bg_attrib(a:id, b:ATTRIBS.LAYER,     c:0);
             [0, 64]->for(do:::(i) {
-                tiles[i] = 0;
-                ses_native__bg_attrib(a:id, b:ATTRIBS.TILEINDEX, c:i, d:0);
+                tiles[i] = ses_native__bg_query(a:id, b:i, c:0);
             });
             ses_native__bg_attrib(a:id, b:ATTRIBS.EFFECT,    c:0);
             ses_native__bg_attrib(a:id, b:ATTRIBS.PALETTE,   c:0);
