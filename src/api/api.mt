@@ -10,9 +10,9 @@
 @:ses_native__bg_attrib = getExternalFunction(name:"ses_native__bg_attrib");
 
 // query functions are necessary because they are (can be) pre-populated by the ROM.
-@:ses_native_palette_query = getExternalFunction(name:"ses_native__palette_query");
-@:ses_native_tile_query = getExternalFunction(name:"ses_native__tile_query");
-
+@:ses_native__palette_query = getExternalFunction(name:"ses_native__palette_query");
+@:ses_native__tile_query = getExternalFunction(name:"ses_native__tile_query");
+@:ses_native__bg_query = getExternalFunction(name:"ses_native__bg_query");
 
 
 // preset palettes are loaded from the rom

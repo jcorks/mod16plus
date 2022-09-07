@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-
+#include <stdint.h>
 void * dump_bytes(const char * filename, uint32_t * len) {
     FILE * f = fopen(filename, "rb");
     if (!f) {
@@ -26,13 +26,15 @@ void * dump_bytes(const char * filename, uint32_t * len) {
     return out;
 }
 
-int main() {
+int main(int argc, char ** argv) {
+    if (argc != 2)
+        exit(1);
     uint32_t len = 0;
-    uint8_t * bytes = dump_bytes("api.mt", &len);
+    uint8_t * bytes = dump_bytes(argv[1], &len);
     
     
     FILE * out = fopen("api_rom", "wb");
-    fprintf("static uint8_t API_ROM_DATA[] = {");
+    fprintf(out,"static uint8_t API_ROM_DATA[] = {");
     uint32_t i;
     
     for(i = 0; i < len; ++i) {
@@ -42,4 +44,5 @@ int main() {
     }
     
     fclose(out);
+    return 0;
 }
