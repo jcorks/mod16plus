@@ -2,7 +2,11 @@
 #include <stdlib.h>
 
 const uint8_t * ses_develop_get_rom(uint32_t * length) {
-    *length = 0;
-    return NULL;
+    *length = 13;
+    static char data[] = {
+        'S', ' ', 'E', ' ', 'S', ' ',
+        'J', ' ', 'L', ' ', 'C', ' ', 1
+    };
+    return data;
 }
 

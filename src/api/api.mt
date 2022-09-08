@@ -17,6 +17,35 @@
 
 // preset palettes are loaded from the rom
 @:Palette = ::<= {
+    @:hexToNum = {
+        '0': 0,
+        '1': 1,
+        '2': 2,
+        '3': 3,
+        '4': 4,
+        '5': 5,
+        '6': 6,
+        '7': 7,
+        '8': 8,
+        '9': 9,
+        'a': 10,
+        'b': 11,
+        'c': 12,
+        'd': 13,
+        'e': 14,
+        'f': 15,
+        'A': 10,
+        'B': 11,
+        'C': 12,
+        'D': 13,
+        'E': 14,
+        'F': 15
+    };
+    
+    @:parseHex::(hi, lo) {
+        return (hexToNum[lo] + hexToNum[hi]*16);
+    };
+
     @:parseColor = ::(input){
         return match(input->type) {
           (Object): input,
@@ -26,19 +55,19 @@
                 parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)), //g
                 parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)), //b
             ]
-        }
-    }
+        };
+    };
 
+    @:COLORS = {
+        BACK: 0,
+        MIDBACK: 1,
+        MIDFRONT: 2,
+        FRONT: 3
+    };
 
     return class(
         name: 'SES.Palette',
         
-        @:COLORS : {
-            BACK: 0,
-            MIDBACK: 1,
-            MIDFRONT: 2,
-            FRONT: 3
-        };
         
         define:::(this) {
             this.interface = {
@@ -49,10 +78,10 @@
                     colors => Object
                 ) {
 
-                    colorBack     = parseColor(input:colors[0]);
-                    colorMidBack  = parseColor(input:colors[1]);
-                    colorMidFront = parseColor(input:colors[2]);
-                    colorBack     = parseColor(input:colors[3]);
+                    @colorBack     = parseColor(input:colors[0]);
+                    @colorMidBack  = parseColor(input:colors[1]);
+                    @colorMidFront = parseColor(input:colors[2]);
+                    @colorFront    = parseColor(input:colors[3]);
 
                     ses_native__palette_attrib(a:index, b:COLORS.BACK,     c:colorBack[0],     d:colorBack[1],     e:colorBack[2]);
                     ses_native__palette_attrib(a:index, b:COLORS.MIDBACK,  c:colorMidBack[0],  d:colorMidBack[1],  e:colorMidBack[2]);
@@ -89,7 +118,7 @@
                             ses_native__palette_query(a:index, b:COLORS.FRONT, c:1),
                             ses_native__palette_query(a:index, b:COLORS.FRONT, c:2)
                         ]
-                    ]
+                    ];
                 }
             };        
         }
@@ -132,7 +161,7 @@
 
 
 @:Input = ::<= {
-    @:DEVICES : {
+    @:DEVICES = {
         KEYBOARD: 0,
  
         // mouse + multitouch
@@ -159,7 +188,7 @@
         
         
         define:::(this) {
-            @:ACTIONS: {
+            @:ACTIONS =  {
                 ADD : 0,
                 REMOVE : 1
             };
@@ -173,7 +202,7 @@
                 
                 
                 removeCallback ::(id => Number) {
-                    ses_native__input_attrib(a:ACTIONS.REMOVE, b:device, c:callback);
+                    ses_native__input_attrib(a:ACTIONS.REMOVE, b:id);
                 }
             };
         }
@@ -183,7 +212,7 @@
 
 
 @:Audio = ::<= {
-    @:ACTIONS : 
+    @:ACTIONS = {
         PLAY: 0,
         HALT: 1,
         VOLUME: 2,
@@ -198,12 +227,12 @@
                 // play a sample to a channel.
                 // the channels audio is halted
                 play::(
-                    sample  => Number
+                    sample  => Number,
                     channel => Number,  // 0 - 31
                     loop    => Boolean
                     
                 ) {
-                    ses_native__audio_attrib(a:ACTIONS.PLAY, b:sample. c:channel, d:loop);
+                    ses_native__audio_attrib(a:ACTIONS.PLAY, b:sample, c:channel, d:loop);
                 },
                 
                 // stops audio from a channel
@@ -306,7 +335,7 @@
                 show : {
                     set ::(value => Boolean) {
                         shown = value;
-                        ses_native__bg_attrib(a:id, b:ATTRIBS.ENABLE, c:value == true ? 1 : 0);
+                        ses_native__bg_attrib(a:id, b:ATTRIBS.ENABLE, c:if(value == true) 1 else 0);
                     },
                     
                     get ::<- shown
@@ -337,11 +366,11 @@
                 // the ordering layer. 0-16. Higher means on top
                 layer : {
                     set ::(value => Number) {
-                        centerY = value;
-                        ses_native__bg_attrib(a:id, b:ATTRIBS.CENTERY, c:value);
+                        layer = value;
+                        ses_native__bg_attrib(a:id, b:ATTRIBS.LAYER, c:value);
                     },
                     
-                    get ::<- centerY
+                    get ::<- layer
                 },  
 
                 // tile index.
@@ -351,7 +380,7 @@
                         tiles = value;
                         [0, 64]->for(do:::(i) {
                             ses_native__bg_attrib(a:id, b:ATTRIBS.TILEINDEX, c:i, d:value[i] => Number);                        
-                        }
+                        });
                     },
                     
                     get ::<- tiles
@@ -365,7 +394,7 @@
                         ses_native__bg_attrib(a:id, b:ATTRIBS.EFFECT, c:value);                        
                     },
                     
-                    get ::<- tileIndex
+                    get ::<- effect
                 },
 
                 // palette index.
@@ -376,7 +405,7 @@
                         ses_native__bg_attrib(a:id, b:ATTRIBS.PALETTE, c:value);                        
                     },
                     
-                    get ::<- tileIndex
+                    get ::<- paletteIndex
                 },
 
                 dispose :: {
@@ -478,7 +507,7 @@
                 show : {
                     set ::(value => Boolean) {
                         shown = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.ENABLE, c:value == true ? 1 : 0);
+                        ses_native__sprite_attrib(a:id, b:ATTRIBS.ENABLE, c:if(value == true) 1 else 0);
                     },
                     
                     get ::<- shown
@@ -557,11 +586,11 @@
                 // the ordering layer. 0-16. Higher means on top
                 layer : {
                     set ::(value => Number) {
-                        centerY = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.CENTERY, c:value);
+                        layer = value;
+                        ses_native__sprite_attrib(a:id, b:ATTRIBS.LAYER, c:value);
                     },
                     
-                    get ::<- centerY
+                    get ::<- layer
                 },  
 
                 // tile index.
@@ -583,7 +612,7 @@
                         ses_native__sprite_attrib(a:id, b:ATTRIBS.EFFECT, c:value);                        
                     },
                     
-                    get ::<- tileIndex
+                    get ::<- effect
                 },
 
                 // palette index.
@@ -594,7 +623,7 @@
                         ses_native__sprite_attrib(a:id, b:ATTRIBS.PALETTE, c:value);                        
                     },
                     
-                    get ::<- tileIndex
+                    get ::<- paletteIndex
                 },
 
                 dispose :: {

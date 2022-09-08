@@ -1,8 +1,7 @@
-#include <stdlib.h>
+#include "dump.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdint.h>
 void * dump_bytes(const char * filename, uint32_t * len) {
     FILE * f = fopen(filename, "rb");
     if (!f) {
@@ -26,23 +25,16 @@ void * dump_bytes(const char * filename, uint32_t * len) {
     return out;
 }
 
-int main(int argc, char ** argv) {
-    uint32_t len = 0;
-    uint8_t * bytes = dump_bytes("api.mt", &len);
+
+int dump_file(const char * filename, void * bytes, uint32_t len) {
+    FILE * f = fopen(filename, "wb");
+    if (f == NULL) return 0;
     
-    
-    FILE * out = fopen("api_rom", "wb");
-    fprintf(out, "static uint32_t API_ROM_SIZE = %d;\n", len);
-    fprintf(out,"static uint8_t API_ROM_DATA[] = {");
-    uint32_t i;
-    
-    for(i = 0; i < len; ++i) {
-        fprintf(out, "%d,", bytes[i]);
-        if (i%32==0)
-            fprintf(out,"\n");
+    if (fwrite(bytes, 1, len, f) != len) {
+        fclose(f);
+        return 0;
     }
-    fprintf(out, "};\n");
     
-    fclose(out);
-    return 0;
+    fclose(f);
+    return 1;
 }

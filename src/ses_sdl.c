@@ -12,9 +12,8 @@ matteValue_t ses_native__sprite_attrib(matteVM_t * vm, matteValue_t fn, const ma
 }
 matteValue_t ses_native__engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
-    printf("ENGINE   ID: %d, ATTRIB: %d\n",
-        (int)matte_value_as_number(heap, args[0]),
-        (int)matte_value_as_number(heap, args[1])
+    printf("ENGINE   ID: %d\n",
+        (int)matte_value_as_number(heap, args[0])
     );  
     return matte_heap_new_value(heap);
 }
@@ -93,5 +92,15 @@ matteValue_t ses_native__bg_query(matteVM_t * vm, matteValue_t fn, const matteVa
     return matte_heap_new_value(heap);
 }
 
+
+
+
+void ses_native__commit_rom() {
+    // nothing yet!
+};
+
+int ses_native__main_loop() {
+
+}
 
 

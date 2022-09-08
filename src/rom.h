@@ -34,7 +34,7 @@ SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength);
 
 
 
-uint8_t * ses_pack_rom(
+matteArray_t * ses_pack_rom(
     matteArray_t * waveformSizes, // uint32_t
     matteArray_t * waveforms, // uint8_t *     
     

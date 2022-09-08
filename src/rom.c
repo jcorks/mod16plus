@@ -1,4 +1,4 @@
-#include "rompack.h"
+#include "rom.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -36,16 +36,16 @@ static matteArray_t * rom_bytecodeSegments = NULL;
 
 
 
-#define SES_CHOMP(__T__) *((__T__*)(romBytes+iter)); iter+=sizeof(__T__); if(iter >= romLength) goto L_BAD_SIZE;
+#define SES_CHOMP(__T__) *((__T__*)(romBytes+iter)); iter+=sizeof(__T__); if(iter > romLength) goto L_BAD_SIZE;
 
 #define SES_CHOMP_LARGE(__N__, __DEST__) {\
-  if (iter + (__N__) >= romLength) goto L_BAD_SIZE;\
+  if (iter + (__N__) > romLength) goto L_BAD_SIZE;\
   memcpy(__DEST__, romBytes+iter, __N__);\
   iter+=__N__;\
 }
   
-
-SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength) {
+  
+static clear_rom() {
     if (!rom_waveforms) {
         rom_waveforms = matte_array_create(sizeof(SESWaveform));
         rom_tiles = matte_array_create(sizeof(SESTile));
@@ -74,6 +74,13 @@ SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength) {
     matte_array_set_size(rom_bytecodeSegments, 0);
     
 
+}
+
+SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength) {
+    clear_rom();
+
+    uint32_t i, len;
+
 
     // before starting, check the size.
     if (romLength < 12 + 5*sizeof(uint32_t)) 
@@ -93,8 +100,7 @@ SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength) {
         return SES_UNPACK_ERROR__BAD_HEADER;
     }
     
-    
-    if (romBytes[13] != 1) 
+    if (romBytes[12] != 1) 
         return SES_UNPACK_ERROR__UNSUPPORTED_VERSION;
     iter += 13;
         
@@ -144,9 +150,9 @@ SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength) {
         SESBytecodeSegment seg;
         seg.length = SES_CHOMP(uint32_t);        
         uint32_t nameLenBytes = SES_CHOMP(uint32_t);
-        char * name = malloc(seg.length+1);
+        char * name = malloc(nameLenBytes+1);
         SES_CHOMP_LARGE(nameLenBytes, name);
-        name[seg.length] = 0;
+        name[nameLenBytes] = 0;
         seg.name = matte_string_create_from_c_str("%s", name);
         free(name);
         seg.data = malloc(seg.length);
@@ -165,6 +171,109 @@ SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength) {
     
 }
 
+
+
+#define PUSHBYTE(__V__) {uint8_t g = __V__; matte_array_push(bytes, g);}
+#define PUSHCOPY(__T__, __V__) {__T__ g = __V__; uint32_t n; matte_array_push_n(bytes, (uint8_t*)&g, sizeof(__T__));}
+#define PUSHN(__N__, __VP__) {uint32_t n; matte_array_push_n(bytes, __VP__, __N__);}
+matteArray_t * ses_pack_rom(
+    matteArray_t * waveformSizes, // uint32_t
+    matteArray_t * waveforms, // uint8_t *     
+    
+    matteArray_t * tiles, // uint8_t, see ses_rom_get_tile
+    matteArray_t * palettes, // uint8_t, see ses_rom_get_palette
+    matteArray_t * backgrounds, // uint32_t, see ses_rom_get_background
+    
+    
+    matteArray_t * bytecodeSegmentNames, // matteString_t *
+    matteArray_t * bytecodeSegmentSizes, // uint32_t
+    matteArray_t * bytecodeSegments // uint8_t *
+) {
+    clear_rom();
+
+    matteArray_t * bytes = matte_array_create(sizeof(uint8_t));
+    PUSHBYTE('S');
+    PUSHBYTE(' ');
+    PUSHBYTE('E');
+    PUSHBYTE(' ');
+    PUSHBYTE('S');
+    PUSHBYTE(' ');
+    PUSHBYTE('J');
+    PUSHBYTE(' ');
+    PUSHBYTE('L');
+    PUSHBYTE(' ');
+    PUSHBYTE('C');
+    PUSHBYTE(' ');
+    PUSHBYTE(1);
+
+
+    PUSHCOPY(uint32_t, matte_array_get_size(waveforms));
+    PUSHCOPY(uint32_t, matte_array_get_size(tiles));
+    PUSHCOPY(uint32_t, matte_array_get_size(palettes));
+    PUSHCOPY(uint32_t, matte_array_get_size(backgrounds));
+    PUSHCOPY(uint32_t, matte_array_get_size(bytecodeSegments));
+
+
+    uint32_t i, len;
+    
+    // waveforms
+    len = matte_array_get_size(waveforms);
+    for(i = 0; i < len; ++i) {
+        uint32_t length = matte_array_at(waveformSizes, uint32_t, i);
+        uint8_t * data = matte_array_at(waveforms, uint8_t *, i);
+
+        PUSHCOPY(uint32_t, length);
+        PUSHN(length, data);
+    }
+    
+    // tiles 
+    len = matte_array_get_size(tiles);
+    PUSHN(
+        len * sizeof(SESTile),
+        matte_array_get_data(tiles)
+    );
+    
+
+    // palettes
+    len = matte_array_get_size(palettes);
+    PUSHN(
+        len * sizeof(SESPalette),
+        matte_array_get_data(palettes)
+    );
+
+    // backgrounds
+    len = matte_array_get_size(backgrounds);
+    PUSHN(
+        len * sizeof(SESBackground),
+        matte_array_get_data(rom_backgrounds)
+    );
+
+    // bytecodeSegments
+    len = matte_array_get_size(bytecodeSegments);
+    for(i = 0; i < len; ++i) {
+        uint32_t length = matte_array_at(bytecodeSegmentSizes, uint32_t, i);
+        PUSHCOPY(uint32_t, length);
+
+        matteString_t * name = matte_array_at(bytecodeSegmentNames, matteString_t *, i);
+        uint32_t nameLen = matte_string_get_byte_length(name);
+        PUSHCOPY(uint32_t, nameLen);
+        
+        PUSHN(
+            nameLen,
+            matte_string_get_byte_data(name)
+        );
+
+
+        PUSHN(
+            length,
+            matte_array_at(bytecodeSegments, uint8_t *, i)
+        );
+    }
+    
+    return bytes;
+    
+
+}
 
 
 
