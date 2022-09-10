@@ -128,6 +128,12 @@
 
 // preset tiles are loaded from the rom
 @:Tile = ::<= {
+    @:ATTRIBS = {
+        BIND       : 0,
+        SETTEXEL   : 1,
+        UNBIND     : 2,
+    };
+
     return class(
         name: 'SES.Tile',
         
@@ -136,22 +142,26 @@
             
                 // data is a plain array of numbers, 0 - 4
                 set ::(index => Number, data => Object) {
+                    ses_native__tile_attrib(a:index, b:ATTRIBS.BIND, c:i)
                     [0, 64]->for(do:::(i) {
                         ses_native__tile_attrib(
                             a:index,
-                            b:i,
+                            b:ATTRIBS.SETTEXEL,
                             c:data[i] => Number
                         );
                     });
+                    ses_native__tile_attrib(a:index, b:ATTRIBS.UNBIND);
 
                 },
                 
                 
                 get ::(index => Number) {
                     @:out = [];
+                    ses_native__tile_attrib(a:index, b:ATTRIBS.BIND, c:i)
                     [0, 64]->for(do:::(i) {
-                        out->push(value:ses_native__tile_query(a:index, b:i));
+                        out->push(value:ses_native__tile_query(a:index));
                     });
+                    ses_native__tile_attrib(a:index, b:ATTRIBS.UNBIND);
                 }
             };
         }
@@ -343,7 +353,7 @@
             
 
                 // scale X relative to center
-                positionX : {
+                x : {
                     set ::(value => Number) {
                         positionX = value;
                         ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONX, c:value);
@@ -353,7 +363,7 @@
                 },
 
                 // scale Y relative to center
-                positionY : {
+                y : {
                     set ::(value => Number) {
                         positionX = value;
                         ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONY, c:value);
@@ -449,7 +459,7 @@
         COLOR_AROUND_MASK: 4, // color only where there is no stencil
         BLEND:             5, // adds color information, giving a transparent ghost image effect 
         BLEND_ON_MASK:     6, // blend, but only masks,
-        BLEIND_AROUND_MASK:7, // blend, but only in non-mask areas
+        BLEND_AROUND_MASK: 7, // blend, but only in non-mask areas
     };
 
     
@@ -487,6 +497,7 @@
             if (id >= spriteLimit)
                 error(detail: "Sprite limit reached.");
 
+            // always the first call
             ses_native__sprite_attrib(a:id, b:ATTRIBS.ENABLE,    c:1);
             ses_native__sprite_attrib(a:id, b:ATTRIBS.ROTATION,  c:0);
             ses_native__sprite_attrib(a:id, b:ATTRIBS.SCALEX,    c:1);
@@ -544,7 +555,7 @@
                 },
 
                 // scale X relative to center
-                positionX : {
+                x : {
                     set ::(value => Number) {
                         positionX = value;
                         ses_native__sprite_attrib(a:id, b:ATTRIBS.POSITIONX, c:value);
@@ -554,7 +565,7 @@
                 },
 
                 // scale Y relative to center
-                positionY : {
+                y : {
                     set ::(value => Number) {
                         positionX = value;
                         ses_native__sprite_attrib(a:id, b:ATTRIBS.POSITIONY, c:value);

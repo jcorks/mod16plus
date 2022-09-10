@@ -16,7 +16,7 @@
 // behavior of the engine is met.
 
 extern void ses_native__commit_rom();
-extern int ses_native__main_loop();
+extern int ses_native__main_loop(matte_t *);
 
 extern matteValue_t ses_native__sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 extern matteValue_t ses_native__engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
@@ -214,5 +214,5 @@ int main(int argc, char ** argv) {
     );
     
     // begin the loop
-    return ses_native__main_loop();
+    return ses_native__main_loop(m);
 }
