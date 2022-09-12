@@ -357,15 +357,15 @@ matteValue_t ses_native__tile_attrib(matteVM_t * vm, matteValue_t fn, const matt
         (int)matte_value_as_number(heap, args[0]),
         (int)matte_value_as_number(heap, args[1])
     );  
-    switch((int)matte_value_as_number(heap, args[0])) {
+    switch((int)matte_value_as_number(heap, args[1])) {
       case BIND:
-        ses_sdl_gl_bind_tile(matte_value_as_number(heap, args[1]));
+        ses_sdl_gl_bind_tile(matte_value_as_number(heap, args[0]));
         break;
         
       case SETTEXEL:
         ses_sdl_gl_set_tile_pixel(
-            matte_value_as_number(heap, args[2]),
-            matte_value_as_number(heap, args[3])
+            matte_value_as_number(heap, args[0]),
+            matte_value_as_number(heap, args[2])
         );
         break;
         

@@ -51,9 +51,9 @@
           (Object): input,
           (String):
             [
-                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)), //r
-                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)), //g
-                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)), //b
+                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)) / 255, //r
+                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)) / 255, //g
+                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)) / 255, //b
             ]
         };
     };
@@ -142,10 +142,10 @@
             
                 // data is a plain array of numbers, 0 - 4
                 set ::(index => Number, data => Object) {
-                    ses_native__tile_attrib(a:index, b:ATTRIBS.BIND, c:i)
+                    ses_native__tile_attrib(a:index, b:ATTRIBS.BIND);
                     [0, 64]->for(do:::(i) {
                         ses_native__tile_attrib(
-                            a:index,
+                            a:i,
                             b:ATTRIBS.SETTEXEL,
                             c:data[i] => Number
                         );
@@ -157,7 +157,7 @@
                 
                 get ::(index => Number) {
                     @:out = [];
-                    ses_native__tile_attrib(a:index, b:ATTRIBS.BIND, c:i)
+                    ses_native__tile_attrib(a:index, b:ATTRIBS.BIND);
                     [0, 64]->for(do:::(i) {
                         out->push(value:ses_native__tile_query(a:index));
                     });
@@ -475,7 +475,7 @@
             @scaleX = 1;
             @scaleY = 1;
             @positionX = 0;
-            @positionY = 1;
+            @positionY = 0;
             @centerX = 0;
             @centerY = 0;
             @layer = 0;

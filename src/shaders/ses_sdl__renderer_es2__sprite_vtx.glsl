@@ -18,7 +18,7 @@ void main() {
     //
     // depth mode success should depend on the effect value
     // before rendering.
-    if (effect == 1||
-        effect == 2)
-        gl_Position.z = 1;
+    if (effect == int(1)||
+        effect == int(2))
+        gl_Position.z = 1.0;
 }

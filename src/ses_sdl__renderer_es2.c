@@ -100,7 +100,7 @@ static SES_GLFramebuffer create_framebuffer(int w, int h) {
     
     
     glBindRenderbuffer(GL_RENDERBUFFER, fb.depthRB);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);    
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, w, h);    
     
     glBindFramebuffer(GL_FRAMEBUFFER, fb.handle);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.texture, 0);
@@ -203,10 +203,10 @@ static SES_GLProgram create_program(const char * srcVertex, const char * srcFrag
     program.locationVBOposition = glGetAttribLocation(program.handle, "position");
     program.locationVBOuv = glGetAttribLocation(program.handle, "uv");
 
-    program.locationUniformEffect = glGetAttribLocation(program.handle, "effect");
-    program.locationUniformLocalMat = glGetAttribLocation(program.handle, "localMat");
-    program.locationUniformPalette = glGetAttribLocation(program.handle, "palette");
-    program.locationUniformProj = glGetAttribLocation(program.handle, "proj");
+    program.locationUniformEffect = glGetUniformLocation(program.handle, "effect");
+    program.locationUniformLocalMat = glGetUniformLocation(program.handle, "localMat");
+    program.locationUniformPalette = glGetUniformLocation(program.handle, "palette");
+    program.locationUniformProj = glGetUniformLocation(program.handle, "proj");
     
     glGenBuffers(1, &program.vbo);
     
@@ -245,14 +245,17 @@ static SES_GLProgram create_program(const char * srcVertex, const char * srcFrag
 
 
 ////////// interface
-
+int ses_sdl_gl_get_error() {
+    return glGetError();
+}
 void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);    
     
-    *window  = SDL_CreateWindow("Sprite Entertainment System", 100, 100, 800, 600, SDL_WINDOW_OPENGL);
+    *window  = SDL_CreateWindow("Sprite Entertainment System", 100, 100, 240*4, 160*4, SDL_WINDOW_OPENGL);
     *context = SDL_GL_CreateContext(*window);
+
     
     // default is gba resolution    
     gl.resultFramebuffer = create_framebuffer(240, 160);
@@ -417,16 +420,21 @@ typedef enum {
 
 void ses_sdl_gl_render_begin() {
     glUseProgram(gl.spriteProgram.handle);
+    glViewport(0, 0, 240, 160);
+
     glBindFramebuffer(GL_FRAMEBUFFER, gl.resultFramebuffer.handle);
     glClearColor(0.12, 0.051, 0.145, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+
+
     sesMatrix_t proj;
     projection_orthographic(
         &proj, 
-        -gl.resolutionWidth/2, gl.resolutionWidth/2,
-        gl.resolutionHeight/2, -gl.resolutionHeight/2,
-        100, -100
+        0, gl.resolutionWidth,
+        0, gl.resolutionHeight,
+        0, 100
     );
 
     glUniformMatrix4fv(
@@ -440,8 +448,6 @@ void ses_sdl_gl_render_begin() {
     glEnableVertexAttribArray(gl.spriteProgram.locationVBOposition);
     glEnableVertexAttribArray(gl.spriteProgram.locationVBOuv);
     
-    glVertexAttribPointer(gl.spriteProgram.locationVBOposition, 2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)0);
-    glVertexAttribPointer(gl.spriteProgram.locationVBOuv,       2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*2));
     
     
 }
@@ -454,32 +460,33 @@ void ses_sdl_gl_render_end() {
 
     glUseProgram(gl.screenProgram.handle);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, 240*4, 160*4);
     
     glClearColor(1, 0, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     SES_VBOvertex vboData[] = {
-        {0, 0, 0, 0},
-        {1, 0, 1, 0},
+        {-1, -1, 0, 0},
+        {1, -1, 1, 0},
         {1, 1, 1, 1},
 
         {1, 1, 1, 1},
-        {0, 1, 0, 1},
-        {0, 0, 0, 0}
+        {-1, 1, 0, 1},
+        {-1, -1, 0, 0}
     };    
 
     glEnableVertexAttribArray(gl.screenProgram.locationVBOposition);
     glEnableVertexAttribArray(gl.screenProgram.locationVBOuv);
     
-    glVertexAttribPointer(gl.screenProgram.locationVBOposition, 2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)0);
-    glVertexAttribPointer(gl.screenProgram.locationVBOuv,       2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*2));
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, gl.resultFramebuffer.texture);
     glBindBuffer(GL_ARRAY_BUFFER, gl.screenProgram.vbo);
-    
-
     glBufferData(GL_ARRAY_BUFFER, sizeof(SES_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);
+    
+    glVertexAttribPointer(gl.screenProgram.locationVBOposition, 2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)0);
+    glVertexAttribPointer(gl.screenProgram.locationVBOuv,       2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*2));
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -549,10 +556,11 @@ void ses_sdl_gl_render_sprite(
     
     sesMatrix_t m;
     ses_matrix_set_identity(&m);
-    ses_matrix_translate(&m, centerX, centerY, 0);
-    ses_matrix_scale(&m, scaleX, scaleY, 0);
-    ses_matrix_rotate_by_angles(&m, 0, 0, rotation);
+
     ses_matrix_translate(&m, x, y, 0);
+    ses_matrix_scale(&m, scaleX, scaleY, 1);
+    ses_matrix_rotate_by_angles(&m, 0, 0, rotation);
+    ses_matrix_translate(&m, centerX, centerY, 0);
     
     
 
@@ -586,16 +594,18 @@ void ses_sdl_gl_render_sprite(
     glBindBuffer(GL_ARRAY_BUFFER, gl.spriteProgram.vbo);
     SES_VBOvertex vboData[] = {
         {0, 0, u,      v},
-        {1, 0, u+unit, v},
-        {1, 1, u+unit, v+unit},
+        {8, 0, u+unit, v},
+        {8, 8, u+unit, v+unit},
 
-        {1, 1, u+unit, v+unit},
-        {0, 1, u,      v+unit},
+        {8, 8, u+unit, v+unit},
+        {0, 8, u,      v+unit},
         {0, 0, u,      v}
     };
     
     glBufferData(GL_ARRAY_BUFFER, sizeof(SES_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);
 
+    glVertexAttribPointer(gl.spriteProgram.locationVBOposition, 2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)0);
+    glVertexAttribPointer(gl.spriteProgram.locationVBOuv,       2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*2));
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindTexture(GL_TEXTURE_2D, 0);
