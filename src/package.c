@@ -87,9 +87,12 @@ int ses_package(const char * dir) {
     matteArray_t * waveformSizes = matte_array_create(sizeof(uint32_t));
     matteArray_t * waveforms = matte_array_create(sizeof(uint8_t*));     
     
+    matteArray_t * tileIDs = matte_array_create(sizeof(uint32_t));
     matteArray_t * tiles = matte_array_create(sizeof(uint8_t)*64); // uint8_t *, see ses_rom_get_tile
+
+
+    matteArray_t * paletteIDs = matte_array_create(sizeof(uint32_t));
     matteArray_t * palettes = matte_array_create(sizeof(uint8_t)*12); // uint8_t *, see ses_rom_get_palette
-    matteArray_t * backgrounds = matte_array_create(sizeof(uint32_t)*64); // uint32_t *, see ses_rom_get_background
     
     
     matteArray_t * bytecodeSegmentNames = matte_array_create(sizeof(matteString_t*));
@@ -133,12 +136,22 @@ int ses_package(const char * dir) {
                 matte_string_destroy(line);
                 continue;
             }
+            
+            char * path = malloc(matte_string_get_length(line)+1);
+            path[0] = 0;
+            int id;
+            if (sscanf(matte_string_get_c_str(line), "%d %s", &id, path) != 2) {
+                printf("Error on line %d of tile specification. Format should be\n[tile id] [path to file]\n", i);
+                exit(1);
+            }
+            
             uint32_t byteLen;
             bytes = dump_bytes_relative(
                 dir,
-                matte_string_get_c_str(line), 
+                path, 
                 &byteLen
             );
+            free(path);
             if (byteLen % 64 != 0) {
                 printf("Tile sheet %s is misaligned and does not contain a multiple of 64 bytes.\n", matte_string_get_c_str(line));
                 exit(1);
@@ -146,6 +159,7 @@ int ses_package(const char * dir) {
             // raw waveforms (for now)
             // todo: possibly ogg
             matte_array_push_n(tiles, bytes, byteLen/64);
+            matte_array_push(tileIDs, id);
             matte_string_destroy(line);
             
         }        
@@ -162,12 +176,23 @@ int ses_package(const char * dir) {
                 matte_string_destroy(line);
                 continue;
             }
+            char * path = malloc(matte_string_get_length(line)+1);
+            path[0] = 0;
+            int id;
+            if (sscanf(matte_string_get_c_str(line), "%d %s", &id, path) != 2) {
+                printf("Error on line %d of palette specification. Format should be\n[palette id] [path to file]\n", i);
+                exit(1);
+            }
+
+
+
             uint32_t byteLen;
             bytes = dump_bytes_relative(
                 dir,
-                matte_string_get_c_str(line), 
+                path, 
                 &byteLen
             );
+            free(path);
             if (byteLen % 12 != 0) {
                 printf("Palette sheet %s is misaligned and does not contain a multiple of 12 bytes.\n", matte_string_get_c_str(line));
                 exit(1);
@@ -175,40 +200,13 @@ int ses_package(const char * dir) {
             // raw waveforms (for now)
             // todo: possibly ogg
             matte_array_push_n(palettes, bytes, byteLen/12);
+            matte_array_push(paletteIDs, id);
             matte_string_destroy(line);
 
         }        
     }    
 
 
-    // tiles 
-    {
-        matteArray_t * lines = package_split(dir, "PALETTES");
-        uint32_t i;
-        len = matte_array_get_size(lines);
-        for(i = 0; i < len; ++i) {
-            matteString_t * line = matte_array_at(lines, matteString_t *, i);
-            if (is_string_empty(line)) {
-                matte_string_destroy(line);
-                continue;
-            }
-            uint32_t byteLen;
-            bytes = dump_bytes_relative(
-                dir,
-                matte_string_get_c_str(line), 
-                &byteLen
-            );
-            if (byteLen % (64*sizeof(uint32_t)) != 0) {
-                printf("background sheet %s is misaligned and does not contain a multiple of %d bytes.\n", matte_string_get_c_str(line), (int)(64*sizeof(uint32_t)));
-                exit(1);
-            }
-            // raw waveforms (for now)
-            // todo: possibly ogg
-            matte_array_push_n(backgrounds, bytes, byteLen/(64*sizeof(uint32_t)));
-            matte_string_destroy(line);
-
-        }        
-    }    
     
     // bytecode segments
     {
@@ -251,10 +249,12 @@ int ses_package(const char * dir) {
     matteArray_t * romBytes = ses_pack_rom(
         waveformSizes, // uint32_t
         waveforms, // uint8_t *     
-        
+
+        tileIDs,        
         tiles, // uint8_t, see ses_rom_get_tile
+
+        paletteIDs, 
         palettes, // uint8_t, see ses_rom_get_palette
-        backgrounds, // uint32_t, see ses_rom_get_background
         
         
         bytecodeSegmentNames, // matteString_t *

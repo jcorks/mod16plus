@@ -4,6 +4,18 @@
 #include <SDL2/SDL.h>
 
 
+#define REAL_TEX_SIZE  1024
+#define TILE_SIZE 8
+#define PIXELS_PER_TILE (TILE_SIZE * TILE_SIZE)
+#define TEXTURE_COUNT 16
+#define TILES_PER_TEXTURE ((REAL_TEX_SIZE * REAL_TEX_SIZE) / (TILE_SIZE * TILE_SIZE))
+#define TILE_SPRITE_MAX_ID (TILES_PER_TEXTURE*TEXTURE_COUNT-1)
+
+#define BACKGROUND_COUNT 512
+#define BACKGROUND_TILE_WIDTH 16
+#define BACKGROUND_TILE_HEIGHT 8
+#define REAL_BACKGROUND_SIZE 128
+#define TILES_PER_BACKGROUND (BACKGROUND_TILE_HEIGHT * BACKGROUND_TILE_WIDTH)
 typedef struct {
     GLuint handle;
     GLuint depthRB;
@@ -38,14 +50,22 @@ typedef struct {
 
 
 typedef struct {
-    uint8_t data[64];
+    uint8_t data[TILE_SIZE * TILE_SIZE];
 } SES_GLTile;
 
 typedef struct {
     GLint texture;
-    SES_GLTile tiles[4096];
+    SES_GLTile tiles[TILES_PER_TEXTURE];
 } SES_GLTileTexture;
 
+
+
+
+
+typedef struct {
+    SES_GLTile tiles[TILES_PER_BACKGROUND];    
+    GLint texture;
+} SES_GLBackgroundTexture;
 
 typedef struct {
 
@@ -55,7 +75,9 @@ typedef struct {
     SES_GLFramebuffer resultFramebuffer;
     SES_GLProgram spriteProgram;
     SES_GLProgram screenProgram;
-    matteArray_t * textures;
+    
+    SES_GLTileTexture * textures[TEXTURE_COUNT];
+    SES_GLBackgroundTexture * backgrounds[BACKGROUND_COUNT];
     
     int resolutionWidth;
     int resolutionHeight;
@@ -253,7 +275,7 @@ void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);    
     
-    *window  = SDL_CreateWindow("Sprite Entertainment System", 100, 100, 240*4, 160*4, SDL_WINDOW_OPENGL);
+    *window  = SDL_CreateWindow("Sprite Entertainment System", 100, 100, 240*5, 160*5, SDL_WINDOW_OPENGL);
     *context = SDL_GL_CreateContext(*window);
 
     
@@ -274,30 +296,74 @@ void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
     
     
     
-    gl.textures = matte_array_create(sizeof(SES_GLTileTexture*));
 }
 
 
-#define REAL_TEX_WIDTH  512
-#define REAL_TEX_HEIGHT 512
 
 static uint8_t NO_TILE_DATA[64] = {};
 
-static SES_GLTileTexture * bound_tile_texture = NULL;
-static uint32_t            bound_tile_id = 0;
-static int                 bound_tile_dirty = 0;
+static SES_GLTileTexture *       bound_tile_texture = NULL;
+static SES_GLTile *              bound_tile = NULL;
+static uint32_t                  bound_tile_id = 0;
+static int                       bound_tile_dirty = 0;
+static SES_GLBackgroundTexture * bound_tile_background = NULL;
 
 void ses_sdl_gl_bind_tile(uint32_t id) {
+    if (id > TILE_SPRITE_MAX_ID) {
+        int slot = (id - TILE_SPRITE_MAX_ID) / TILES_PER_BACKGROUND;
+        int index = (id - TILE_SPRITE_MAX_ID) % TILES_PER_BACKGROUND;
+       
+        bound_tile_id = id - TILE_SPRITE_MAX_ID;
+        
+        if (slot > 512) return;        
+        SES_GLBackgroundTexture * bg = gl.backgrounds[slot];
+
+        if (!bg) {
+            bg = calloc(1, sizeof(SES_GLBackgroundTexture));
+            glGenTextures(1, &bg->texture);
+            glBindTexture(GL_TEXTURE_2D, bg->texture);
+            glTexImage2D(
+                GL_TEXTURE_2D,
+                0,
+                GL_ALPHA,
+                BACKGROUND_TILE_WIDTH * TILE_SIZE,
+                BACKGROUND_TILE_HEIGHT * TILE_SIZE,
+                0,
+                GL_ALPHA,
+                GL_UNSIGNED_BYTE,
+                NULL
+            );
+
+            glTexParameteri(
+                GL_TEXTURE_2D,
+                GL_TEXTURE_MIN_FILTER,
+                GL_NEAREST
+            );
+
+
+            glTexParameteri(
+                GL_TEXTURE_2D,
+                GL_TEXTURE_MAG_FILTER,
+                GL_NEAREST
+            );
+            
+            glBindTexture(GL_TEXTURE_2D, 0);
+            gl.backgrounds[slot] = bg;            
+        }
+
+
+        bound_tile_dirty = 0;
+        bound_tile_texture = NULL;                  
+        bound_tile = &bg->tiles[index];
+        bound_tile_background = bg;
+        return;
+    }
     // 512 x 512 per GL texture, which means 
     // each texture holds 4096 tiles.
-    int slot = id / 4096;
-    int index = id % 4096;
+    int slot = id / TILES_PER_TEXTURE;
+    int index = id % TILES_PER_TEXTURE;
     
-    while(matte_array_get_size(gl.textures) <= slot) {
-        SES_GLTileTexture * t = NULL;
-        matte_array_push(gl.textures, t);
-    }
-    SES_GLTileTexture * t = matte_array_at(gl.textures, SES_GLTileTexture *, slot);
+    SES_GLTileTexture * t = gl.textures[slot];
     if (t == NULL) {
         t = calloc(1, sizeof(SES_GLTileTexture));
         glGenTextures(1, &t->texture);
@@ -306,8 +372,8 @@ void ses_sdl_gl_bind_tile(uint32_t id) {
             GL_TEXTURE_2D,
             0,
             GL_ALPHA,
-            512,
-            512,
+            REAL_TEX_SIZE,
+            REAL_TEX_SIZE,
             0,
             GL_ALPHA,
             GL_UNSIGNED_BYTE,
@@ -328,42 +394,96 @@ void ses_sdl_gl_bind_tile(uint32_t id) {
         );
         
         glBindTexture(GL_TEXTURE_2D, 0);
-        matte_array_at(gl.textures, SES_GLTileTexture *, slot) = t;
+        gl.textures[slot] = t;
     }
     
     bound_tile_id = id;
     bound_tile_dirty = 0;
-    bound_tile_texture = t;     
+    bound_tile_texture = t;  
+    bound_tile = &t->tiles[index];   
 }
 void ses_sdl_gl_set_tile_pixel(uint8_t location, uint8_t value) {
-    bound_tile_texture->tiles[bound_tile_id%4096].data[location] = value;
+    bound_tile->data[location] = value;
     bound_tile_dirty = 1;
 };
 
 uint8_t ses_sdl_gl_get_tile_pixel(uint8_t location) {
-    return bound_tile_texture->tiles[bound_tile_id%4096].data[location];
+    return bound_tile->data[location];
+}
+
+void ses_sdl_gl_copy_from(uint32_t id) {
+    int i;
+    if (id > TILE_SPRITE_MAX_ID) {
+        int slot = (id - TILE_SPRITE_MAX_ID) / TILES_PER_BACKGROUND;
+        int index = (id - TILE_SPRITE_MAX_ID) % TILES_PER_BACKGROUND;
+        
+        SES_GLBackgroundTexture * bg = gl.backgrounds[slot];
+        if (bg == NULL) return;
+        
+        int i;
+        SES_GLTile * other = &bg->tiles[index];
+        for(i = 0; i < 64; ++i) {
+            bound_tile->data[i] = other->data[i];
+        }
+    } else {
+        int slot = id / TILES_PER_TEXTURE;
+        int index = id % TILES_PER_TEXTURE;    
+
+        SES_GLTileTexture * t = gl.textures[slot];
+        if (t == NULL) return;
+
+        SES_GLTile * other = &t->tiles[index];
+        for(i = 0; i < 64; ++i) {
+            bound_tile->data[i] = other->data[i];
+        }
+    }
+    bound_tile_dirty = 1;
+    
 }
 
 void ses_sdl_gl_unbind_tile() {
     if (bound_tile_dirty) {
-        int index = bound_tile_id % 4096;
+        if (bound_tile_background) {
+            int index = bound_tile_id % TILES_PER_BACKGROUND;
 
 
-        glBindTexture(GL_TEXTURE_2D, bound_tile_texture->texture);
-        glTexSubImage2D(
-            GL_TEXTURE_2D,
-            0,
-            (index % 64)*8,
-            (index / 64)*8,
-            8,
-            8,
-            GL_ALPHA,
-            GL_UNSIGNED_BYTE,
-            bound_tile_texture->tiles[bound_tile_id%4096].data // always 64 bytes
-        );
-        glBindTexture(GL_TEXTURE_2D, 0);     
+            glBindTexture(GL_TEXTURE_2D, bound_tile_background->texture);
+            glTexSubImage2D(
+                GL_TEXTURE_2D,
+                0,
+                (index % PIXELS_PER_TILE)*TILE_SIZE,
+                (index / PIXELS_PER_TILE)*TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+                GL_ALPHA,
+                GL_UNSIGNED_BYTE,
+                bound_tile_background->tiles[index].data // always 64 bytes
+            );
+            glBindTexture(GL_TEXTURE_2D, 0);     
+        
+        
+        } else {
+            int index = bound_tile_id % TILES_PER_TEXTURE;
+
+
+            glBindTexture(GL_TEXTURE_2D, bound_tile_texture->texture);
+            glTexSubImage2D(
+                GL_TEXTURE_2D,
+                0,
+                (index % PIXELS_PER_TILE)*TILE_SIZE,
+                (index / PIXELS_PER_TILE)*TILE_SIZE,
+                TILE_SIZE,
+                TILE_SIZE,
+                GL_ALPHA,
+                GL_UNSIGNED_BYTE,
+                bound_tile_texture->tiles[index].data // always 64 bytes
+            );
+            glBindTexture(GL_TEXTURE_2D, 0);     
+        }
     }
     bound_tile_texture = NULL;
+    bound_tile_background = NULL;
+    
 }
 
 
@@ -372,18 +492,19 @@ void ses_sdl_gl_unbind_tile() {
 static GLint ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, float * unit) {
     *u = 0;
     *v = 0;
-    int slot = id / 4096;
-    int index = id % 4096;
-    if (slot >= matte_array_get_size(gl.textures))
+    if (id > TILE_SPRITE_MAX_ID)
         return 1;
-        
-    SES_GLTileTexture * t = matte_array_at(gl.textures, SES_GLTileTexture *, id);
+    int slot = id / TILES_PER_TEXTURE;
+    int index = id % TILES_PER_TEXTURE;        
+    SES_GLTileTexture * t = gl.textures[slot];
     if (t == NULL)
         return 1;
+    
+    float TILES_PER_ROW = (REAL_TEX_SIZE / TILE_SIZE);
         
-    *u = (index % 64)   / 64.0;
-    *v = (index / 64.0) / 64.0;
-    *unit = 1 / 64.0;
+    *u = (index % TILES_PER_TEXTURE) / TILES_PER_ROW;
+    *v = (index / TILES_PER_TEXTURE) / TILES_PER_ROW;
+    *unit = 1 / TILES_PER_ROW;
     return t->texture;
 }
 
@@ -423,7 +544,7 @@ void ses_sdl_gl_render_begin() {
     glViewport(0, 0, 240, 160);
 
     glBindFramebuffer(GL_FRAMEBUFFER, gl.resultFramebuffer.handle);
-    glClearColor(0.12, 0.051, 0.145, 0);
+    glClearColor(0.12, 0.051, 0.145, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -455,12 +576,13 @@ void ses_sdl_gl_render_begin() {
 
 // cleans up + draws to main framebuffer
 void ses_sdl_gl_render_end() {
+    glDisable(GL_BLEND);
     glDisableVertexAttribArray(gl.spriteProgram.locationVBOposition);
     glDisableVertexAttribArray(gl.spriteProgram.locationVBOuv);
 
     glUseProgram(gl.screenProgram.handle);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, 240*4, 160*4);
+    glViewport(0, 0, 240*5, 160*5);
     
     glClearColor(1, 0, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -481,6 +603,9 @@ void ses_sdl_gl_render_end() {
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, gl.resultFramebuffer.texture);
+
+
+
     glBindBuffer(GL_ARRAY_BUFFER, gl.screenProgram.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(SES_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);
     
@@ -510,6 +635,7 @@ void ses_sdl_gl_render_sprite(
     
     uint32_t id
 ) {
+    if (id > TILE_SPRITE_MAX_ID) return;
     glEnable(GL_DEPTH_TEST);
 
     // depth
@@ -542,7 +668,8 @@ void ses_sdl_gl_render_sprite(
         glBlendFunc(GL_ONE, GL_ONE);
         break;
       default:
-        glDisable(GL_BLEND);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     }
     
 
@@ -576,10 +703,10 @@ void ses_sdl_gl_render_sprite(
     
     float paletteReal[] = {
         0, 0, 0, 0,
-        back.x, back.y, back.z, 0,
-        midBack.x, midBack.y, midBack.z, 0,
-        midFront.x, midFront.y, midFront.z, 0,
-        front.x, front.y, front.z, 0
+        back.x, back.y, back.z, 1,
+        midBack.x, midBack.y, midBack.z, 1,
+        midFront.x, midFront.y, midFront.z, 1,
+        front.x, front.y, front.z, 1
     };
     glUniform4fv(gl.spriteProgram.locationUniformPalette, 5, paletteReal);
     
@@ -600,6 +727,126 @@ void ses_sdl_gl_render_sprite(
         {8, 8, u+unit, v+unit},
         {0, 8, u,      v+unit},
         {0, 0, u,      v}
+    };
+    
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SES_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(gl.spriteProgram.locationVBOposition, 2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)0);
+    glVertexAttribPointer(gl.spriteProgram.locationVBOuv,       2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*2));
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+}
+
+
+
+void ses_sdl_gl_render_background(
+    float x, float y,
+    int layer,
+    int effect,
+
+    sesVector_t back,
+    sesVector_t midBack,
+    sesVector_t midFront,
+    sesVector_t front,
+    
+    uint32_t id
+) {
+
+    SES_GLBackgroundTexture * bg = gl.backgrounds[id];
+    if (bg == NULL) return;    
+    
+    
+    glEnable(GL_DEPTH_TEST);
+
+    // depth
+    switch(effect) {
+      case RE_COLOR:
+      case RE_MASK:
+      case RE_BLEND:
+      case RE_MASK_AND_COLOR:
+        glDepthFunc(GL_ALWAYS);
+        break;
+        
+      case RE_COLOR_ON_MASK:
+      case RE_BLEND_ON_MASK:
+        glDepthFunc(GL_LESS);
+        break;
+      case RE_COLOR_AROUND_MASK:
+      case RE_BLEND_AROUND_MASK:
+        glDepthFunc(GL_EQUAL);
+        break;
+    }
+    
+    
+    // blending
+    switch(effect) {
+      case RE_BLEND:
+      case RE_BLEND_ON_MASK:
+      case RE_BLEND_AROUND_MASK:
+        glEnable(GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_ONE, GL_ONE);
+        break;
+      default:
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    }
+    
+
+    // order:
+    /*
+        - center translation
+        - scale
+        - rotation 
+        - position
+    */
+    
+    sesMatrix_t m;
+    ses_matrix_set_identity(&m);
+
+    ses_matrix_translate(&m, x, y, 0);
+    
+    
+
+    
+    glUniformMatrix4fv(
+        gl.spriteProgram.locationUniformLocalMat,
+        1, // count,
+        1, // transpose (yes)
+        (GLfloat*)&m
+    );
+    
+    glUniform1i(gl.spriteProgram.locationUniformEffect, effect);
+    
+    float paletteReal[] = {
+        0, 0, 0, 0,
+        back.x, back.y, back.z, 1,
+        midBack.x, midBack.y, midBack.z, 1,
+        midFront.x, midFront.y, midFront.z, 1,
+        front.x, front.y, front.z, 1
+    };
+    glUniform4fv(gl.spriteProgram.locationUniformPalette, 5, paletteReal);
+    
+    
+    glActiveTexture(GL_TEXTURE0);
+
+
+
+    
+    glBindTexture(GL_TEXTURE_2D, bg->texture);
+
+
+    glBindBuffer(GL_ARRAY_BUFFER, gl.spriteProgram.vbo);
+    SES_VBOvertex vboData[] = {
+        {0, 0, 0, 0},
+        {BACKGROUND_TILE_WIDTH*TILE_SIZE, 0, 1,      0},
+        {BACKGROUND_TILE_WIDTH*TILE_SIZE, BACKGROUND_TILE_HEIGHT*TILE_SIZE, 1, 1},
+
+        {BACKGROUND_TILE_WIDTH*TILE_SIZE, BACKGROUND_TILE_HEIGHT*TILE_SIZE, 1, 1},
+        {0, BACKGROUND_TILE_HEIGHT*TILE_SIZE, 0, 1},
+        {0, 0, 0, 0}
     };
     
     glBufferData(GL_ARRAY_BUFFER, sizeof(SES_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);

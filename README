@@ -7,6 +7,9 @@ The SES is a development kit and system to produce and play games
 with the look and feel of early generations of game consoles.
 
 
+
+
+
 It is split into 3 parts:
 
 ses developer:  The UI that generates and modifies ROMs.
@@ -18,5 +21,102 @@ makes it convenient to debug ROMs.
 ROMS consist of different segments of binary data:
 - Game bytecode that controls the game's logic
 - Audio waveform data for audio samples
-- Initial image data 
+- Initial tile data 
 - Initial palette data
+
+
+
+
+Tile-based Rendering 
+--------------------
+
+Rendering is based on tiles, which are 5-bit images 
+8x8 in size. Tiles are the visual primitive of the SES.
+
+Each pixel of a tile can be 5 possible values:
+0 -> Transparent 
+1 -> Back color 
+2 -> Mid-back color 
+3 -> Mid-front color 
+4 -> Front color
+
+Where each are an index into the palette. The real, on-screen 
+color comes from the palette, which is what defines the 
+color used for each pixel when rendered.
+
+There are 2 kinds of tiles:
+
+. Sprite tiles. These are used render sprites,
+  which consist of 1 tile that can be rotated, scaled, and translated.
+  
+. Background tiles. These are used for backgrounds, which are sets of 
+  tiles all rendered simultaneously, which is useful for images greater 
+  than 8x8. These can only be translated.
+
+
+The total number of possible tiles able to be 
+stored is 327680. 65536 are exclusive to backgrounds, 
+and 262144 are exclusive to sprites.
+
+Tiles of any kind can be copied and moved around 
+freely, so sprite tile memory can be used as "overflow"
+or working memory.
+
+Sprites
+-------
+
+A total of 4096 sprites may be onscreen at the same time.
+Each sprite consists of 1 tile and can have transform effects
+(position, rotation, scale) applied to it. This can be 
+useful for particle effects, characters, anything thats 
+more-or-less dynamic.
+
+Sprites can use tiles from IDs 0 to 0x40000-1
+
+
+Backgrounds
+-----------
+
+Backgrounds may be used to render collections of tiles 
+simulaneously. This can be convenient for background visuals,
+large images, and more. A total of 512 backgrounds may be 
+used at the same time.
+
+Backgrounds are specifically collections of tiles in 
+a predefined order. Backgrounds are 16 tiles wide and 
+8 tiles tall, so theyre always the same dimensions. They 
+pull from tiles from topleft, to the right, and down.
+For example:
+
+0  1  2  3  4  5  6  7
+8  9  10 11 12 13 14 15
+...
+
+And so on.
+
+Backgrounds only use background tiles, which start at 
+tile ID 0x40000 and go until tile 0x50000-1
+
+Effects
+-------
+
+All rendered tiles have multiple possible rendering effects.
+The default is "Color mode" where each color of a pixel displayed
+and the pixel "on top" is the one on-screen.
+"Blending mode" will color based on adding color values together.
+
+Masking is also available, which can control which pixels make it 
+to the screen or not.
+
+
+Layers
+------
+
+Each background and sprite have a layer upon which theyre drawn.
+Layers are used to control the order in which things appear 
+on-screen. Earlier layers are drawn first, with backgrounds drawn 
+before sprites for each layer. Layers 0-31 exist for use.
+
+
+
+

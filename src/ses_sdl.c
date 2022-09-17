@@ -31,6 +31,8 @@ typedef struct {
     // sprites.
     matteArray_t * sprites;
     
+    
+    
     // an array of SES_Palette, representing all accessed 
     // palettes
     matteArray_t * palettes;
@@ -92,6 +94,9 @@ extern void ses_sdl_gl_set_tile_pixel(uint8_t location, uint8_t value);
 // location should be a number from 0 to 63
 extern uint8_t ses_sdl_gl_get_tile_pixel(uint8_t location);
 
+// Copies tile data from another tile into the bound tile.
+extern void ses_sdl_gl_copy_from(uint32_t otherTileID);
+
 // Unbinds a tile, committing a tiles new data if edited.
 extern void ses_sdl_gl_unbind_tile();
 
@@ -112,6 +117,21 @@ extern void ses_sdl_gl_render_sprite(
             
     uint32_t id
 );
+
+extern void ses_sdl_gl_render_background(
+    float x, float y,
+
+    int layer,
+    int effect,
+
+    sesVector_t back,
+    sesVector_t midBack,
+    sesVector_t midFront,
+    sesVector_t front,
+            
+    uint32_t id
+);
+
 
 extern void ses_sdl_gl_render_end();
 
@@ -345,9 +365,10 @@ matteValue_t ses_native__palette_attrib(matteVM_t * vm, matteValue_t fn, const m
 }
 
 typedef enum {
-    BIND,
-    SETTEXEL,
-    UNBIND,
+    SESNTA_BIND,
+    SESNTA_SETTEXEL,
+    SESNTA_UNBIND,
+    SESNTA_COPY
 } SESNative_TileAttribs_t;
 
 
@@ -358,20 +379,28 @@ matteValue_t ses_native__tile_attrib(matteVM_t * vm, matteValue_t fn, const matt
         (int)matte_value_as_number(heap, args[1])
     );  
     switch((int)matte_value_as_number(heap, args[1])) {
-      case BIND:
+      case SESNTA_BIND:
         ses_sdl_gl_bind_tile(matte_value_as_number(heap, args[0]));
         break;
         
-      case SETTEXEL:
+      case SESNTA_SETTEXEL:
         ses_sdl_gl_set_tile_pixel(
             matte_value_as_number(heap, args[0]),
             matte_value_as_number(heap, args[2])
         );
         break;
         
-      case UNBIND:
+      case SESNTA_UNBIND:
         ses_sdl_gl_unbind_tile();
         break;
+        
+      case SESNTA_COPY:
+        ses_sdl_gl_copy_from(
+            matte_value_as_number(heap, args[0])
+        );
+        break;
+
+
     }
     return matte_heap_new_value(heap);
 }
@@ -393,7 +422,7 @@ matteValue_t ses_native__audio_attrib(matteVM_t * vm, matteValue_t fn, const mat
     return matte_heap_new_value(heap);
 }
 
-extern matteValue_t ses_native__bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native__bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     printf("BG       ID: %d, ATTRIB: %d\n",
         (int)matte_value_as_number(heap, args[0]),

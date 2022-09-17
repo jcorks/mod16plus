@@ -10,16 +10,15 @@ typedef struct {
 } SESWaveform;
 
 typedef struct {
+    uint32_t id;
     uint8_t data[64];
 } SESTile;
 
 typedef struct {
+    uint32_t id;
     uint8_t data[12];
 } SESPalette;
 
-typedef struct {
-    uint32_t data[64];
-} SESBackground;
 
 typedef struct {
     matteString_t * name;
@@ -30,7 +29,6 @@ typedef struct {
 static matteArray_t * rom_waveforms = NULL;
 static matteArray_t * rom_tiles = NULL;
 static matteArray_t * rom_palettes = NULL;
-static matteArray_t * rom_backgrounds = NULL;
 static matteArray_t * rom_bytecodeSegments = NULL;
 
 
@@ -50,7 +48,6 @@ static clear_rom() {
         rom_waveforms = matte_array_create(sizeof(SESWaveform));
         rom_tiles = matte_array_create(sizeof(SESTile));
         rom_palettes = matte_array_create(sizeof(SESPalette));
-        rom_backgrounds = matte_array_create(sizeof(SESBackground));
         rom_bytecodeSegments = matte_array_create(sizeof(SESBytecodeSegment));
     }
 
@@ -65,7 +62,6 @@ static clear_rom() {
     matte_array_set_size(rom_waveforms, 0);
     matte_array_set_size(rom_tiles, 0);
     matte_array_set_size(rom_palettes, 0);
-    matte_array_set_size(rom_backgrounds, 0);
     len = matte_array_get_size(rom_bytecodeSegments);
     for(i = 0; i < len; ++i) {
         matte_string_destroy(matte_array_at(rom_bytecodeSegments, SESBytecodeSegment, i).name);
@@ -83,7 +79,7 @@ SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength) {
 
 
     // before starting, check the size.
-    if (romLength < 12 + 5*sizeof(uint32_t)) 
+    if (romLength < 12 + 4*sizeof(uint32_t)) 
         return SES_UNPACK_ERROR__TOO_SMALL;
     
     
@@ -108,7 +104,6 @@ SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength) {
     uint32_t waveformCount        = SES_CHOMP(uint32_t);
     uint32_t tileCount            = SES_CHOMP(uint32_t);
     uint32_t paletteCount         = SES_CHOMP(uint32_t);
-    uint32_t backgroundCount      = SES_CHOMP(uint32_t);
     uint32_t bytecodeSegmentCount = SES_CHOMP(uint32_t);
     
     
@@ -138,12 +133,7 @@ SESUnpackError_t ses_unpack_rom(const uint8_t * romBytes, uint32_t romLength) {
         matte_array_get_data(rom_palettes)
     );
 
-    // backgrounds
-    matte_array_set_size(rom_backgrounds, backgroundCount);
-    SES_CHOMP_LARGE(
-        backgroundCount * sizeof(SESBackground),
-        matte_array_get_data(rom_backgrounds)
-    );
+
 
     // bytecodeSegments
     for(i = 0; i < bytecodeSegmentCount; ++i) {
@@ -180,9 +170,11 @@ matteArray_t * ses_pack_rom(
     matteArray_t * waveformSizes, // uint32_t
     matteArray_t * waveforms, // uint8_t *     
     
+    matteArray_t * tileIDs,
     matteArray_t * tiles, // uint8_t, see ses_rom_get_tile
+
+    matteArray_t * paletteIDs,
     matteArray_t * palettes, // uint8_t, see ses_rom_get_palette
-    matteArray_t * backgrounds, // uint32_t, see ses_rom_get_background
     
     
     matteArray_t * bytecodeSegmentNames, // matteString_t *
@@ -210,7 +202,6 @@ matteArray_t * ses_pack_rom(
     PUSHCOPY(uint32_t, matte_array_get_size(waveforms));
     PUSHCOPY(uint32_t, matte_array_get_size(tiles));
     PUSHCOPY(uint32_t, matte_array_get_size(palettes));
-    PUSHCOPY(uint32_t, matte_array_get_size(backgrounds));
     PUSHCOPY(uint32_t, matte_array_get_size(bytecodeSegments));
 
 
@@ -228,25 +219,29 @@ matteArray_t * ses_pack_rom(
     
     // tiles 
     len = matte_array_get_size(tiles);
-    PUSHN(
-        len * sizeof(SESTile),
-        matte_array_get_data(tiles)
-    );
+    for(i = 0; i < len; ++i) {
+        SESTile tile;
+        tile.id = matte_array_at(tileIDs, uint32_t, i);
+        memcpy(tile.data, &matte_array_at(tiles, uint8_t, i*64), 64);
+        PUSHN(
+            sizeof(SESTile),
+            &tile
+        );
+    };
     
 
     // palettes
     len = matte_array_get_size(palettes);
-    PUSHN(
-        len * sizeof(SESPalette),
-        matte_array_get_data(palettes)
-    );
+    for(i = 0; i < len; ++i) {
+        SESPalette palette;
+        palette.id = matte_array_at(paletteIDs, uint32_t, i);
+        memcpy(palette.data, &matte_array_at(palettes, uint8_t, i*12), 12);
+        PUSHN(
+            sizeof(SESPalette),
+            &palette
+        );
+    };
 
-    // backgrounds
-    len = matte_array_get_size(backgrounds);
-    PUSHN(
-        len * sizeof(SESBackground),
-        matte_array_get_data(rom_backgrounds)
-    );
 
     // bytecodeSegments
     len = matte_array_get_size(bytecodeSegments);
@@ -302,11 +297,13 @@ uint32_t ses_rom_get_tile_count() {
     return matte_array_get_size(rom_tiles);
 }
 
-const uint8_t * ses_rom_get_tile(uint32_t id) {
+const uint8_t * ses_rom_get_tile(uint32_t index, uint32_t * id) {
     if (!rom_tiles) return NULL;
-    if (id >= ses_rom_get_tile_count()) return NULL;
+    if (index >= ses_rom_get_tile_count()) return NULL;
     
-    return matte_array_at(rom_tiles, SESTile, id).data;
+    SESTile * tile = &matte_array_at(rom_tiles, SESTile, index);
+    *id = tile->id;
+    return tile->data;
 }
 
 
@@ -316,25 +313,16 @@ uint32_t ses_rom_get_palette_count() {
     return matte_array_get_size(rom_palettes);
 }
 
-const uint8_t * ses_rom_get_palette(uint32_t id) {
+const uint8_t * ses_rom_get_palette(uint32_t index, uint32_t * id) {
     if (!rom_palettes) return NULL;
-    if (id >= ses_rom_get_palette_count()) return NULL;
+    if (index >= ses_rom_get_palette_count()) return NULL;
     
-    return matte_array_at(rom_palettes, SESPalette, id).data;
+
+    SESPalette * palette = &matte_array_at(rom_tiles, SESPalette, index);
+    *id = palette->id;
+    return palette->data;
 }
 
-
-
-uint32_t ses_rom_get_background_count() {
-    if (!rom_backgrounds) return 0;
-    return matte_array_get_size(rom_backgrounds);
-}
-const uint32_t * ses_rom_get_background(uint32_t id) {
-    if (!rom_backgrounds) return NULL;
-    if (id >= ses_rom_get_background_count()) return NULL;
-    
-    return matte_array_at(rom_backgrounds, SESBackground, id).data;
-}
 
 
 

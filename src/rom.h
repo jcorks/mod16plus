@@ -38,9 +38,13 @@ matteArray_t * ses_pack_rom(
     matteArray_t * waveformSizes, // uint32_t
     matteArray_t * waveforms, // uint8_t *     
     
+
+    matteArray_t * tileIDs, // uint32_t
     matteArray_t * tiles, // uint8_t *, see ses_rom_get_tile
+
+
+    matteArray_t * paletteIDs, // uint32_t
     matteArray_t * palettes, // uint8_t *, see ses_rom_get_palette
-    matteArray_t * backgrounds, // uint32_t *, see ses_rom_get_background
     
     
     matteArray_t * bytecodeSegmentNames, // matteString_t *
@@ -79,7 +83,7 @@ uint32_t ses_rom_get_tile_count();
 //
 // Each tile in the SES is always 8x8, so this block is 
 // always 64 bytes.
-const uint8_t * ses_rom_get_tile(uint32_t id);
+const uint8_t * ses_rom_get_tile(uint32_t index, uint32_t * id);
 
 
 
@@ -93,20 +97,7 @@ uint32_t ses_rom_get_palette_count();
 // Palette color orders are always: background, mid-background, mid-front, and front
 // in order of bytes.
 // Palettes returned are always 12 bytes.
-const uint8_t * ses_rom_get_palette(uint32_t i);
-
-
-
-// Gets the number of pre-defined backgrounds.
-// Background data contains only the pre-ordained arrangement 
-// of tiles. All other information is provided 
-// during runtime.
-uint32_t ses_rom_get_background_count();
-
-// Gets the background at the given index.
-// Backgrounds are arrays of tile indexes, from left to right, top to bottom 
-// in a contiguous order. Backgrounds are always 8x8 tiles.
-const uint32_t * ses_rom_get_background(uint32_t i);
+const uint8_t * ses_rom_get_palette(uint32_t index, uint32_t * id);
 
 
 

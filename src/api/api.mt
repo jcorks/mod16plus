@@ -132,6 +132,7 @@
         BIND       : 0,
         SETTEXEL   : 1,
         UNBIND     : 2,
+        COPY       : 3
     };
 
     return class(
@@ -162,7 +163,14 @@
                         out->push(value:ses_native__tile_query(a:index));
                     });
                     ses_native__tile_attrib(a:index, b:ATTRIBS.UNBIND);
+                },
+                
+                copy ::(to => Number, from => Number) {
+                    ses_native__tile_attrib(a:to, b:ATTRIBS.BIND);
+                    ses_native__tile_attrib(a:from, b:ATTRIBS.COPY);
+                    ses_native__tile_attrib(a:to, b:ATTRIBS.UNBIND);
                 }
+
             };
         }
     ).new();
@@ -183,9 +191,9 @@
         
         
         GAMEPAD0: 5,
-        GAMEPAD1: 5,
-        GAMEPAD2: 5,
-        GAMEPAD0: 5
+        GAMEPAD1: 6,
+        GAMEPAD2: 7,
+        GAMEPAD0: 8
     };
 
 
@@ -273,20 +281,33 @@
 };
 
 
-// backgrounds are specifically 8x8 tiles
+// backgrounds are specifically
+// sets of tiles collated together.
+//
+// Tiles above id 0x40000 correspond to 
+// background tiles. Backgrounds ALWAYS read 
+// the same tiles, so the user will work with 
+// backgrounds by populating the tiles 
+// corresponding to the expected IDs.
+//
+// IDs are ordered from topleft to bottomright
+// in rows, where each row is 16 tiles with 8 rows 
+// per background.
+//
+// NOTE: background tiles CANNOT be used as 
+// sprites.
 @:Background = ::<= {
     @bgIDPool = [];
     @bgID = 0;
-    @:bgLimit = 256;
     
     @:ATTRIBS = {
         ENABLE:    0,
-        POSITIONX :4,
-        POSITIONY :5,
-        LAYER     :8,
-        TILEINDEX:9,
-        EFFECT    :10,
-        PALETTE   :11,
+        POSITIONX :1,
+        POSITIONY :2,
+        LAYER     :3,
+        TILEINDEX :4,
+        EFFECT    :5,
+        PALETTE   :6
     };
     
     
@@ -308,37 +329,26 @@
         },
         define:::(this) {
             @shown = true;
-            
+            @id;
             @positionX = 0;
             @positionY = 0;
             @layer = 0;
-            @tiles = [];
 
             @effect = 0;
             @paletteIndex = 0;
             
             
-            @id = 
-                if (bgIDPool->keycount) 
-                    bgIDPool->pop()
-                else ::<={
-                    @out = bgID;
-                    bgID+=1;
-                    return out;
-                }
-            ;
-
-            ses_native__bg_attrib(a:id, b:ATTRIBS.ENABLE,    c:1);
-            ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONX, c:0);
-            ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONY, c:0);
-            ses_native__bg_attrib(a:id, b:ATTRIBS.LAYER,     c:0);
-            [0, 64]->for(do:::(i) {
-                tiles[i] = ses_native__bg_query(a:id, b:i, c:0);
-            });
-            ses_native__bg_attrib(a:id, b:ATTRIBS.EFFECT,    c:0);
-            ses_native__bg_attrib(a:id, b:ATTRIBS.PALETTE,   c:0);
 
 
+            this.constructor = ::(index => Number) {
+                id = index;
+                ses_native__bg_attrib(a:id, b:ATTRIBS.ENABLE,    c:1);
+                ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONX, c:0);
+                ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONY, c:0);
+                ses_native__bg_attrib(a:id, b:ATTRIBS.LAYER,     c:0);
+                ses_native__bg_attrib(a:id, b:ATTRIBS.EFFECT,    c:0);
+                ses_native__bg_attrib(a:id, b:ATTRIBS.PALETTE,   c:0);
+            };
 
             this.interface = {
                 // degree rotation
@@ -383,18 +393,6 @@
                     get ::<- layer
                 },  
 
-                // tile index.
-                // Tiles are not objects, just handle IDs in SES
-                tiles : {
-                    set ::(value => Object) {
-                        tiles = value;
-                        [0, 64]->for(do:::(i) {
-                            ses_native__bg_attrib(a:id, b:ATTRIBS.TILEINDEX, c:i, d:value[i] => Number);                        
-                        });
-                    },
-                    
-                    get ::<- tiles
-                },
 
 
                 // effect
@@ -429,6 +427,12 @@
 };
 
 
+
+// Sprites are single-tile objects that 
+// have specific attributes.
+//
+// NOTE: background tiles (tiles above ID 0x40000-1) CANNOT be used as 
+// sprites.
 @:Sprite = ::<= {
     @spriteIDPool = [];
     @spriteID = 0;
