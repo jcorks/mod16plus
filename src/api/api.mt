@@ -348,6 +348,8 @@
                 ses_native__bg_attrib(a:id, b:ATTRIBS.LAYER,     c:0);
                 ses_native__bg_attrib(a:id, b:ATTRIBS.EFFECT,    c:0);
                 ses_native__bg_attrib(a:id, b:ATTRIBS.PALETTE,   c:0);
+                
+                return this;
             };
 
             this.interface = {
@@ -469,186 +471,68 @@
     
     return class(
         name: 'SES.Sprite',
-        statics : {
-            EFFECTS: EFFECTS
-        },
         define:::(this) {
-            @rotation = 0;
-            @shown = true;
-            
-            @scaleX = 1;
-            @scaleY = 1;
-            @positionX = 0;
-            @positionY = 0;
-            @centerX = 0;
-            @centerY = 0;
-            @layer = 0;
-            @tileIndex = 0;
-            @effect = 0;
-            @paletteIndex = 0;
-            
-            
-            @id = 
-                if (spriteIDPool->keycount) 
-                    spriteIDPool->pop()
-                else ::<={
-                    @out = spriteID;
-                    spriteID+=1;
-                    return out;
-                }
-            ;
-            
-            if (id >= spriteLimit)
-                error(detail: "Sprite limit reached.");
-
-            // always the first call
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.ENABLE,    c:1);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.ROTATION,  c:0);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.SCALEX,    c:1);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.SCALEY,    c:1);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.POSITIONX, c:0);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.POSITIONY, c:0);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.CENTERX,   c:0);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.CENTERY,   c:0);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.LAYER,     c:0);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.TILEINDEX,c:0);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.EFFECT,    c:0);
-            ses_native__sprite_attrib(a:id, b:ATTRIBS.PALETTE,   c:0);
-
-
-
             this.interface = {
-                // degree rotation
-                show : {
-                    set ::(value => Boolean) {
-                        shown = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.ENABLE, c:if(value == true) 1 else 0);
-                    },
-                    
-                    get ::<- shown
-                },            
-            
-                // degree rotation about center
-                rotation : {
-                    set ::(value => Number) {
-                        rotation = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.ROTATION, c:value);
-                    },
-                    
-                    get ::<- rotation
+                set::(
+                    index => Number,
+                    show,
+                    tile,
+                    scaleX,
+                    scaleY,
+                    centerX,
+                    centerY,
+                    x,
+                    y,
+                    rotation,
+                    layer,
+                    effect,
+                    palette
+                ) {
+                    if (show != empty) 
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.ENABLE, c:if((show => Boolean) == true) 1 else 0);
+
+                    if (tile != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.TILEINDEX, c:tile=>Number);            
+
+                    if (scaleX != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.SCALEX, c:scaleX=>Number);
+
+                    if (scaleY != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.SCALEY, c:scaleY=>Number);
+
+                    if (x != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.POSITIONX, c:x=>Number);
+
+                    if (y != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.POSITIONY, c:y=>Number);
+
+                    if (rotation != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.ROTATION, c:rotation=>Number);
+
+                    if (centerX != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.CENTERX, c:centerX=>Number);
+
+                    if (centerY != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.CENTERY, c:centerY=>Number);
+
+
+                    if (layer != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.LAYER, c:layer=>Number);            
+
+                    if (effect != empty)                        
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.EFFECT, c:effect=>Number);                        
+
+                    if (palette != empty)
+                        ses_native__sprite_attrib(a:index, b:ATTRIBS.PALETTE, c:palette=>Number);
+
                 },
-
-                // scale X relative to center
-                scaleX : {
-                    set ::(value => Number) {
-                        scaleX = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.SCALEX, c:value);
-                    },
-                    
-                    get ::<- scaleX
-                },
-
-                // scale Y relative to center
-                scaleY : {
-                    set ::(value => Number) {
-                        scaleX = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.SCALEY, c:value);
-                    },
-                    
-                    get ::<- scaleY
-                },
-
-                // scale X relative to center
-                x : {
-                    set ::(value => Number) {
-                        positionX = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.POSITIONX, c:value);
-                    },
-                    
-                    get ::<- positionX
-                },
-
-                // scale Y relative to center
-                y : {
-                    set ::(value => Number) {
-                        positionX = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.POSITIONY, c:value);
-                    },
-                    
-                    get ::<- positionY
-                },                
-
-                // center offset. Determines relative to effects
-                centerX : {
-                    set ::(value => Number) {
-                        centerX = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.CENTERX, c:value);
-                    },
-                    
-                    get ::<- positionX
-                },
-                centerY : {
-                    set ::(value => Number) {
-                        centerY = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.CENTERY, c:value);
-                    },
-                    
-                    get ::<- centerY
-                },  
-
-
-
-                // the ordering layer. 0-16. Higher means on top
-                layer : {
-                    set ::(value => Number) {
-                        layer = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.LAYER, c:value);
-                    },
-                    
-                    get ::<- layer
-                },  
-
-                // tile index.
-                // Tiles are not objects, just handle IDs in SES
-                tile : {
-                    set ::(value => Number) {
-                        tileIndex = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.TILEINDEX, c:value);                        
-                    },
-                    
-                    get ::<- tileIndex
-                },
-
-
-                // effect
-                effect : {
-                    set ::(value => Number) {
-                        effect = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.EFFECT, c:value);                        
-                    },
-                    
-                    get ::<- effect
-                },
-
-                // palette index.
-                // palettes are not objects, just handle IDs in SES
-                palette : {
-                    set ::(value => Number) {
-                        paletteIndex = value;
-                        ses_native__sprite_attrib(a:id, b:ATTRIBS.PALETTE, c:value);                        
-                    },
-                    
-                    get ::<- paletteIndex
-                },
-
-                dispose :: {
-                    ses_native__sprite_attrib(a:id, b:ATTRIBS.ENABLE, c:0);
-                    spriteIDPool->push(value:id);
-                    id = -1;
+                
+                EFFECTS: {
+                    get::<-EFFECTS
                 }
             };
         }
-    );
+    ).new();
 };
 
 
@@ -722,6 +606,1391 @@ return class(
                 ses_native__engine_attrib(a:ATTRIBS.REMOVEALARM, b:id);
             },
             
+            // Loads tiles corresponding to ASCII characters
+            // using a default font. This can be useful for debugging 
+            // or generalized tool development.
+            //
+            // The tile data is overwritten starting 
+            // at the offset given in order of 
+            // ascii characters. 
+            // For example, with an offset of 0,
+            // the tile representing 'A' will be placed
+            
+            loadAsciiFont::(offset => Number) {
+                Tile.set(
+                    index: ' '->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '\t'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: '\n'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );                
+
+                Tile.set(
+                    index: 'A'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );
+
+
+                Tile.set(
+                    index: 'B'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'C'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+
+                Tile.set(
+                    index: 'D'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'E'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: 'F'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                ); 
+                
+                
+                Tile.set(
+                    index: 'G'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );    
+                
+                Tile.set(
+                    index: 'H'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: 'I'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );    
+
+
+                Tile.set(
+                    index: 'J'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+                
+                
+                Tile.set(
+                    index: 'K'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 0, 0, 0, 0,
+                        4, 0, 4, 0, 0, 0, 0, 0,
+                        4, 4, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 0, 0, 0, 0, 0,
+                        4, 0, 0, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );    
+
+                Tile.set(
+                    index: 'L'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'M'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 0, 4, 4, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'N'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 0, 0, 4, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'O'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'P'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'Q'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 0, 0, 0, 0,
+                        0, 4, 4, 0, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'R'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 4, 0, 0, 0, 0, 0,
+                        4, 0, 0, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: 'S'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );    
+                
+                Tile.set(
+                    index: 'T'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );    
+
+                Tile.set(
+                    index: 'U'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'V'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'W'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: 'X'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );    
+                
+                Tile.set(
+                    index: 'Y'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );    
+
+                Tile.set(
+                    index: 'Z'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+                
+
+
+
+
+
+                Tile.set(
+                    index: 'a'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'b'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 4, 0, 0, 0, 0,
+                        4, 4, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'c'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );    
+
+                Tile.set(
+                    index: 'd'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'e'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+
+
+                Tile.set(
+                    index: 'f'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 4, 4, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'g'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 4, 0, 0, 0,
+                        0, 4, 4, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'h'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 4, 0, 0, 0, 0,
+                        4, 4, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );
+
+
+                Tile.set(
+                    index: 'i'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: 'j'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );    
+
+                Tile.set(
+                    index: 'k'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 0, 0, 0, 0,
+                        4, 4, 4, 0, 0, 0, 0, 0,
+                        4, 0, 0, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'l'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 4, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'm'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 0, 4, 4, 0, 0,
+                        4, 4, 0, 4, 0, 4, 0, 0,
+                        4, 0, 0, 4, 0, 4, 0, 0,
+                        4, 0, 0, 4, 0, 4, 0, 0,
+                        4, 0, 0, 4, 0, 4, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'n'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 4, 0, 0, 0, 0,
+                        4, 4, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'o'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'p'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 4, 0, 0, 0, 0,
+                        4, 4, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: 'q'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 4, 0, 0, 0,
+                        0, 4, 4, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );    
+
+                Tile.set(
+                    index: 'r'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 4, 0, 0, 0, 0,
+                        4, 4, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 's'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 't'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 4, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'u'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 4, 0, 0, 0,
+                        0, 4, 4, 0, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: 'v'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+
+
+                Tile.set(
+                    index: 'w'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: 'x'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0
+                    ]
+                );    
+                
+                Tile.set(
+                    index: 'y'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 4, 0, 0, 0,
+                        0, 4, 4, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );    
+                
+                Tile.set(
+                    index: 'z'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '0'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '1'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 4, 0, 0, 0, 0, 0,
+                        4, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: '2'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );    
+
+                Tile.set(
+                    index: '3'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 4, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+
+                Tile.set(
+                    index: '4'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0
+                    ]
+                );
+
+
+                Tile.set(
+                    index: '5'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '6'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: '7'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );    
+
+                Tile.set(
+                    index: '8'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+
+                Tile.set(
+                    index: '9'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: '.'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );                
+                
+                Tile.set(
+                    index: ','->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '"'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '\''->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: '?'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 4, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '!'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '@'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 4, 4, 0, 0, 0,
+                        4, 0, 4, 4, 4, 0, 0, 0,
+                        4, 4, 0, 4, 4, 0, 0, 0,
+                        4, 0, 4, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '_'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '*'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '#'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '$'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 4, 0, 0, 0,
+                        4, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 4, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 4, 0, 0, 0,
+                        4, 4, 4, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '%'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 0, 0, 0, 0, 0, 0,
+                        4, 4, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 4, 4, 0, 0, 0,
+                        4, 0, 0, 4, 4, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: '&'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 0, 0, 0, 0, 0,
+                        4, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        4, 0, 0, 4, 0, 0, 0, 0,
+                        0, 4, 4, 0, 4, 0, 0, 0
+                    ]
+                );                
+
+                Tile.set(
+                    index: '('->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: ')'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );                
+
+                Tile.set(
+                    index: '+'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '-'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '/'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: ':'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: ';'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '<'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 4, 4, 0, 0, 0,
+                        0, 4, 4, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 4, 4, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '='->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+                Tile.set(
+                    index: '>'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 4, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 4, 4, 0, 0, 0, 0,
+                        4, 4, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '['->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '\\'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        4, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: ']'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: '^'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 4, 0, 0, 0, 0,
+                        4, 0, 0, 0, 4, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+                
+                Tile.set(
+                    index: '`'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );                
+
+                Tile.set(
+                    index: '{'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 4, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '|'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '}'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 0, 4, 0, 0, 0, 0, 0,
+                        0, 4, 4, 0, 0, 0, 0, 0
+                    ]
+                );
+
+                Tile.set(
+                    index: '~'->charCodeAt(index:0)+offset,
+                    data: [
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 4, 0, 0, 0, 0, 0, 0,
+                        4, 0, 4, 0, 4, 0, 0, 0,
+                        0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0
+                    ]
+                );
+
+            },
             
             updateRate : {
                 set ::(value => Number) {

@@ -465,13 +465,14 @@ void ses_sdl_gl_unbind_tile() {
         } else {
             int index = bound_tile_id % TILES_PER_TEXTURE;
 
-
+            int TILES_PER_ROW = (REAL_TEX_SIZE / TILE_SIZE);
+        
             glBindTexture(GL_TEXTURE_2D, bound_tile_texture->texture);
             glTexSubImage2D(
                 GL_TEXTURE_2D,
                 0,
-                (index % PIXELS_PER_TILE)*TILE_SIZE,
-                (index / PIXELS_PER_TILE)*TILE_SIZE,
+                (index % TILES_PER_ROW)*TILE_SIZE,
+                (index / TILES_PER_ROW)*TILE_SIZE,
                 TILE_SIZE,
                 TILE_SIZE,
                 GL_ALPHA,
