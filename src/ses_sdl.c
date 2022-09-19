@@ -1,6 +1,7 @@
 #include "matte/src/matte_vm.h"
 #include "matte/src/matte.h"
 #include "matte/src/matte_array.h"
+#include "matte/src/matte_string.h"
 #include "linear.h"
 #include <stdio.h>
 
@@ -556,9 +557,60 @@ int ses_native__main_loop(matte_t * m) {
                 break;
             }            
             
+            
+            
             switch(evt.type) {
+            
+              case SDL_TEXTINPUT: {
+              
+              
+                uint32_t i;
+                uint32_t len = matte_array_get_size(sdl.inputCallbacks[SES_DEVICE__KEYBOARD]);
+                if (len == 0) break;
+                
+                matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "text");
+                matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "event");
+                
+                
+                matteValue_t text = matte_heap_new_value(heap);
+                matteValue_t event = matte_heap_new_value(heap);
+                
+                matte_value_into_string(heap, &text, textStr);
+                matte_value_into_string(heap, &event, eventStr);
+                
+                
+                matteValue_t textval = matte_heap_new_value(heap);
+                matteValue_t eventVal = matte_heap_new_value(heap);
+                
+                double xcon, ycon;
+                int w, h;
+                
+                
+                matteString_t * textRaw = matte_string_create_from_c_str("%s", evt.text.text);
+                matte_value_into_string(heap, &textval, textRaw);
+                matte_string_destroy(textRaw);
+                matte_value_into_number(heap, &eventVal, 1);
+
+
+
+                matteValue_t namesArr[] = {event, text};
+                matteValue_t valsArr[] = {eventVal, textval};                
+                
+                for(i = 0; i < len; ++i) {
+                    matteValue_t val = matte_array_at(sdl.inputCallbacks[SES_DEVICE__KEYBOARD], matteValue_t, i);    
+                    if (val.binID == 0) continue;
+
+                    // for safety
+                    matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 2);
+                    matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 2);
+
+                    matte_vm_call(sdl.vm, val, &vals, &names, NULL);
+                    
+                }   
+                break;       
+              }
+            
               case SDL_MOUSEMOTION: {
-                printf("x: %d, y: %d\n", evt.motion.x, evt.motion.y);
               
               
                 uint32_t i;

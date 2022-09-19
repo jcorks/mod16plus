@@ -58,29 +58,6 @@ SES.Palette.set(
 
 
 
-drawString(x:0, y:0, string:
-"
-static GLint ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, float * unit) {
-    *u = 0;
-    *v = 0;
-    if (id > TILE_SPRITE_MAX_ID)
-        return 1;
-    int slot = id / TILES_PER_TEXTURE;
-    int index = id % TILES_PER_TEXTURE;        
-    SES_GLTileTexture * t = gl.textures[slot];
-    if (t == NULL)
-        return 1;
-    
-    float TILES_PER_ROW = (REAL_TEX_SIZE / TILE_SIZE);
-        
-    *u = (index % TILES_PER_TEXTURE) / TILES_PER_ROW;
-    *v = (index / TILES_PER_TEXTURE) / TILES_PER_ROW;
-    *unit = 1 / TILES_PER_ROW;
-    return t->texture;
-}
-"
-    
-);
 
 
 
@@ -104,7 +81,14 @@ SES.Input.addCallback(
     }
 );
 
-
+@runningStr = '';
+SES.Input.addCallback(
+    device:SES.Input.DEVICES.KEYBOARD,
+    callback:::(event, text) {
+        runningStr = runningStr + text;
+        drawString(x:0, y:0, string:runningStr);   
+    }
+);
 /*
 
 SES.Sprite.set(
