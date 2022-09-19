@@ -82,11 +82,22 @@ typedef struct {
     int resolutionWidth;
     int resolutionHeight;
 
+    SDL_Window * window;
+
 } SES_GLRenderer;
 
 
 static SES_GLRenderer gl;
 
+
+
+int ses_sdl_gl_get_render_width() {
+    return gl.resolutionWidth;
+}
+
+int ses_sdl_gl_get_render_height() {
+    return gl.resolutionHeight;
+}
 
 
 static SES_GLFramebuffer create_framebuffer(int w, int h) {
@@ -275,9 +286,10 @@ void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);    
     
-    *window  = SDL_CreateWindow("Sprite Entertainment System", 100, 100, 240*5, 160*5, SDL_WINDOW_OPENGL);
+    *window  = SDL_CreateWindow("Sprite Entertainment System", 0, 0, 240*3, 160*3, SDL_WINDOW_OPENGL);
     *context = SDL_GL_CreateContext(*window);
 
+    gl.window = *window;
     
     // default is gba resolution    
     gl.resultFramebuffer = create_framebuffer(240, 160);
@@ -294,7 +306,7 @@ void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
         ses_sdl__renderer_es2__screen_frag_data
     );
     
-    
+    SDL_GL_SetSwapInterval(0);
     
 }
 
@@ -583,7 +595,9 @@ void ses_sdl_gl_render_end() {
 
     glUseProgram(gl.screenProgram.handle);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, 240*5, 160*5);
+    int w, h;
+    SDL_GetWindowSize(gl.window, &w, &h);
+    glViewport(0, 0, w, h);
     
     glClearColor(1, 0, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

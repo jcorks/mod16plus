@@ -6,7 +6,21 @@
 
 #include <SDL2/SDL.h>
 
+typedef enum {
+    SES_DEVICE__KEYBOARD,
+    
+    SES_DEVICE__POINTER0,
+    SES_DEVICE__POINTER1,
+    SES_DEVICE__POINTER2,
+    SES_DEVICE__POINTER3,
 
+    SES_DEVICE__GAMEPAD0,
+    SES_DEVICE__GAMEPAD1,
+    SES_DEVICE__GAMEPAD2,
+    SES_DEVICE__GAMEPAD3,
+
+    
+} SES_DeviceType;
 
 typedef struct {
     // SDL window
@@ -20,6 +34,10 @@ typedef struct {
 
     // user function called every frame    
     matteValue_t updateFunc;
+    
+    
+    // array of matteValue_t of user callbacks for input.
+    matteArray_t * inputCallbacks[SES_DEVICE__GAMEPAD3+1];
     
     // delay before updating the next frame
     uint32_t frameUpdateDelayMS;
@@ -132,6 +150,13 @@ extern void ses_sdl_gl_render_background(
     uint32_t id
 );
 
+
+
+
+extern int ses_sdl_gl_get_render_width();
+
+extern int ses_sdl_gl_get_render_height();
+ 
 
 extern void ses_sdl_gl_render_end();
 
@@ -404,12 +429,31 @@ matteValue_t ses_native__tile_attrib(matteVM_t * vm, matteValue_t fn, const matt
     }
     return matte_heap_new_value(heap);
 }
+
+
+typedef enum {
+    SESNIA_ADD,
+    SESNIA_REMOVE
+} SESNative_InputAction_t;
+
 matteValue_t ses_native__input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     printf("INPUT    ID: %d, ATTRIB: %d\n",
         (int)matte_value_as_number(heap, args[0]),
         (int)matte_value_as_number(heap, args[1])
     );  
+
+    switch((int)matte_value_as_number(heap, args[0])) {
+      case SESNIA_ADD:
+        matte_array_push(
+            sdl.inputCallbacks[(int)matte_value_as_number(heap, args[1])],
+            args[2]
+        );
+        matte_value_object_push_lock(heap, args[2]);
+        
+    }
+
+
 
     return matte_heap_new_value(heap);
 }
@@ -481,7 +525,10 @@ void ses_native__commit_rom() {
     }
     sdl.sprites = matte_array_create(sizeof(SES_Sprite));
     sdl.palettes = matte_array_create(sizeof(SES_Palette));
-
+    int i;
+    for(i = 0; i <= SES_DEVICE__GAMEPAD3; ++i) {
+        sdl.inputCallbacks[i] = matte_array_create(sizeof(matteValue_t));    
+    }
     ses_sdl_gl_init(
         &sdl.window,
         &sdl.ctx
@@ -499,7 +546,7 @@ void ses_native__commit_rom() {
 
 int ses_native__main_loop(matte_t * m) {
     sdl.vm = matte_get_vm(m);
-
+    matteHeap_t * heap = matte_vm_get_heap(sdl.vm);
     SDL_Event evt;
     int quit = 0;
     while(!quit) {
@@ -508,6 +555,63 @@ int ses_native__main_loop(matte_t * m) {
                 quit = 1;
                 break;
             }            
+            
+            switch(evt.type) {
+              case SDL_MOUSEMOTION: {
+                printf("x: %d, y: %d\n", evt.motion.x, evt.motion.y);
+              
+              
+                uint32_t i;
+                uint32_t len = matte_array_get_size(sdl.inputCallbacks[SES_DEVICE__POINTER0]);
+                if (len == 0) break;
+                
+                matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "x");
+                matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "y");
+                matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "event");
+                
+                
+                matteValue_t x = matte_heap_new_value(heap);
+                matteValue_t y = matte_heap_new_value(heap);
+                matteValue_t event = matte_heap_new_value(heap);
+                
+                matte_value_into_string(heap, &x, xStr);
+                matte_value_into_string(heap, &y, yStr);
+                matte_value_into_string(heap, &event, eventStr);
+                
+                
+                matteValue_t xval = matte_heap_new_value(heap);
+                matteValue_t yval = matte_heap_new_value(heap);
+                matteValue_t eventVal = matte_heap_new_value(heap);
+                
+                double xcon, ycon;
+                int w, h;
+                SDL_GetWindowSize(sdl.window, &w, &h);
+                
+                
+                
+                matte_value_into_number(heap, &xval, (evt.motion.x / (float) w) * ses_sdl_gl_get_render_width());
+                matte_value_into_number(heap, &yval, (evt.motion.y / (float) h) * ses_sdl_gl_get_render_height());
+                matte_value_into_number(heap, &eventVal, 0);
+
+
+
+                matteValue_t namesArr[] = {event, x, y};
+                matteValue_t valsArr[] = {eventVal, xval, yval};                
+                
+                for(i = 0; i < len; ++i) {
+                    matteValue_t val = matte_array_at(sdl.inputCallbacks[SES_DEVICE__POINTER0], matteValue_t, i);    
+                    if (val.binID == 0) continue;
+
+                    // for safety
+                    matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 3);
+                    matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 3);
+
+                    matte_vm_call(sdl.vm, val, &vals, &names, NULL);
+                    
+                }
+              }
+                
+            }
             
             
             // frame update controlled by timer
@@ -526,7 +630,6 @@ int ses_native__main_loop(matte_t * m) {
                 SDL_GL_SwapWindow(sdl.window);
             }
         }
-        
     }
     return 0;
 }

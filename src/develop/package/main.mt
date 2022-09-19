@@ -84,6 +84,27 @@ static GLint ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, floa
 
 
 
+
+
+SES.Input.addCallback(
+    device:SES.Input.DEVICES.POINTER0,
+    callback:::(event, x, y) {
+        SES.Sprite.set(
+            index: 2000,
+            tile: '.'->charCodeAt(index:0),
+            show:true,
+            scaleX:1,
+            scaleY:10,
+            centerX: -3,
+            centerY: -8,
+            x: x,
+            y: y,
+            effect: SES.Sprite.EFFECTS.Color
+        );     
+    }
+);
+
+
 /*
 
 SES.Sprite.set(

@@ -193,15 +193,16 @@
         GAMEPAD0: 5,
         GAMEPAD1: 6,
         GAMEPAD2: 7,
-        GAMEPAD0: 8
+        GAMEPAD3: 8
+    };
+
+    @:EVENTS = {
+        POINTER_MOTION : 0
     };
 
 
     return class(
         name: 'SES.Input',
-        statics : {
-            DEVICES: DEVICES
-        },
         
         
         
@@ -211,10 +212,14 @@
                 REMOVE : 1
             };
             this.interface = {
+                DEVICES : {
+                    get ::<- DEVICES
+                },
                 addCallback ::(
                     device => Number,
                     callback => Function
                 ){
+                    if (device < 0 || device > DEVICES.GAMEPAD3) error(detail:'Unrecognized device');
                     return ses_native__input_attrib(a:ACTIONS.ADD, b:device, c:callback); 
                 },
                 
