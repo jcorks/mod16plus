@@ -3,65 +3,142 @@
 
 
 
-SES.loadAsciiFont(offset:0);
-
-SES.Palette.set(
-    index: 0,
-    colors: [
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 0, 1],
-        [1, 1, 1]
-    ]
-);
+@textarea = SES.createTextArea();
 
 
-@:drawString::(string, x, y) {
-    @spr = 0;
-    
-    @chX = 0;
-    @chY = 0;
+// full GBA screen
+textarea.widthChars = 40;
+textarea.heightChars = 20;
+
+textarea.text = 
+'
+
+@:ses_native__sprite_attrib = getExternalFunction(name:"ses_native__sprite_attrib");
+@:ses_native__engine_attrib = getExternalFunction(name:"ses_native__engine_attrib");
+@:ses_native__palette_attrib = getExternalFunction(name:"ses_native__palette_attrib");
+@:ses_native__tile_attrib = getExternalFunction(name:"ses_native__tile_attrib");
+@:ses_native__input_attrib = getExternalFunction(name:"ses_native__input_attrib");
+@:ses_native__audio_attrib = getExternalFunction(name:"ses_native__audio_attrib");
+@:ses_native__bg_attrib = getExternalFunction(name:"ses_native__bg_attrib");
+
+// query functions are necessary because they are (can be) pre-populated by the ROM.
+@:ses_native__palette_query = getExternalFunction(name:"ses_native__palette_query");
+@:ses_native__tile_query = getExternalFunction(name:"ses_native__tile_query");
+@:ses_native__bg_query = getExternalFunction(name:"ses_native__bg_query");
 
 
-    @:drawChar::(px, py, code) {
-        SES.Sprite.set(
-            index: spr,
-            tile: code,
-            show:true,
-            scaleX:1,
-            scaleY:1,
-            centerX: 0,
-            centerY: 0,
-            x: px,
-            y: py,
-            effect: SES.Sprite.EFFECTS.Color
-        );
-        spr += 1;
+// preset palettes are loaded from the rom
+@:Palette = ::<= {
+    @:hexToNum = {
+        "0": 0,
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5,
+        "6": 6,
+        "7": 7,
+        "8": 8,
+        "9": 9,
+        "a": 10,
+        "b": 11,
+        "c": 12,
+        "d": 13,
+        "e": 14,
+        "f": 15,
+        "A": 10,
+        "B": 11,
+        "C": 12,
+        "D": 13,
+        "E": 14,
+        "F": 15
     };
     
-    [0, string->length]->for(do:::(i) {
-        drawChar(
-            px: chX * 6 + x,
-            py: chY * 8 + y,
-            code: string->charCodeAt(index:i)
-        );
-        
-        if (string->charAt(index:i) == '\n' || chX > 30) ::<= {
-            chY += 1;
-            chX = 0;
-        } else ::<= {
-            chX += 1;
+    @:parseHex::(hi, lo) {
+        return (hexToNum[lo] + hexToNum[hi]*16);
+    };
+
+    @:parseColor = ::(input){
+        return match(input->type) {
+          (Object): input,
+          (String):
+            [
+                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)) / 255, //r
+                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)) / 255, //g
+                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)) / 255, //b
+            ]
         };
+    };
+
+    @:COLORS = {
+        BACK: 0,
+        MIDBACK: 1,
+        MIDFRONT: 2,
+        FRONT: 3
+    };
+
+    return class(
+        name: "SES.Palette",
         
-    });
+        
+        define:::(this) {
+            this.interface = {
+                set::(
+                    index => Number,
+                    
+                    // each can either be an array of rgb or a hex string prefixed with #
+                    colors => Object
+                ) {
+
+                    @colorBack     = parseColor(input:colors[0]);
+                    @colorMidBack  = parseColor(input:colors[1]);
+                    @colorMidFront = parseColor(input:colors[2]);
+                    @colorFront    = parseColor(input:colors[3]);
+
+                    ses_native__palette_attrib(a:index, b:COLORS.BACK,     c:colorBack[0],     d:colorBack[1],     e:colorBack[2]);
+                    ses_native__palette_attrib(a:index, b:COLORS.MIDBACK,  c:colorMidBack[0],  d:colorMidBack[1],  e:colorMidBack[2]);
+                    ses_native__palette_attrib(a:index, b:COLORS.MIDFRONT, c:colorMidFront[0], d:colorMidFront[1], e:colorMidFront[2]);
+                    ses_native__palette_attrib(a:index, b:COLORS.FRONT,    c:colorFront[0],    d:colorFront[1],    e:colorFront[2]);
+                        
+                },
+                
+                
+                get::(
+                    index => Number
+                ) {
+                    return [
+                        [
+                            ses_native__palette_query(a:index, b:COLORS.BACK, c:0),
+                            ses_native__palette_query(a:index, b:COLORS.BACK, c:1),
+                            ses_native__palette_query(a:index, b:COLORS.BACK, c:2)
+                        ],
+                        
+                        [
+                            ses_native__palette_query(a:index, b:COLORS.MIDBACK, c:0),
+                            ses_native__palette_query(a:index, b:COLORS.MIDBACK, c:1),
+                            ses_native__palette_query(a:index, b:COLORS.MIDBACK, c:2)
+                        ],
+                        
+                        [
+                            ses_native__palette_query(a:index, b:COLORS.MIDFRONT, c:0),
+                            ses_native__palette_query(a:index, b:COLORS.MIDFRONT, c:1),
+                            ses_native__palette_query(a:index, b:COLORS.MIDFRONT, c:2)
+                        ],
+                    
+                        [
+                            ses_native__palette_query(a:index, b:COLORS.FRONT, c:0),
+                            ses_native__palette_query(a:index, b:COLORS.FRONT, c:1),
+                            ses_native__palette_query(a:index, b:COLORS.FRONT, c:2)
+                        ]
+                    ];
+                }
+            };        
+        }
+    ).new();
 };
 
 
-
-
-
-
-
+';
 
 SES.Input.addCallback(
     device:SES.Input.DEVICES.POINTER0,
@@ -80,77 +157,3 @@ SES.Input.addCallback(
         );     
     }
 );
-
-@runningStr = '';
-SES.Input.addCallback(
-    device:SES.Input.DEVICES.KEYBOARD,
-    callback:::(event, text) {
-        runningStr = runningStr + text;
-        drawString(x:0, y:0, string:runningStr);   
-    }
-);
-/*
-
-SES.Sprite.set(
-    index: 0,
-
-    tile: 'A'->charCodeAt(index:0), 
-    show: true,
-    scaleX: 5,
-    scaleY: 5,
-    centerX: -4,
-    centerY: -4,
-    
-    x: 20,
-    y: 20,
-    
-    effect: SES.Sprite.EFFECTS.COLOR
-);  
-
-
-
-SES.Sprite.set(
-    index: 1,
-
-    tile: 'B'->charCodeAt(index:0) ,       
-    show: true,
-    scaleX: 5,
-    scaleY: 5,
-    centerX: -4,
-    centerY: -4,
-    
-    x: 40,
-    y: 40,
-    
-    effect: SES.Sprite.EFFECTS.COLOR
-);  
-
-
-
-
-
-
-
-
-
-SES.Tile.copy(from:0, to:0x40000);
-SES.Tile.copy(from:1, to:0x40001);
-SES.Tile.copy(from:0, to:0x40002);
-SES.Tile.copy(from:1, to:0x40003);
-SES.Tile.copy(from:0, to:0x40004);
-SES.Tile.copy(from:1, to:0x40005);
-
-@:bg = SES.Background.new(index:0);
-bg.palette = 0;
-@counter = 0;
-SES.update = ::{
-    print(message:'Test!' + counter);
-    counter += 1;
-    
-    
-    
-    SES.Sprite.set(index:0, rotation:counter*3);
-    SES.Sprite.set(index:1, rotation:counter*5);
-};
-
-*/

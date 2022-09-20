@@ -560,6 +560,52 @@ int ses_native__main_loop(matte_t * m) {
             
             
             switch(evt.type) {
+              case SDL_KEYDOWN: {
+              
+              
+                uint32_t i;
+                uint32_t len = matte_array_get_size(sdl.inputCallbacks[SES_DEVICE__KEYBOARD]);
+                if (len == 0) break;
+                
+                matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "key");
+                matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "event");
+                
+                
+                matteValue_t text = matte_heap_new_value(heap);
+                matteValue_t event = matte_heap_new_value(heap);
+                
+                matte_value_into_string(heap, &text, textStr);
+                matte_value_into_string(heap, &event, eventStr);
+                
+                
+                matteValue_t textval = matte_heap_new_value(heap);
+                matteValue_t eventVal = matte_heap_new_value(heap);
+                
+                double xcon, ycon;
+                int w, h;
+                
+                
+                matte_value_into_number(heap, &textval, evt.key.keysym.sym);
+                matte_value_into_number(heap, &eventVal, 2);// key down
+
+
+
+                matteValue_t namesArr[] = {event, text};
+                matteValue_t valsArr[] = {eventVal, textval};                
+                
+                for(i = 0; i < len; ++i) {
+                    matteValue_t val = matte_array_at(sdl.inputCallbacks[SES_DEVICE__KEYBOARD], matteValue_t, i);    
+                    if (val.binID == 0) continue;
+
+                    // for safety
+                    matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 2);
+                    matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 2);
+
+                    matte_vm_call(sdl.vm, val, &vals, &names, NULL);
+                    
+                }   
+                break;                 
+              } 
             
               case SDL_TEXTINPUT: {
               
