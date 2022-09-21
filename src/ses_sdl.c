@@ -656,6 +656,66 @@ int ses_native__main_loop(matte_t * m) {
                 break;       
               }
             
+            
+              case SDL_MOUSEBUTTONDOWN:
+              case SDL_MOUSEBUTTONUP: {
+              
+              
+                uint32_t i;
+                uint32_t len = matte_array_get_size(sdl.inputCallbacks[SES_DEVICE__POINTER0]);
+                if (len == 0) break;
+                
+                matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "x");
+                matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "y");
+                matteString_t * buttonStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "button");
+                matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "event");
+                
+                
+                matteValue_t x = matte_heap_new_value(heap);
+                matteValue_t y = matte_heap_new_value(heap);
+                matteValue_t event = matte_heap_new_value(heap);
+                matteValue_t button = matte_heap_new_value(heap);
+                
+                matte_value_into_string(heap, &x, xStr);
+                matte_value_into_string(heap, &y, yStr);
+                matte_value_into_string(heap, &button, buttonStr);
+                matte_value_into_string(heap, &event, eventStr);
+                
+                
+                matteValue_t xval = matte_heap_new_value(heap);
+                matteValue_t yval = matte_heap_new_value(heap);
+                matteValue_t buttonval = matte_heap_new_value(heap);
+                matteValue_t eventVal = matte_heap_new_value(heap);
+                
+                double xcon, ycon;
+                int w, h;
+                SDL_GetWindowSize(sdl.window, &w, &h);
+                
+                
+                
+                matte_value_into_number(heap, &xval, (evt.button.x / (float) w) * ses_sdl_gl_get_render_width());
+                matte_value_into_number(heap, &yval, (evt.button.y / (float) h) * ses_sdl_gl_get_render_height());
+                matte_value_into_number(heap, &eventVal, evt.button.type == SDL_MOUSEBUTTONDOWN ? 3 : 4);
+                matte_value_into_number(heap, &buttonval, evt.button.button);
+
+
+
+                matteValue_t namesArr[] = {event, x, y, button};
+                matteValue_t valsArr[] = {eventVal, xval, yval, buttonval};                
+                
+                for(i = 0; i < len; ++i) {
+                    matteValue_t val = matte_array_at(sdl.inputCallbacks[SES_DEVICE__POINTER0], matteValue_t, i);    
+                    if (val.binID == 0) continue;
+
+                    // for safety
+                    matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 4);
+                    matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 4);
+
+                    matte_vm_call(sdl.vm, val, &vals, &names, NULL);
+                    
+                }
+              }
+            
               case SDL_MOUSEMOTION: {
               
               

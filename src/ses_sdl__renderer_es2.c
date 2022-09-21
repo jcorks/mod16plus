@@ -286,7 +286,7 @@ void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);    
     
-    *window  = SDL_CreateWindow("Sprite Entertainment System", 0, 0, 240*5, 160*5, SDL_WINDOW_OPENGL);
+    *window  = SDL_CreateWindow("Sprite Entertainment System", 0, 0, 240*4, 160*4, SDL_WINDOW_OPENGL);
     *context = SDL_GL_CreateContext(*window);
 
     gl.window = *window;

@@ -199,7 +199,16 @@
     @:EVENTS = {
         POINTER_MOTION : 0,
         KEYBOARD_TEXT : 1,
-        KEY_DOWN : 2
+        KEY_DOWN : 2,
+        POINTER_BUTTON_DOWN: 3,
+        POINTER_BUTTON_UP: 4
+
+    };
+    
+    @:POINTER_BUTTONS = {
+        LEFT: 0,
+        MIDDLE: 1,
+        RIGHT: 2
     };
     
     // moreorless match SDLs
@@ -801,484 +810,11 @@
 };
 
 
-return class(
-    name: 'SES',
-    
+
+@:Text = class(
+    name : 'SES.Text',
     define:::(this) {
-        @:ATTRIBS = {
-            UPDATERATE:  0,
-            UPDATEFUNC:  1,
-            RESOLUTION:  2,
-            ADDALARM:    3,
-            REMOVEALARM: 4,
-        };
-        
-        @:RESOLUTION = {
-            NES : 0, // 256 x 240       
-            GBA : 1, // 240 x 160,
-            GBC : 2, // 160 x 144,
-            MD  : 3, // 320 x 224
-        };
-
-
-        @updateRate = 1 / 60; // how fast update should be called in the engine
-        @updateFunc = ::{};
-        @resolution = RESOLUTION.GBA;
-
-
-        // before update is called: engine polls input         
-        @update = ::{
-            // dispatch events
-            updateFunc();
-        };
-        // after update is called: backgrounds + sprites are posted to screen
-        
-        
-        
-
-        ses_native__engine_attrib(a:ATTRIBS.UPDATERATE, b:updateRate);
-        ses_native__engine_attrib(a:ATTRIBS.UPDATEFUNC, b:update);
-        ses_native__engine_attrib(a:ATTRIBS.RESOLUTION, b:resolution);
-    
         this.interface = {
-            Sprite    : {get ::<- Sprite},
-            Palette   : {get ::<- Palette},
-            Tile      : {get ::<- Tile},
-            Input     : {get ::<- Input},
-            Background: {get ::<- Background},
-            Audio     : {get ::<- Audio},
-
-            RESOLUTION : RESOLUTION,
-
-            resolution : {
-                set ::(value => Number) {
-                
-                },
-                get ::<- resolution
-            },
-            
-    
-            // add a function to call expireMS milliseconds later.
-            // Only as resolute as the updateRate.
-            // The alarm is removed after it expires.            
-            addAlarm ::(expireMS => Number, callback => Function) {
-                return ses_native__engine_attrib(a:ATTRIBS.ADDALARM, b:expireMS, c:callback);
-            },
-            
-            
-            // removes an alarm that is currently active, else does nothing.
-            removeAlarm ::(id => Number) {
-                ses_native__engine_attrib(a:ATTRIBS.REMOVEALARM, b:id);
-            },
-            
-            
-            createTextArea :: {
-                @TEXT_AREA_HEIGHT = 10;
-                @TEXT_AREA_WIDTH = 10;
-                
-                @LINE_LIMIT = 0;
-                
-                @GLYPH_WIDTH  = 6;
-                @GLYPH_HEIGHT = 8;
-                
-                Palette.set(
-                    index: 0,
-                    colors: [
-                        [1, 0, 0],
-                        [0, 1, 0],
-                        [0, 0, 1],
-                        [1, 1, 1]
-                    ]
-                );
-
-                @lines = [''];
-                
-                @offsetX = 0;
-                @offsetY = 0;
-                
-                @cursorX = 0;
-                @cursorY = 0;
-
-
-                @scrollX = 0;
-                @scrollY = 0;
-
-
-
-                this.loadAsciiFont(offset:0);
-
-
-
-
-                @:drawString::(string, x, y, offset) {
-                    @spr = offset;
-                    
-                    @chX = 0;
-                    @chY = 0;
-
-
-                    @:drawChar::(px, py, code) {
-                        Sprite.set(
-                            index: spr,
-                            tile: code,
-                            show:true,
-                            scaleX:1,
-                            scaleY:1,
-                            centerX: 0,
-                            centerY: 0,
-                            x: px,
-                            y: py,
-                            effect: Sprite.EFFECTS.Color
-                        );
-                        spr += 1;
-                    };
-                    
-                    [0, string->length]->for(do:::(i) {
-                        drawChar(
-                            px: chX * GLYPH_WIDTH  + x,
-                            py: chY * GLYPH_HEIGHT + y,
-                            code: string->charCodeAt(index:i)
-                        );        
-                        chX += 1;
-                    });
-                    return spr;
-                };
-
-
-
-                @:clearCanvas:: {
-                    [0, 400]->for(do:::(i) {
-                        Sprite.set(
-                            index:i,
-                            show:false
-                        );
-                    });
-
-                };
-
-
-                @:MIN ::(a, b) <- if (a < b) a else b;
-
-
-                @:redrawLines :: {
-                    clearCanvas();
-                    @spr = 0;
-                    @i = 0;
-                    [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
-                        @:line = lines[index];
-                        when(line->length == 0) ::<= {
-                            i+=1;
-                        };
-                        
-                        @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
-                        when(scrolledLine == empty || scrolledLine->length == 0) ::<= {
-                            i+=1;
-                        };
-
-                        spr = drawString(offset:spr, x:offsetX, y: i*8 + offsetY, string:scrolledLine);
-                        i+=1;
-                    });
-                    
-                    // cursor
-                    drawString(
-                        offset:spr, 
-                        x:(cursorX - scrollX) * GLYPH_WIDTH     + offsetX, 
-                        y:(cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY, 
-                        string:'_'
-                    );
-                        
-                };
-
-
-                @:insertText ::(src, at, text) {
-                    when(at >= src->length-1) src + text;
-                    when(at == 0) text + src;
-                       
-                    return src->substr(from:0, to:at-1) + text + src->substr(from:at, to:src->length-1);
-                };
-
-
-
-
-
-
-
-                @:movedDown :: {
-                    if (cursorY >= lines->keycount) ::<= {
-                        cursorY = lines->keycount-1;
-                        cursorX = lines[cursorY]->length;
-                        movedLeft();
-                        movedRight();
-                    };
-                    if (cursorX > lines[cursorY]->length) ::<= {
-                        cursorX = lines[cursorY]->length;
-                        movedLeft();
-                        movedRight();
-
-                    };
-
-
-                    if (cursorY - scrollY > TEXT_AREA_HEIGHT-2) ::<= {
-                        scrollY = cursorY - (TEXT_AREA_HEIGHT-1);
-                    };
-
-
-                };
-
-                @:movedLeft :: {
-                    if (cursorX < 0) ::<= {
-                        when (cursorY == 0) cursorX = 0;
-                        cursorY -= 1;
-                        cursorX = lines[cursorY]->length;
-                        movedUp();
-                    }; 
-
-                    if (cursorX < scrollX + 2 && scrollX > 0) ::<= {
-                        scrollX = cursorX - 2;
-                        if (scrollX < 0) scrollX = 0;
-                    };
-
-                    if (cursorX > scrollX + TEXT_AREA_WIDTH) ::<= {
-                        scrollX = cursorX - TEXT_AREA_WIDTH;
-                    };
-                    
-
-
-
-                };
-
-                @:movedUp :: {
-                    if (cursorY < 0) cursorY = 0;
-                    if (cursorX > lines[cursorY]->length) ::<= {
-                        cursorX = lines[cursorY]->length;
-                        movedLeft();
-                        movedRight();
-
-                    };
-
-                    if (cursorY - scrollY < 2 && scrollY > 0) ::<= {
-                        scrollY = cursorY-2;
-                        
-                    };
-
-
-                };
-
-
-                @:movedRight :: {
-                    if (cursorX > lines[cursorY]->length) ::<= {
-                        cursorY += 1;
-                        cursorX = 0;
-                        movedDown();
-                        movedLeft();
-                    };
-                    if (cursorY >= lines->keycount) ::<= {
-                        cursorY = lines->keycount-1;
-                        cursorX = lines[cursorY]->length;  
-                    };
-
-                        
-                    if (cursorX > scrollX + TEXT_AREA_WIDTH) ::<= {
-                        scrollX = cursorX - TEXT_AREA_WIDTH;
-                    };
-
-                };
-
-                Input.addCallback(
-                    device:Input.DEVICES.KEYBOARD,
-                    callback:::(event, text, key) {
-
-                        when(event == Input.EVENTS.KEY_DOWN) ::<= {
-                            match(key) {
-                              (Input.KEYS.TAB):::<= {
-                                lines[cursorY] = insertText(src:lines[cursorY], at:cursorX, text:'  ');
-                                cursorX += 2;
-                                movedRight();
-                                redrawLines();
-                              },
-
-                              (Input.KEYS.BACKSPACE):::<= {
-                              
-                                // remove "newline"
-                                when (lines[cursorY] == '') ::<={
-                                    when(lines->keycount == 1) empty;
-
-                                    lines->remove(key:cursorY);
-                                    cursorY-=1;
-                                    cursorX = lines[cursorY]->length;
-                                    movedUp();
-                                    movedLeft();
-                                };
-                              
-                                lines[cursorY] = lines[cursorY]->removeChar(index:cursorX-1);
-                                cursorX -=1;
-
-
-                                movedLeft();
-                              },
-                              
-                              (Input.KEYS.UP):::<= {
-                                cursorY -= 1;
-                                movedUp();
-                              },
-                              
-                              (Input.KEYS.DOWN):::<= {
-                                cursorY += 1;
-                                movedDown();
-
-                              },
-
-                              (Input.KEYS.LEFT):::<= {
-                                cursorX -= 1;
-                                movedLeft();             
-                               },
-                              
-                              (Input.KEYS.RIGHT):::<= {
-                                cursorX += 1;
-                                movedRight();
-
-                              },
-
-
-                              
-                              (Input.KEYS.RETURN):::<= {  
-                                when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
-                              
-                                // return at end
-                                when(cursorX >= lines[cursorY]->length) ::<= {
-                                    cursorY += 1;
-                                    cursorX = 0;
-                                    lines->insert(value:'', at:cursorY);                
-                                    movedDown();
-                                    movedLeft();
-
-                                };            
-                                
-                                // return at start
-                                when(cursorX == 0) ::<= {
-                                    @line = lines[cursorY];
-                                    lines[cursorY] = '';
-                                    cursorY += 1;
-                                    cursorX = 0;
-                                    lines->insert(value:line, at:cursorY);
-                                    
-                                    movedDown();
-                                    movedLeft();
-                                    
-                                    
-                                };
-                                
-                                @portion = lines[cursorY]->substr(from:cursorX, to:lines[cursorY]->length-1);
-                                lines[cursorY] = lines[cursorY]->substr(from:0, to:cursorX-1);
-                                cursorY += 1;
-                                cursorX = 0;
-                                lines->insert(value:portion, at:cursorY);
-
-                                movedDown();
-                                movedLeft();
-
-                              }
-                              
-                            };
-
-                            redrawLines();
-                        };
-
-                        if (text != empty) ::<= {
-                            // else, just normal text
-                            @:line = lines[cursorY];
-                            lines[cursorY] = insertText(src:line, at:cursorX, text);
-                            cursorX += 1;
-                            movedRight();
-
-                        
-
-                            redrawLines();
-                        };
-                    }
-                );            
-                
-                
-                
-                
-                return class(
-                    name: 'SES.TextArea',
-                    define:::(this) {
-                        this.interface = {
-                            x : {
-                                set ::(value) {
-                                    offsetX = value;
-                                    redrawLines();
-                                },
-                                get ::<- offsetX
-                            },
-
-                            y : {
-                                set ::(value) {
-                                    offsetY = value;
-                                    redrawLines();
-                                },
-                                get ::<- offsetY
-                            },
-                                        
-                                        
-                            widthChars : {
-                                set ::(value) {
-                                    TEXT_AREA_WIDTH = value;
-                                }
-                            },
-                            
-                            
-                            width : {
-                                get ::<- TEXT_AREA_WIDTH * GLYPH_WIDTH                            
-                            },
-
-                            heightChars : {
-                                set ::(value) {
-                                    TEXT_AREA_HEIGHT = value;
-                                }
-                            },
-                            
-                            
-                            height : {
-                                get ::<- TEXT_AREA_HEIGHT * GLYPH_HEIGHT                            
-                            },
-                            
-                            text : {
-                                get :: {
-                                    @text = '';
-                                    lines->foreach(do:::(i, line) {
-                                        if (text != '') text = text + '\n';
-                                        text = text + line;
-                                    });
-                                    return text;
-                                },
-                                
-                                
-                                set ::(value)  {
-                                    cursorX = 0;
-                                    cursorY = 0;
-                                                                    
-                                    lines = value->split(token:'\n');
-
-                                    if (LINE_LIMIT > 0)
-                                        lines = lines->subset(from:0, to:LINE_LIMIT);
-                                    redrawLines();  
-                                },
-                            },
-                            
-                            lineLimit : {
-                                set ::(value) <- LINE_LIMIT = value
-                            }
-
-
-                        };
-                    }
-                ).new();
-            },
-            
-            
-            
             // Loads tiles corresponding to ASCII characters
             // using a default font. This can be useful for debugging 
             // or generalized tool development.
@@ -2664,6 +2200,555 @@ return class(
                 );
 
             },
+            
+            drawString ::(spriteOffset, x, y, string) {
+                @GLYPH_WIDTH  = 6;
+                @GLYPH_HEIGHT = 8;            
+            
+                @spr = spriteOffset;
+                
+                @chX = 0;
+                @chY = 0;
+
+
+                @:drawChar::(px, py, code) {
+                    Sprite.set(
+                        index: spr,
+                        tile: code,
+                        show:true,
+                        scaleX:1,
+                        scaleY:1,
+                        centerX: 0,
+                        centerY: 0,
+                        x: px,
+                        y: py,
+                        effect: Sprite.EFFECTS.Color
+                    );
+                    spr += 1;
+                };
+                
+                [0, string->length]->for(do:::(i) {
+                    drawChar(
+                        px: chX * GLYPH_WIDTH  + x,
+                        py: chY * GLYPH_HEIGHT + y,
+                        code: string->charCodeAt(index:i)
+                    );        
+                    chX += 1;
+                });
+                return spr;
+            },
+            
+            createArea :: {
+                @TEXT_AREA_HEIGHT = 10;
+                @TEXT_AREA_WIDTH = 10;
+                
+                @LINE_LIMIT = 0;
+                
+                @GLYPH_WIDTH  = 6;
+                @GLYPH_HEIGHT = 8;
+                
+                Palette.set(
+                    index: 0,
+                    colors: [
+                        [1, 0, 0],
+                        [0, 1, 0],
+                        [0, 0, 1],
+                        [1, 1, 1]
+                    ]
+                );
+
+                @lines = [''];
+                
+                @offsetX = 0;
+                @offsetY = 0;
+                
+                @cursorX = 0;
+                @cursorY = 0;
+
+
+                @scrollX = 0;
+                @scrollY = 0;
+
+
+
+                this.loadAsciiFont(offset:0);
+
+
+
+
+                @:drawString::(string, x, y, offset) {
+                    @spr = offset;
+                    
+                    @chX = 0;
+                    @chY = 0;
+
+
+                    @:drawChar::(px, py, code) {
+                        Sprite.set(
+                            index: spr,
+                            tile: code,
+                            show:true,
+                            scaleX:1,
+                            scaleY:1,
+                            centerX: 0,
+                            centerY: 0,
+                            x: px,
+                            y: py,
+                            effect: Sprite.EFFECTS.Color
+                        );
+                        spr += 1;
+                    };
+                    
+                    [0, string->length]->for(do:::(i) {
+                        drawChar(
+                            px: chX * GLYPH_WIDTH  + x,
+                            py: chY * GLYPH_HEIGHT + y,
+                            code: string->charCodeAt(index:i)
+                        );        
+                        chX += 1;
+                    });
+                    return spr;
+                };
+
+
+
+                @:clearCanvas:: {
+                    [0, 400]->for(do:::(i) {
+                        Sprite.set(
+                            index:i,
+                            show:false
+                        );
+                    });
+
+                };
+
+
+                @:MIN ::(a, b) <- if (a < b) a else b;
+
+
+                @:redrawLines :: {
+                    clearCanvas();
+                    @spr = 0;
+                    @i = 0;
+                    [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
+                        @:line = lines[index];
+                        when(line->length == 0) ::<= {
+                            i+=1;
+                        };
+                        
+                        @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
+                        when(scrolledLine == empty || scrolledLine->length == 0) ::<= {
+                            i+=1;
+                        };
+
+                        spr = drawString(offset:spr, x:offsetX, y: i*8 + offsetY, string:scrolledLine);
+                        i+=1;
+                    });
+                    
+                    // cursor
+                    drawString(
+                        offset:spr, 
+                        x:(cursorX - scrollX) * GLYPH_WIDTH     + offsetX, 
+                        y:(cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY, 
+                        string:'_'
+                    );
+                        
+                };
+
+
+                @:insertText ::(src, at, text) {
+                    when(at >= src->length-1) src + text;
+                    when(at == 0) text + src;
+                       
+                    return src->substr(from:0, to:at-1) + text + src->substr(from:at, to:src->length-1);
+                };
+
+
+
+
+
+
+
+                @:movedDown :: {
+                    if (cursorY >= lines->keycount) ::<= {
+                        cursorY = lines->keycount-1;
+                        cursorX = lines[cursorY]->length;
+                        movedLeft();
+                        movedRight();
+                    };
+                    if (cursorX > lines[cursorY]->length) ::<= {
+                        cursorX = lines[cursorY]->length;
+                        movedLeft();
+                        movedRight();
+
+                    };
+
+
+                    if (cursorY - scrollY > TEXT_AREA_HEIGHT-2) ::<= {
+                        scrollY = cursorY - (TEXT_AREA_HEIGHT-1);
+                    };
+
+
+                };
+
+                @:movedLeft :: {
+                    if (cursorX < 0) ::<= {
+                        when (cursorY == 0) cursorX = 0;
+                        cursorY -= 1;
+                        cursorX = lines[cursorY]->length;
+                        movedUp();
+                    }; 
+
+                    if (cursorX < scrollX + 2 && scrollX > 0) ::<= {
+                        scrollX = cursorX - 2;
+                        if (scrollX < 0) scrollX = 0;
+                    };
+
+                    if (cursorX > scrollX + TEXT_AREA_WIDTH) ::<= {
+                        scrollX = cursorX - TEXT_AREA_WIDTH;
+                    };
+                    
+
+
+
+                };
+
+                @:movedUp :: {
+                    if (cursorY < 0) cursorY = 0;
+                    if (cursorX > lines[cursorY]->length) ::<= {
+                        cursorX = lines[cursorY]->length;
+                        movedLeft();
+                        movedRight();
+
+                    };
+
+                    if (cursorY - scrollY < 2 && scrollY > 0) ::<= {
+                        scrollY = cursorY-2;
+                        
+                    };
+
+
+                };
+
+
+                @:movedRight :: {
+                    if (cursorX > lines[cursorY]->length) ::<= {
+                        cursorY += 1;
+                        cursorX = 0;
+                        movedDown();
+                        movedLeft();
+                    };
+                    if (cursorY >= lines->keycount) ::<= {
+                        cursorY = lines->keycount-1;
+                        cursorX = lines[cursorY]->length;  
+                    };
+
+                        
+                    if (cursorX > scrollX + TEXT_AREA_WIDTH) ::<= {
+                        scrollX = cursorX - TEXT_AREA_WIDTH;
+                    };
+
+                };
+
+                Input.addCallback(
+                    device:Input.DEVICES.KEYBOARD,
+                    callback:::(event, text, key) {
+
+                        when(event == Input.EVENTS.KEY_DOWN) ::<= {
+                            match(key) {
+                              (Input.KEYS.TAB):::<= {
+                                lines[cursorY] = insertText(src:lines[cursorY], at:cursorX, text:'  ');
+                                cursorX += 2;
+                                movedRight();
+                                redrawLines();
+                              },
+
+                              (Input.KEYS.BACKSPACE):::<= {
+                              
+                                // remove "newline"
+                                when (lines[cursorY] == '') ::<={
+                                    when(lines->keycount == 1) empty;
+
+                                    lines->remove(key:cursorY);
+                                    cursorY-=1;
+                                    cursorX = lines[cursorY]->length;
+                                    movedUp();
+                                    movedLeft();
+                                };
+                              
+                                lines[cursorY] = lines[cursorY]->removeChar(index:cursorX-1);
+                                cursorX -=1;
+
+
+                                movedLeft();
+                              },
+                              
+                              (Input.KEYS.UP):::<= {
+                                cursorY -= 1;
+                                movedUp();
+                              },
+                              
+                              (Input.KEYS.DOWN):::<= {
+                                cursorY += 1;
+                                movedDown();
+
+                              },
+
+                              (Input.KEYS.LEFT):::<= {
+                                cursorX -= 1;
+                                movedLeft();             
+                               },
+                              
+                              (Input.KEYS.RIGHT):::<= {
+                                cursorX += 1;
+                                movedRight();
+
+                              },
+
+
+                              
+                              (Input.KEYS.RETURN):::<= {  
+                                when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
+                              
+                                // return at end
+                                when(cursorX >= lines[cursorY]->length) ::<= {
+                                    cursorY += 1;
+                                    cursorX = 0;
+                                    lines->insert(value:'', at:cursorY);                
+                                    movedDown();
+                                    movedLeft();
+
+                                };            
+                                
+                                // return at start
+                                when(cursorX == 0) ::<= {
+                                    @line = lines[cursorY];
+                                    lines[cursorY] = '';
+                                    cursorY += 1;
+                                    cursorX = 0;
+                                    lines->insert(value:line, at:cursorY);
+                                    
+                                    movedDown();
+                                    movedLeft();
+                                    
+                                    
+                                };
+                                
+                                @portion = lines[cursorY]->substr(from:cursorX, to:lines[cursorY]->length-1);
+                                lines[cursorY] = lines[cursorY]->substr(from:0, to:cursorX-1);
+                                cursorY += 1;
+                                cursorX = 0;
+                                lines->insert(value:portion, at:cursorY);
+
+                                movedDown();
+                                movedLeft();
+
+                              }
+                              
+                            };
+
+                            redrawLines();
+                        };
+
+                        if (text != empty) ::<= {
+                            // else, just normal text
+                            @:line = lines[cursorY];
+                            lines[cursorY] = insertText(src:line, at:cursorX, text);
+                            cursorX += 1;
+                            movedRight();
+
+                        
+
+                            redrawLines();
+                        };
+                    }
+                );            
+                
+                
+                
+                
+                return class(
+                    name: 'SES.Text.Area',
+                    define:::(this) {
+                        this.interface = {
+                            x : {
+                                set ::(value) {
+                                    offsetX = value;
+                                    redrawLines();
+                                },
+                                get ::<- offsetX
+                            },
+
+                            y : {
+                                set ::(value) {
+                                    offsetY = value;
+                                    redrawLines();
+                                },
+                                get ::<- offsetY
+                            },
+                                        
+                                        
+                            widthChars : {
+                                set ::(value) {
+                                    TEXT_AREA_WIDTH = value;
+                                }
+                            },
+                            
+                            
+                            width : {
+                                get ::<- TEXT_AREA_WIDTH * GLYPH_WIDTH                            
+                            },
+
+                            heightChars : {
+                                set ::(value) {
+                                    TEXT_AREA_HEIGHT = value;
+                                }
+                            },
+                            
+                            
+                            height : {
+                                get ::<- TEXT_AREA_HEIGHT * GLYPH_HEIGHT                            
+                            },
+                            
+                            text : {
+                                get :: {
+                                    @text = '';
+                                    lines->foreach(do:::(i, line) {
+                                        if (text != '') text = text + '\n';
+                                        text = text + line;
+                                    });
+                                    return text;
+                                },
+                                
+                                
+                                set ::(value)  {
+                                    cursorX = 0;
+                                    cursorY = 0;
+                                                                    
+                                    lines = value->split(token:'\n');
+
+                                    if (LINE_LIMIT > 0)
+                                        lines = lines->subset(from:0, to:LINE_LIMIT);
+                                    redrawLines();  
+                                },
+                            },
+                            
+                            lineLimit : {
+                                set ::(value) <- LINE_LIMIT = value
+                            },
+                            
+                            
+                            // returns an x y set of cursor a cursor position 
+                            // corresponding to the x y pixel given
+                            pixelCoordsToCursor::(x, y) {
+                                @ycursor = scrollY + ((y - offsetY) / GLYPH_HEIGHT);
+                                if (ycursor < 0) ycursor = 0;
+                                if (ycursor > lines->keycount-1) ycursor = lines->keycount-1;
+                                
+                                ycursor = ycursor->floor;
+                                
+                                @xcursor = scrollX + ((x - offsetX) / GLYPH_WIDTH);
+                                if (xcursor < 0) xcursor = 0;
+                                if (xcursor > lines[ycursor]->length) xcursor = lines[ycursor]->length;
+                                
+                                return {x:xcursor->floor, y:ycursor};
+                            },
+                            
+                            
+                            moveCursor ::(x, y) {
+                                cursorX = x;
+                                cursorY = y;
+                                redrawLines();
+                            }
+
+
+                        };
+                    }
+                ).new();
+            }       
+        };
+    }
+).new();
+
+
+
+return class(
+    name: 'SES',
+    
+    define:::(this) {
+        @:ATTRIBS = {
+            UPDATERATE:  0,
+            UPDATEFUNC:  1,
+            RESOLUTION:  2,
+            ADDALARM:    3,
+            REMOVEALARM: 4,
+        };
+        
+        @:RESOLUTION = {
+            NES : 0, // 256 x 240       
+            GBA : 1, // 240 x 160,
+            GBC : 2, // 160 x 144,
+            MD  : 3, // 320 x 224
+        };
+
+
+        @updateRate = 1 / 60; // how fast update should be called in the engine
+        @updateFunc = ::{};
+        @resolution = RESOLUTION.GBA;
+
+
+        // before update is called: engine polls input         
+        @update = ::{
+            // dispatch events
+            updateFunc();
+        };
+        // after update is called: backgrounds + sprites are posted to screen
+        
+        
+        
+
+        ses_native__engine_attrib(a:ATTRIBS.UPDATERATE, b:updateRate);
+        ses_native__engine_attrib(a:ATTRIBS.UPDATEFUNC, b:update);
+        ses_native__engine_attrib(a:ATTRIBS.RESOLUTION, b:resolution);
+    
+        this.interface = {
+            Sprite    : {get ::<- Sprite},
+            Palette   : {get ::<- Palette},
+            Tile      : {get ::<- Tile},
+            Input     : {get ::<- Input},
+            Background: {get ::<- Background},
+            Audio     : {get ::<- Audio},
+            Text      : {get ::<- Text},
+
+            RESOLUTION : RESOLUTION,
+
+            resolution : {
+                set ::(value => Number) {
+                
+                },
+                get ::<- resolution
+            },
+            
+    
+            // add a function to call expireMS milliseconds later.
+            // Only as resolute as the updateRate.
+            // The alarm is removed after it expires.            
+            addAlarm ::(expireMS => Number, callback => Function) {
+                return ses_native__engine_attrib(a:ATTRIBS.ADDALARM, b:expireMS, c:callback);
+            },
+            
+            
+            // removes an alarm that is currently active, else does nothing.
+            removeAlarm ::(id => Number) {
+                ses_native__engine_attrib(a:ATTRIBS.REMOVEALARM, b:id);
+            },
+            
+            
+
+            
+            
+            
+
             
             updateRate : {
                 set ::(value => Number) {
