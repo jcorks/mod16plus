@@ -28,7 +28,6 @@ extern matteValue_t ses_native__bg_attrib(matteVM_t * vm, matteValue_t fn, const
 
 extern matteValue_t ses_native__palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 extern matteValue_t ses_native__tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-extern matteValue_t ses_native__bg_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
 
 
@@ -164,8 +163,6 @@ int main(int argc, char ** argv) {
 
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_query"), 3, ses_native__palette_query, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_query"), 2, ses_native__tile_query, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__bg_query"), 3, ses_native__bg_query, NULL);
-
 
     // dump rom to memory and hook import
     int result = ses_unpack_rom(romBytes, romLength); 

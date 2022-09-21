@@ -322,10 +322,10 @@ static SES_GLBackgroundTexture * bound_tile_background = NULL;
 
 void ses_sdl_gl_bind_tile(uint32_t id) {
     if (id > TILE_SPRITE_MAX_ID) {
-        int slot = (id - TILE_SPRITE_MAX_ID) / TILES_PER_BACKGROUND;
-        int index = (id - TILE_SPRITE_MAX_ID) % TILES_PER_BACKGROUND;
+        int slot = (id - (TILE_SPRITE_MAX_ID+1)) / TILES_PER_BACKGROUND;
+        int index = (id - (TILE_SPRITE_MAX_ID+1)) % TILES_PER_BACKGROUND;
        
-        bound_tile_id = id - TILE_SPRITE_MAX_ID;
+        bound_tile_id = id - (TILE_SPRITE_MAX_ID+1);
         
         if (slot > 512) return;        
         SES_GLBackgroundTexture * bg = gl.backgrounds[slot];
@@ -426,8 +426,8 @@ uint8_t ses_sdl_gl_get_tile_pixel(uint8_t location) {
 void ses_sdl_gl_copy_from(uint32_t id) {
     int i;
     if (id > TILE_SPRITE_MAX_ID) {
-        int slot = (id - TILE_SPRITE_MAX_ID) / TILES_PER_BACKGROUND;
-        int index = (id - TILE_SPRITE_MAX_ID) % TILES_PER_BACKGROUND;
+        int slot = (id - (TILE_SPRITE_MAX_ID+1)) / TILES_PER_BACKGROUND;
+        int index = (id - (TILE_SPRITE_MAX_ID+1)) % TILES_PER_BACKGROUND;
         
         SES_GLBackgroundTexture * bg = gl.backgrounds[slot];
         if (bg == NULL) return;
@@ -463,8 +463,8 @@ void ses_sdl_gl_unbind_tile() {
             glTexSubImage2D(
                 GL_TEXTURE_2D,
                 0,
-                (index % PIXELS_PER_TILE)*TILE_SIZE,
-                (index / PIXELS_PER_TILE)*TILE_SIZE,
+                (index % BACKGROUND_TILE_WIDTH)*TILE_SIZE,
+                (index / BACKGROUND_TILE_WIDTH)*TILE_SIZE,
                 TILE_SIZE,
                 TILE_SIZE,
                 GL_ALPHA,
@@ -640,7 +640,6 @@ void ses_sdl_gl_render_sprite(
     float scaleX, float scaleY,
     float centerX, float centerY,
     float rotation,
-    int layer,
     int effect,
 
     sesVector_t back,
@@ -758,7 +757,6 @@ void ses_sdl_gl_render_sprite(
 
 void ses_sdl_gl_render_background(
     float x, float y,
-    int layer,
     int effect,
 
     sesVector_t back,

@@ -12,7 +12,6 @@
 // query functions are necessary because they are (can be) pre-populated by the ROM.
 @:ses_native__palette_query = getExternalFunction(name:"ses_native__palette_query");
 @:ses_native__tile_query = getExternalFunction(name:"ses_native__tile_query");
-@:ses_native__bg_query = getExternalFunction(name:"ses_native__bg_query");
 
 
 // preset palettes are loaded from the rom
@@ -201,7 +200,8 @@
         KEYBOARD_TEXT : 1,
         KEY_DOWN : 2,
         POINTER_BUTTON_DOWN: 3,
-        POINTER_BUTTON_UP: 4
+        POINTER_BUTTON_UP: 4,
+        POINTER_SCROLL: 5
 
     };
     
@@ -493,8 +493,8 @@
                 },
                 
                 
-                removeCallback ::(id => Number) {
-                    ses_native__input_attrib(a:ACTIONS.REMOVE, b:id);
+                removeCallback ::(id => Number, device => Number) {
+                    ses_native__input_attrib(a:ACTIONS.REMOVE, b:device, c:id);
                 }
             };
         }
@@ -571,17 +571,14 @@
 // NOTE: background tiles CANNOT be used as 
 // sprites.
 @:Background = ::<= {
-    @bgIDPool = [];
-    @bgID = 0;
     
     @:ATTRIBS = {
         ENABLE:    0,
         POSITIONX :1,
         POSITIONY :2,
         LAYER     :3,
-        TILEINDEX :4,
-        EFFECT    :5,
-        PALETTE   :6
+        EFFECT    :4,
+        PALETTE   :5
     };
     
     
@@ -598,108 +595,44 @@
     
     return class(
         name: 'SES.Background',
-        statics : {
-            EFFECTS: EFFECTS
-        },
         define:::(this) {
-            @shown = true;
-            @id;
-            @positionX = 0;
-            @positionY = 0;
-            @layer = 0;
-
-            @effect = 0;
-            @paletteIndex = 0;
-            
-            
-
-
-            this.constructor = ::(index => Number) {
-                id = index;
-                ses_native__bg_attrib(a:id, b:ATTRIBS.ENABLE,    c:1);
-                ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONX, c:0);
-                ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONY, c:0);
-                ses_native__bg_attrib(a:id, b:ATTRIBS.LAYER,     c:0);
-                ses_native__bg_attrib(a:id, b:ATTRIBS.EFFECT,    c:0);
-                ses_native__bg_attrib(a:id, b:ATTRIBS.PALETTE,   c:0);
-                
-                return this;
-            };
-
             this.interface = {
-                // degree rotation
-                show : {
-                    set ::(value => Boolean) {
-                        shown = value;
-                        ses_native__bg_attrib(a:id, b:ATTRIBS.ENABLE, c:if(value == true) 1 else 0);
-                    },
-                    
-                    get ::<- shown
-                },            
-            
+                set::(
+                    index => Number,
+                    show,
+                    x,
+                    y,
+                    layer,
+                    effect,
+                    palette
+                ) {
+                    if (show != empty) 
+                        ses_native__bg_attrib(a:index, b:ATTRIBS.ENABLE, c:if((show => Boolean) == true) 1 else 0);
+ 
+                    if (x != empty)
+                        ses_native__bg_attrib(a:index, b:ATTRIBS.POSITIONX, c:x=>Number);
 
-                // scale X relative to center
-                x : {
-                    set ::(value => Number) {
-                        positionX = value;
-                        ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONX, c:value);
-                    },
-                    
-                    get ::<- positionX
+                    if (y != empty)
+                        ses_native__bg_attrib(a:index, b:ATTRIBS.POSITIONY, c:y=>Number);
+
+
+                    if (layer != empty)
+                        ses_native__bg_attrib(a:index, b:ATTRIBS.LAYER, c:layer=>Number);            
+
+                    if (effect != empty)                        
+                        ses_native__bg_attrib(a:index, b:ATTRIBS.EFFECT, c:effect=>Number);                        
+
+                    if (palette != empty)
+                        ses_native__bg_attrib(a:index, b:ATTRIBS.PALETTE, c:palette=>Number);
+
                 },
-
-                // scale Y relative to center
-                y : {
-                    set ::(value => Number) {
-                        positionX = value;
-                        ses_native__bg_attrib(a:id, b:ATTRIBS.POSITIONY, c:value);
-                    },
-                    
-                    get ::<- positionY
-                },                
-
-
-                // the ordering layer. 0-16. Higher means on top
-                layer : {
-                    set ::(value => Number) {
-                        layer = value;
-                        ses_native__bg_attrib(a:id, b:ATTRIBS.LAYER, c:value);
-                    },
-                    
-                    get ::<- layer
-                },  
-
-
-
-                // effect
-                effect : {
-                    set ::(value => Number) {
-                        effect = value;
-                        ses_native__bg_attrib(a:id, b:ATTRIBS.EFFECT, c:value);                        
-                    },
-                    
-                    get ::<- effect
-                },
-
-                // palette index.
-                // palettes are not objects, just handle IDs in SES
-                palette : {
-                    set ::(value => Number) {
-                        paletteIndex = value;
-                        ses_native__bg_attrib(a:id, b:ATTRIBS.PALETTE, c:value);                        
-                    },
-                    
-                    get ::<- paletteIndex
-                },
-
-                dispose :: {
-                    ses_native__bg_attrib(a:id, b:ATTRIBS.ENABLE, c:0);
-                    bgIDPool->push(value:id);
-                    id = -1;
+                
+                EFFECTS: {
+                    get::<-EFFECTS
                 }
             };
         }
-    );
+    ).new();
 };
 
 
@@ -2243,14 +2176,14 @@
                 @TEXT_AREA_WIDTH = 10;
                 
                 @LINE_LIMIT = 0;
-                
+                @LAYER = 31;
                 @GLYPH_WIDTH  = 6;
                 @GLYPH_HEIGHT = 8;
                 
                 Palette.set(
                     index: 0,
                     colors: [
-                        [1, 0, 0],
+                        [0, 0, 0],
                         [0, 1, 0],
                         [0, 0, 1],
                         [1, 1, 1]
@@ -2268,6 +2201,8 @@
 
                 @scrollX = 0;
                 @scrollY = 0;
+                
+                @lastSpriteCount = 0;
 
 
 
@@ -2291,6 +2226,7 @@
                             scaleX:1,
                             scaleY:1,
                             centerX: 0,
+                            layer: LAYER,
                             centerY: 0,
                             x: px,
                             y: py,
@@ -2313,7 +2249,7 @@
 
 
                 @:clearCanvas:: {
-                    [0, 400]->for(do:::(i) {
+                    [0, lastSpriteCount]->for(do:::(i) {
                         Sprite.set(
                             index:i,
                             show:false
@@ -2346,12 +2282,15 @@
                     });
                     
                     // cursor
-                    drawString(
-                        offset:spr, 
-                        x:(cursorX - scrollX) * GLYPH_WIDTH     + offsetX, 
-                        y:(cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY, 
-                        string:'_'
-                    );
+                    if (inputCallbackID != empty) ::<= {
+                        drawString(
+                            offset:spr, 
+                            x:(cursorX - scrollX) * GLYPH_WIDTH     + offsetX, 
+                            y:(cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY, 
+                            string:'_'
+                        );
+                    };
+                    lastSpriteCount = spr+1;
                         
                 };
 
@@ -2450,119 +2389,136 @@
 
                 };
 
-                Input.addCallback(
-                    device:Input.DEVICES.KEYBOARD,
-                    callback:::(event, text, key) {
 
-                        when(event == Input.EVENTS.KEY_DOWN) ::<= {
-                            match(key) {
-                              (Input.KEYS.TAB):::<= {
-                                lines[cursorY] = insertText(src:lines[cursorY], at:cursorX, text:'  ');
-                                cursorX += 2;
-                                movedRight();
-                                redrawLines();
-                              },
+                @inputCallbackID;
 
-                              (Input.KEYS.BACKSPACE):::<= {
-                              
-                                // remove "newline"
-                                when (lines[cursorY] == '') ::<={
-                                    when(lines->keycount == 1) empty;
+                @:keyboardCallback = ::(event, text, key) {
 
-                                    lines->remove(key:cursorY);
-                                    cursorY-=1;
-                                    cursorX = lines[cursorY]->length;
-                                    movedUp();
-                                    movedLeft();
-                                };
-                              
-                                lines[cursorY] = lines[cursorY]->removeChar(index:cursorX-1);
-                                cursorX -=1;
-
-
-                                movedLeft();
-                              },
-                              
-                              (Input.KEYS.UP):::<= {
-                                cursorY -= 1;
-                                movedUp();
-                              },
-                              
-                              (Input.KEYS.DOWN):::<= {
-                                cursorY += 1;
-                                movedDown();
-
-                              },
-
-                              (Input.KEYS.LEFT):::<= {
-                                cursorX -= 1;
-                                movedLeft();             
-                               },
-                              
-                              (Input.KEYS.RIGHT):::<= {
-                                cursorX += 1;
-                                movedRight();
-
-                              },
-
-
-                              
-                              (Input.KEYS.RETURN):::<= {  
-                                when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
-                              
-                                // return at end
-                                when(cursorX >= lines[cursorY]->length) ::<= {
-                                    cursorY += 1;
-                                    cursorX = 0;
-                                    lines->insert(value:'', at:cursorY);                
-                                    movedDown();
-                                    movedLeft();
-
-                                };            
-                                
-                                // return at start
-                                when(cursorX == 0) ::<= {
-                                    @line = lines[cursorY];
-                                    lines[cursorY] = '';
-                                    cursorY += 1;
-                                    cursorX = 0;
-                                    lines->insert(value:line, at:cursorY);
-                                    
-                                    movedDown();
-                                    movedLeft();
-                                    
-                                    
-                                };
-                                
-                                @portion = lines[cursorY]->substr(from:cursorX, to:lines[cursorY]->length-1);
-                                lines[cursorY] = lines[cursorY]->substr(from:0, to:cursorX-1);
-                                cursorY += 1;
-                                cursorX = 0;
-                                lines->insert(value:portion, at:cursorY);
-
-                                movedDown();
-                                movedLeft();
-
-                              }
-                              
-                            };
-
+                    when(event == Input.EVENTS.KEY_DOWN) ::<= {
+                        match(key) {
+                          (Input.KEYS.TAB):::<= {
+                            lines[cursorY] = insertText(src:lines[cursorY], at:cursorX, text:'  ');
+                            cursorX += 2;
+                            movedRight();
                             redrawLines();
-                        };
+                          },
 
-                        if (text != empty) ::<= {
-                            // else, just normal text
-                            @:line = lines[cursorY];
-                            lines[cursorY] = insertText(src:line, at:cursorX, text);
+                          (Input.KEYS.BACKSPACE):::<= {
+                          
+                            // remove "newline"
+                            when (lines[cursorY] == '') ::<={
+                                when(lines->keycount == 1) empty;
+
+                                lines->remove(key:cursorY);
+                                cursorY-=1;
+                                cursorX = lines[cursorY]->length;
+                                movedUp();
+                                movedLeft();
+                            };
+                            
+                            
+                            // remove newline + merge previous line
+                            when(cursorX == 0) ::<= {
+                                when(lines->keycount == 1) empty;
+                                @oldText = lines[cursorY];
+                                lines->remove(key:cursorY);
+                                cursorY-=1;
+                                cursorX = lines[cursorY]->length;
+                                lines[cursorY] = lines[cursorY] + oldText;
+                                movedUp();
+                                movedLeft();
+                            
+                            };
+                          
+                            lines[cursorY] = lines[cursorY]->removeChar(index:cursorX-1);
+                            cursorX -=1;
+
+
+                            movedLeft();
+                          },
+                          
+                          (Input.KEYS.UP):::<= {
+                            cursorY -= 1;
+                            movedUp();
+                          },
+                          
+                          (Input.KEYS.DOWN):::<= {
+                            cursorY += 1;
+                            movedDown();
+
+                          },
+
+                          (Input.KEYS.LEFT):::<= {
+                            cursorX -= 1;
+                            movedLeft();             
+                           },
+                          
+                          (Input.KEYS.RIGHT):::<= {
                             cursorX += 1;
                             movedRight();
 
-                        
+                          },
 
-                            redrawLines();
+
+                          
+                          (Input.KEYS.RETURN):::<= {  
+                            when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
+                          
+                            // return at end
+                            when(cursorX >= lines[cursorY]->length) ::<= {
+                                cursorY += 1;
+                                cursorX = 0;
+                                lines->insert(value:'', at:cursorY);                
+                                movedDown();
+                                movedLeft();
+
+                            };            
+                            
+                            // return at start
+                            when(cursorX == 0) ::<= {
+                                @line = lines[cursorY];
+                                lines[cursorY] = '';
+                                cursorY += 1;
+                                cursorX = 0;
+                                lines->insert(value:line, at:cursorY);
+                                
+                                movedDown();
+                                movedLeft();
+                                
+                                
+                            };
+                            
+                            @portion = lines[cursorY]->substr(from:cursorX, to:lines[cursorY]->length-1);
+                            lines[cursorY] = lines[cursorY]->substr(from:0, to:cursorX-1);
+                            cursorY += 1;
+                            cursorX = 0;
+                            lines->insert(value:portion, at:cursorY);
+
+                            movedDown();
+                            movedLeft();
+
+                          }
+                          
                         };
-                    }
-                );            
+
+                        redrawLines();
+                    };
+
+                    if (text != empty) ::<= {
+                        // else, just normal text
+                        @:line = lines[cursorY];
+                        lines[cursorY] = insertText(src:line, at:cursorX, text);
+                        cursorX += 1;
+                        movedRight();
+
+                    
+
+                        redrawLines();
+                    };
+                };
+
+
+                
                 
                 
                 
@@ -2586,6 +2542,25 @@
                                 },
                                 get ::<- offsetY
                             },
+
+                            scrollX : {
+                                get ::<- scrollX,
+                                set ::(value) {
+                                    scrollX = value;
+                                    if (scrollX < 0) scrollX = 0;
+                                    redrawLines();
+                                    
+                                }
+                            },
+
+                            scrollY : {
+                                get ::<- scrollY,
+                                set ::(value) {
+                                    scrollY = value;
+                                    if (scrollY < 0) scrollY = 0;
+                                    redrawLines();
+                                }
+                            },
                                         
                                         
                             widthChars : {
@@ -2593,6 +2568,7 @@
                                     TEXT_AREA_WIDTH = value;
                                 }
                             },
+                            
                             
                             
                             width : {
@@ -2608,6 +2584,25 @@
                             
                             height : {
                                 get ::<- TEXT_AREA_HEIGHT * GLYPH_HEIGHT                            
+                            },
+                            
+                            editable : {
+                                set::(value => Boolean) {
+                                    when(value == true) ::<= {
+                                        when(inputCallbackID != empty) empty;
+                                        inputCallbackID = Input.addCallback(
+                                            device:Input.DEVICES.KEYBOARD,
+                                            callback:keyboardCallback
+                                        );            
+                                        redrawLines();
+                                    };
+                                    
+                                    when(inputCallbackID == empty) empty;
+                                    Input.removeCallback(id:inputCallbackID, device:Input.DEVICES.KEYBOARD);
+                                    inputCallbackID = empty;
+                                    redrawLines();
+                                },
+                                
                             },
                             
                             text : {
