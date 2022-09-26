@@ -11,24 +11,10 @@
 #include "rom.h"
 #include "dump.h"
 #include "package.h"
-
+#include "debug.h"
+#include "native.h"
 // host of external functions that are required to be implemented so that the 
 // behavior of the engine is met.
-
-extern void ses_native__commit_rom();
-extern int ses_native__main_loop(matte_t *);
-
-extern matteValue_t ses_native__sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-extern matteValue_t ses_native__engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-extern matteValue_t ses_native__palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-extern matteValue_t ses_native__tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-extern matteValue_t ses_native__input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-extern matteValue_t ses_native__audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-extern matteValue_t ses_native__bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-
-extern matteValue_t ses_native__palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-extern matteValue_t ses_native__tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-
 
 
 
@@ -71,32 +57,7 @@ static uint8_t * ses_native__import(
 }
 
 
-static void ses_native__unhandled_error(
-    matteVM_t * vm, 
-    uint32_t file, 
-    int lineNumber, 
-    matteValue_t val, 
-    void * userdata
-) {
-    if (val.binID == MATTE_VALUE_TYPE_OBJECT) {
-        matteValue_t s = matte_value_object_access_string(matte_vm_get_heap(vm), val, MATTE_VM_STR_CAST(vm, "summary"));
-        if (s.binID) {
-            
-            printf(
-                "Unhandled error: %s\n", 
-                matte_string_get_c_str(matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), s))
-            );
-            fflush(stdout);
-            return;
-        }
-    }
-    
-    printf(
-        "Unhandled error (%s, line %d)\n", 
-        matte_string_get_c_str(matte_vm_get_script_name_by_id(vm, file)), 
-        lineNumber
-    );
-}
+
 
 static void ses_native__print(matteVM_t * vm, const matteString_t * str, void * ud) {
     printf("%s\n", matte_string_get_c_str(str));
@@ -148,21 +109,13 @@ int main(int argc, char ** argv) {
     matte_t * m = matte_create();
     matteVM_t * vm = matte_get_vm(m);
     matte_vm_set_print_callback(vm, ses_native__print, NULL);
-    matte_vm_set_unhandled_callback(vm, ses_native__unhandled_error, NULL);
     
 
-    // all 3 modes require activating the core features.
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__sprite_attrib"), 3, ses_native__sprite_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__engine_attrib"), 3, ses_native__engine_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_attrib"), 5, ses_native__palette_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_attrib"), 3, ses_native__tile_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__input_attrib"), 3, ses_native__input_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__audio_attrib"), 4, ses_native__audio_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__bg_attrib"), 4, ses_native__bg_attrib, NULL);
 
 
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_query"), 3, ses_native__palette_query, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_query"), 2, ses_native__tile_query, NULL);
+    ses_debug_init(m, !strcmp(argv[1], "debug"), argv[2]);
+
+
 
     // dump rom to memory and hook import
     int result = ses_unpack_rom(romBytes, romLength); 
@@ -191,8 +144,8 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
-    // tell the implementing backend to 
-    ses_native__commit_rom();
+    // tell the implementing backend to process the rom.
+    ses_native_commit_rom(m);
     
     
     // next link up import
@@ -211,5 +164,5 @@ int main(int argc, char ** argv) {
     );
     
     // begin the loop
-    return ses_native__main_loop(m);
+    return ses_native_main_loop(m);
 }

@@ -13,6 +13,12 @@
 @:ses_native__palette_query = getExternalFunction(name:"ses_native__palette_query");
 @:ses_native__tile_query = getExternalFunction(name:"ses_native__tile_query");
 
+@:ses_native__debug_context_enter = getExternalFunction(name:"ses_native__debug_context_enter");
+@:ses_native__debug_context_update = getExternalFunction(name:"ses_native__debug_context_update");
+@:ses_native__debug_context_leave = getExternalFunction(name:"ses_native__debug_context_leave");
+@:ses_native__debug_context_query = getExternalFunction(name:"ses_native__debug_context_query");
+@:ses_native__debug_context_is_done = getExternalFunction(name:"ses_native__debug_context_is_done");
+@:ses_native__debug_context_is_allowed = getExternalFunction(name:"ses_native__debug_context_is_allowed");
 
 // preset palettes are loaded from the rom
 @:Palette = ::<= {
@@ -2171,7 +2177,8 @@
                 return spr;
             },
             
-            createArea :: {
+            createArea ::(spriteOffset) {
+                if (spriteOffset == empty) spriteOffset = 0;
                 @TEXT_AREA_HEIGHT = 10;
                 @TEXT_AREA_WIDTH = 10;
                 
@@ -2249,7 +2256,7 @@
 
 
                 @:clearCanvas:: {
-                    [0, lastSpriteCount]->for(do:::(i) {
+                    [spriteOffset, lastSpriteCount]->for(do:::(i) {
                         Sprite.set(
                             index:i,
                             show:false
@@ -2264,7 +2271,7 @@
 
                 @:redrawLines :: {
                     clearCanvas();
-                    @spr = 0;
+                    @spr = spriteOffset;
                     @i = 0;
                     [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
                         @:line = lines[index];
@@ -2461,7 +2468,7 @@
 
 
                           
-                          (Input.KEYS.RETURN):::<= {  
+                          (Input.KEYS.RETURN):::<= {
                             when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
                           
                             // return at end
@@ -2518,12 +2525,12 @@
                 };
 
 
+            
                 
                 
                 
                 
-                
-                return class(
+                @:out = class(
                     name: 'SES.Text.Area',
                     define:::(this) {
                         this.interface = {
@@ -2556,6 +2563,7 @@
                             scrollY : {
                                 get ::<- scrollY,
                                 set ::(value) {
+                                    when (lines->keycount <= TEXT_AREA_HEIGHT) scrollY = 0;
                                     scrollY = value;
                                     if (scrollY < 0) scrollY = 0;
                                     redrawLines();
@@ -2617,10 +2625,13 @@
                                 
                                 
                                 set ::(value)  {
-                                    cursorX = 0;
+                                    cursorX = 1;
                                     cursorY = 0;
-                                                                    
-                                    lines = value->split(token:'\n');
+
+                                    if (value == '')
+                                        lines = ['']
+                                    else                                                                       
+                                        lines = value->split(token:'\n');
 
                                     if (LINE_LIMIT > 0)
                                         lines = lines->subset(from:0, to:LINE_LIMIT);
@@ -2628,8 +2639,22 @@
                                 },
                             },
                             
+                            addLine ::(text) {
+                                lines->push(value:text);
+                                if (LINE_LIMIT > 0)
+                                    lines = lines->subset(from:0, to:LINE_LIMIT);
+                                redrawLines();  
+                            },
+                            
                             lineLimit : {
                                 set ::(value) <- LINE_LIMIT = value
+                            },
+                            
+                            setScrollBottom :: {
+                                if (lines->keycount > TEXT_AREA_HEIGHT) ::<= {
+                                    scrollY = lines->keycount - TEXT_AREA_HEIGHT;
+                                };
+                                redrawLines();
                             },
                             
                             
@@ -2660,6 +2685,23 @@
                         };
                     }
                 ).new();
+                
+                Input.addCallback(
+                    device:Input.DEVICES.POINTER0,
+                    callback:::(event, x, y, button) {
+                        if (event == Input.EVENTS.POINTER_SCROLL) ::<= {
+                            out.scrollX -= x;
+                            out.scrollY -= y;
+                        
+                        };
+
+                        if (event == Input.EVENTS.POINTER_BUTTON_DOWN) ::<= {
+                            @:a = out.pixelCoordsToCursor(x, y);        
+                            out.moveCursor(x:a.x, y:a.y);
+                        };
+                    }
+                );    
+                return out;                
             }       
         };
     }
@@ -2698,7 +2740,10 @@ return class(
             updateFunc();
         };
         // after update is called: backgrounds + sprites are posted to screen
-        
+
+
+
+        @inDebugContext = false;
         
         
 
@@ -2719,9 +2764,28 @@ return class(
 
             resolution : {
                 set ::(value => Number) {
-                
+                    if (value > RESOLUTION.MD || value < 0) error(detail: 'Invalid resolution type.');
+                    resolution = value;
                 },
                 get ::<- resolution
+            },
+            
+            resolutionWidth : {
+                get ::<- match(resolution) {
+                  (RESOLUTION.NES): 256,
+                  (RESOLUTION.GBA): 240,
+                  (RESOLUTION.GBC): 160,
+                  (RESOLUTION.MD):  320
+                }
+            },
+            
+            resolutionHeight : {
+                get ::<- match(resolution) {
+                  (RESOLUTION.NES):240,
+                  (RESOLUTION.GBA):160,
+                  (RESOLUTION.GBC):144,
+                  (RESOLUTION.MD): 224
+                }
             },
             
     
@@ -2739,7 +2803,78 @@ return class(
             },
             
             
+            // activates the console, suspending computation.
+            //
+            debug ::{    
+                when(!ses_native__debug_context_is_allowed()) empty;
+               
+                when (inDebugContext) empty;
+                inDebugContext = true;  
+                
+               
+                @:onDebugPrint::(text, colorHint) {
+                    display.addLine(text);
+                    display.setScrollBottom();
+                };
+                
+                @:onDebugClear:: {
+                    display.text = '';
+                };
+                       
 
+                // for debug context
+                @:display = Text.createArea();
+                display. = {
+                    widthChars: (this.resolutionWidth / 8)->floor,
+                    heightChars:((this.resolutionHeight-3) / 8)->floor,
+                    editable : false
+                };
+
+
+                @:cursor = Text.createArea(spriteOffset:3999);
+                cursor. = {
+                    text : '>',
+                    heightChars: 1,
+                    editable : false,
+                    x: 0,
+                    y: this.resolutionHeight - 8               
+                };         
+
+                @:entry = Text.createArea(spriteOffset:4000);
+                entry. = {
+                    widthChars: (this.resolutionWidth / 8)->floor,
+                    heightChars: 1,
+                    editable : true,
+                    x: 8,
+                    y: this.resolutionHeight - 8               
+                };
+
+                ses_native__debug_context_enter(a:onDebugPrint, b:onDebugClear);
+
+
+                Input.addCallback(
+                    device: Input.DEVICES.KEYBOARD,
+                    callback:::(event, text, key) {
+                        when(event != Input.EVENTS.KEY_DOWN) empty;
+                        if (key == Input.KEYS.RETURN) ::<= {
+                            ses_native__debug_context_query(a:entry.text => String);
+                            entry.text = '';       
+                            entry.scrollY = 0;                 
+                        };
+                    }
+                );
+
+                [::] {
+                    forever(do:::{
+                        when(ses_native__debug_context_is_done()) send();
+                        ses_native__debug_context_update();                                   
+                    });
+                };
+                ses_native__debug_context_leave();
+                inDebugContext = false;         
+
+
+            },
             
             
             

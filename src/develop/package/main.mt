@@ -3,6 +3,10 @@
 
 
 
+
+SES.debug();
+
+
 @textarea = SES.Text.createArea();
 
 
