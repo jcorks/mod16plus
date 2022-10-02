@@ -4,6 +4,10 @@
 #include "matte/src/matte_string.h"
 #include "matte/src/matte_array.h"
 #include "matte/src/matte_compiler.h"
+#include "matte/src/matte_heap.h"
+#include "matte/src/matte_vm.h"
+#include "matte/src/matte.h"
+#include "matte/src/matte_bytecode_stub.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -78,7 +82,88 @@ static int is_string_empty(const matteString_t * line) {
 }
 
 
+// will leak memory until finalized
+
+// runs the core json parser on the package.json within dir.
+// returns empty on failure.
+matteValue_t ses_package_get_json(matte_t * m, const char * dir) {
+    matteVM_t * vm = matte_get_vm(m);
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    
+    const char * json_unpack_src =
+        "return import(module:'Matte.Core.JSON').decode(string:parameters.json);"
+    ;
+     
+    uint32_t bytecodeLen;   
+    uint8_t * bytecode = matte_compiler_run(
+        json_unpack_src,
+        strlen(json_unpack_src),
+        &bytecodeLen,
+        
+        NULL,
+        NULL
+    );
+
+    
+    
+    if (!bytecode || !bytecodeLen)
+        return matte_heap_new_value(heap);
+        
+    
+    uint32_t fileID = matte_vm_get_new_file_id(vm, MATTE_VM_STR_CAST(vm, "JSONPARSE"));
+    matteArray_t * stubs = matte_bytecode_stubs_from_bytecode(
+        heap,
+        fileID,
+        bytecode,
+        bytecodeLen
+    );
+    
+    matte_vm_add_stubs(vm, stubs);
+        
+    
+
+    matteString_t * fullpath = matte_string_create_from_c_str("%s/%s", dir, "package.json");
+    uint32_t srclen = 0;
+    uint8_t * srcbytes = dump_bytes(matte_string_get_c_str(fullpath), &srclen);
+    if (srclen == 0 || srcbytes == NULL)
+        return matte_heap_new_value(heap);
+    
+    uint8_t * srcstring = malloc(srclen+1);
+    memcpy(srcstring, srcbytes, srclen);
+    srcstring[srclen] = 0;
+    free(srcbytes);
+    
+    matteString_t * srcstringMatte = matte_string_create_from_c_str("%s", srcstring);
+    free(srcstring);
+    matteValue_t srcval = matte_heap_new_value(heap);
+    matte_value_into_string(heap, &srcval, srcstringMatte);
+    matte_string_destroy(srcstringMatte);
+    
+    
+    matteValue_t parameters = matte_heap_new_value(heap);
+    matte_value_into_new_object_ref(heap, &parameters);
+    matteValue_t key = matte_heap_new_value(heap);
+    matte_value_into_string(heap, &key, MATTE_VM_STR_CAST(vm, "json"));
+
+    matte_value_object_set(heap, parameters, key, srcval, 1);
+    
+    return matte_vm_run_fileid(
+        vm,
+        fileID,
+        parameters,
+        NULL
+    );
+}
+
+
 int ses_package(const char * dir) {
+    matte_t * m = matte_create();
+    matteVM_t * vm = matte_get_vm(m);
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    
+    
+    matteValue_t json = ses_package_get_json(m, dir);
+    if (json.binID == 0) return 0;
     
     // for each source, dump
     uint32_t len;
@@ -99,21 +184,25 @@ int ses_package(const char * dir) {
     matteArray_t * bytecodeSegmentSizes = matte_array_create(sizeof(uint32_t));
     matteArray_t * bytecodeSegments = matte_array_create(sizeof(uint8_t*));
     
+    uint32_t i;
+    
+    
+    
     // waveforms 
-    {
-        matteArray_t * lines = package_split(dir, "WAVEFORMS");
-        uint32_t i;
-        len = matte_array_get_size(lines);
+    matteValue_t next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "waveforms"));
+    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+        len = matte_value_object_get_number_key_count(heap, next);
         for(i = 0; i < len; ++i) {
-            matteString_t * line = matte_array_at(lines, matteString_t *, i);
-            if (is_string_empty(line)) {
-                matte_string_destroy(line);
-                continue;
+            matteValue_t name = matte_value_object_access_index(heap, next, i);
+            if (name.binID != MATTE_VALUE_TYPE_STRING) {
+                printf("Error on waveform %d: value is not a string.\n", i+1);
+                exit(1);
             }
+
             uint32_t byteLen;
             bytes = dump_bytes_relative(
                 dir,
-                matte_string_get_c_str(line), 
+                matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, name)), 
                 &byteLen
             );
             
@@ -126,82 +215,89 @@ int ses_package(const char * dir) {
     
 
     // tiles 
-    {
-        matteArray_t * lines = package_split(dir, "TILES");
-        uint32_t i;
-        len = matte_array_get_size(lines);
+    next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "tiles"));
+    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+        len = matte_value_object_get_number_key_count(heap, next);
         for(i = 0; i < len; ++i) {
-            matteString_t * line = matte_array_at(lines, matteString_t *, i);
-            if (is_string_empty(line)) {
-                matte_string_destroy(line);
-                continue;
-            }
-            
-            char * path = malloc(matte_string_get_length(line)+1);
-            path[0] = 0;
-            int id;
-            if (sscanf(matte_string_get_c_str(line), "%d %s", &id, path) != 2) {
-                printf("Error on line %d of tile specification. Format should be\n[tile id] [path to file]\n", i);
+            matteValue_t set = matte_value_object_access_index(heap, next, i);
+            if (set.binID != MATTE_VALUE_TYPE_OBJECT) {
+                printf("Error on tile %d: value is not an array.\n", i+1);
                 exit(1);
             }
+            
+            matteValue_t id   = matte_value_object_access_index(heap, next, 0);
+            matteValue_t path = matte_value_object_access_index(heap, next, 1);
+
+            if (id.binID != MATTE_VALUE_TYPE_NUMBER) {
+                printf("Error on tile %d: first array value is not a number.\n", i+1);
+                exit(1);
+            }
+
+            if (path.binID != MATTE_VALUE_TYPE_STRING) {
+                printf("Error on tile %d: second array value is not a string.\n", i+1);
+                exit(1);
+            }
+            
+            
             
             uint32_t byteLen;
             bytes = dump_bytes_relative(
                 dir,
-                path, 
+                matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)), 
                 &byteLen
             );
-            free(path);
+
             if (byteLen % 64 != 0) {
-                printf("Tile sheet %s is misaligned and does not contain a multiple of 64 bytes.\n", matte_string_get_c_str(line));
+                printf("Tile sheet %s is misaligned and does not contain a multiple of 64 bytes.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
                 exit(1);
             }
-            // raw waveforms (for now)
-            // todo: possibly ogg
+
             matte_array_push_n(tiles, bytes, byteLen/64);
             matte_array_push(tileIDs, id);
-            matte_string_destroy(line);
-            
         }        
     }
 
-    // tiles 
-    {
-        matteArray_t * lines = package_split(dir, "PALETTES");
-        uint32_t i;
-        len = matte_array_get_size(lines);
+    // palettes 
+    next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "palettes"));
+    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+        len = matte_value_object_get_number_key_count(heap, next);
         for(i = 0; i < len; ++i) {
-            matteString_t * line = matte_array_at(lines, matteString_t *, i);
-            if (is_string_empty(line)) {
-                matte_string_destroy(line);
-                continue;
-            }
-            char * path = malloc(matte_string_get_length(line)+1);
-            path[0] = 0;
-            int id;
-            if (sscanf(matte_string_get_c_str(line), "%d %s", &id, path) != 2) {
-                printf("Error on line %d of palette specification. Format should be\n[palette id] [path to file]\n", i);
+            matteValue_t set = matte_value_object_access_index(heap, next, i);
+            if (set.binID != MATTE_VALUE_TYPE_OBJECT) {
+                printf("Error on palette %d: value is not an array.\n", i+1);
                 exit(1);
             }
+            
+            matteValue_t id   = matte_value_object_access_index(heap, next, 0);
+            matteValue_t path = matte_value_object_access_index(heap, next, 1);
+
+            if (id.binID != MATTE_VALUE_TYPE_NUMBER) {
+                printf("Error on palette %d: first array value is not a number.\n", i+1);
+                exit(1);
+            }
+
+            if (path.binID != MATTE_VALUE_TYPE_STRING) {
+                printf("Error on palette %d: second array value is not a string.\n", i+1);
+                exit(1);
+            }
+
 
 
 
             uint32_t byteLen;
             bytes = dump_bytes_relative(
                 dir,
-                path, 
+                matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)), 
                 &byteLen
             );
-            free(path);
             if (byteLen % 12 != 0) {
-                printf("Palette sheet %s is misaligned and does not contain a multiple of 12 bytes.\n", matte_string_get_c_str(line));
+                printf("Palette sheet %s is misaligned and does not contain a multiple of 12 bytes.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
                 exit(1);
             }
             // raw waveforms (for now)
             // todo: possibly ogg
             matte_array_push_n(palettes, bytes, byteLen/12);
             matte_array_push(paletteIDs, id);
-            matte_string_destroy(line);
 
         }        
     }    
@@ -209,26 +305,26 @@ int ses_package(const char * dir) {
 
     
     // bytecode segments
-    {
-        matteArray_t * lines = package_split(dir, "SOURCES");
-        uint32_t i;
-        len = matte_array_get_size(lines);
+    next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "sources"));
+    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+        len = matte_value_object_get_number_key_count(heap, next);
         for(i = 0; i < len; ++i) {
-            matteString_t * line = matte_array_at(lines, matteString_t *, i);
-            if (is_string_empty(line)) {
-                matte_string_destroy(line);
-                continue;
+            matteValue_t name = matte_value_object_access_index(heap, next, i);
+            if (name.binID != MATTE_VALUE_TYPE_STRING) {
+                printf("Error on source %d: value is not a string.\n", i+1);
+                exit(1);
             }
+
             uint32_t byteLen;
             bytes = dump_bytes_relative(
                 dir,
-                matte_string_get_c_str(line), 
+                matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, name)),
                 &byteLen
             );
 
             // now that we have a source, compile it
             uint32_t segmentLength;
-            currentCompiled = line;
+            currentCompiled = matte_value_string_get_string_unsafe(heap, name);
             bytes = matte_compiler_run(
                 bytes,
                 byteLen,
@@ -238,6 +334,7 @@ int ses_package(const char * dir) {
             );
             currentCompiled = NULL;
             
+            matteString_t * line = matte_value_string_get_string_unsafe(heap, name);
             
             matte_array_push(bytecodeSegments, bytes);
             matte_array_push(bytecodeSegmentSizes, segmentLength);

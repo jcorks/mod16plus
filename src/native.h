@@ -11,6 +11,7 @@ int ses_native_main_loop(matte_t *);
 // returns whether to continue;
 int ses_native_update(matte_t * m);
 
-
+// swaps between the main and debug contexts
+void ses_native_swap_context();
 
 #endif

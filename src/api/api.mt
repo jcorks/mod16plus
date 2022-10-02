@@ -207,7 +207,8 @@
         KEY_DOWN : 2,
         POINTER_BUTTON_DOWN: 3,
         POINTER_BUTTON_UP: 4,
-        POINTER_SCROLL: 5
+        POINTER_SCROLL: 5,
+        KEY_UP : 6
 
     };
     
@@ -479,6 +480,9 @@
                 },
                 EVENTS: {
                     get::<- EVENTS
+                },
+                POINTER_BUTTONS : {
+                    get::<- POINTER_BUTTONS
                 },
                 
                 
@@ -765,6 +769,20 @@
             // the tile representing 'A' will be placed
             
             loadAsciiFont::(offset => Number) {
+                Tile.set(
+                    index: offset,
+                    data: [
+                        4, 4, 4, 4, 4, 4, 0, 0,
+                        4, 4, 4, 4, 4, 4, 0, 0,
+                        4, 4, 4, 4, 4, 4, 0, 0,
+                        4, 4, 4, 4, 4, 4, 0, 0,
+                        4, 4, 4, 4, 4, 4, 0, 0,
+                        4, 4, 4, 4, 4, 4, 0, 0,
+                        4, 4, 4, 4, 4, 4, 0, 0,
+                        4, 4, 4, 4, 4, 4, 0, 0
+                    ]
+                );
+
                 Tile.set(
                     index: ' '->charCodeAt(index:0)+offset,
                     data: [
@@ -2290,12 +2308,19 @@
                     
                     // cursor
                     if (inputCallbackID != empty) ::<= {
-                        drawString(
-                            offset:spr, 
-                            x:(cursorX - scrollX) * GLYPH_WIDTH     + offsetX, 
-                            y:(cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY, 
-                            string:'_'
-                        );
+                        Sprite.set(
+                            index: spr,
+                            tile: 0,
+                            show:true,
+                            scaleX:1,
+                            scaleY:1,
+                            centerX: 0,
+                            layer: 0,
+                            centerY: 0,
+                            x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
+                            y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
+                            effect: Sprite.EFFECTS.Color
+                        );                    
                     };
                     lastSpriteCount = spr+1;
                         
@@ -2524,11 +2549,15 @@
                     };
                 };
 
-
+                
             
                 
                 
-                
+                @pointerCallbackID;
+                @scrollCallbackID;
+                @ctrlCallbackID;
+                @ctrlMod = false;
+                @holdMod = false;
                 
                 @:out = class(
                     name: 'SES.Text.Area',
@@ -2565,9 +2594,21 @@
                                 set ::(value) {
                                     when (lines->keycount <= TEXT_AREA_HEIGHT) scrollY = 0;
                                     scrollY = value;
+                                    if (scrollY > lines->keycount - TEXT_AREA_HEIGHT) scrollY = lines->keycount - TEXT_AREA_HEIGHT;
                                     if (scrollY < 0) scrollY = 0;
                                     redrawLines();
                                 }
+                            },
+                            
+                            setScroll ::(x, y) {
+                                scrollX = x;
+                                if (scrollX < 0) scrollX = 0;
+                                when (lines->keycount <= TEXT_AREA_HEIGHT) scrollY = 0;
+                                scrollY = y;
+                                if (scrollY > lines->keycount - TEXT_AREA_HEIGHT) scrollY = lines->keycount - TEXT_AREA_HEIGHT;
+                                if (scrollY < 0) scrollY = 0;
+                                redrawLines();
+                                
                             },
                                         
                                         
@@ -2602,15 +2643,82 @@
                                             device:Input.DEVICES.KEYBOARD,
                                             callback:keyboardCallback
                                         );            
+                                        pointerCallbackID = Input.addCallback(
+                                            device:Input.DEVICES.POINTER0,
+                                            callback:::(event, x, y, button) {
+                                                if (event == Input.EVENTS.POINTER_BUTTON_DOWN) ::<= {
+                                                    @:a = this.pixelCoordsToCursor(x, y);        
+                                                    this.moveCursor(x:a.x, y:a.y);
+                                                };
+                                            }
+                                        );
                                         redrawLines();
                                     };
                                     
                                     when(inputCallbackID == empty) empty;
                                     Input.removeCallback(id:inputCallbackID, device:Input.DEVICES.KEYBOARD);
+                                    Input.removeCallback(id:pointerCallbackID, device:Input.DEVICES.POINTER0);
                                     inputCallbackID = empty;
                                     redrawLines();
                                 },
                                 
+                            },
+                            
+                            scrollable : {
+                                set::(value => Boolean) {
+                                    when(value == true) ::<= {
+                                        when(scrollCallbackID != empty) empty;
+                                        
+                                        @isDown = false;
+                                        
+                                        @lastX = 0;
+                                        @lastY = 0;
+                                        @ripple = false;
+                                        scrollCallbackID = Input.addCallback(
+                                            device:Input.DEVICES.POINTER0,
+                                            callback:::(event, x, y, button) {
+                                                if (event == Input.EVENTS.POINTER_BUTTON_DOWN) holdMod = true;
+                                                if (event == Input.EVENTS.POINTER_BUTTON_UP  ) holdMod = false;
+
+                                                if (event == Input.EVENTS.POINTER_MOTION) ::<= {
+                                                    if (holdMod && ctrlMod) ::<= {
+                                                        if (ripple) ::<= {
+                                                            this.setScroll(
+                                                                x: this.scrollX - (x - lastX)/2,
+                                                                y: this.scrollY - (y - lastY)/2
+                                                            );
+                                                        };
+                                                        ripple = !ripple;
+                                                    };
+                                                    
+                                                    lastX = x;
+                                                    lastY = y;
+                                                };
+
+                                                if (event == Input.EVENTS.POINTER_SCROLL) ::<= {
+                                                    this.scrollX -= x;
+                                                    this.scrollY -= y;                                                
+                                                };    
+                                                
+                                            }
+                                        );
+                                        
+                                        ctrlCallbackID = Input.addCallback(
+                                            device:Input.DEVICES.KEYBOARD,
+                                            callback:::(event, text, key) {
+                                                when(event == Input.EVENTS.KEY_DOWN && key == Input.KEYS.LCTRL) ctrlMod = true;
+                                                when(event == Input.EVENTS.KEY_UP   && key == Input.KEYS.LCTRL) ctrlMod = false;
+                                            }
+                                        );
+                                    };
+
+                                    when(scrollCallbackID == empty) empty;
+                                    Input.removeCallback(id:scrollCallbackID, device:Input.DEVICES.POINTER0);
+                                    Input.removeCallback(id:ctrlCallbackID, device:Input.DEVICES.KEYBOARD);
+                                    scrollCallbackID = empty;
+                                    
+
+                                }
                             },
                             
                             text : {
@@ -2628,7 +2736,7 @@
                                     cursorX = 1;
                                     cursorY = 0;
 
-                                    if (value == '')
+                                    if (value == '' || value == '\n')
                                         lines = ['']
                                     else                                                                       
                                         lines = value->split(token:'\n');
@@ -2686,21 +2794,7 @@
                     }
                 ).new();
                 
-                Input.addCallback(
-                    device:Input.DEVICES.POINTER0,
-                    callback:::(event, x, y, button) {
-                        if (event == Input.EVENTS.POINTER_SCROLL) ::<= {
-                            out.scrollX -= x;
-                            out.scrollY -= y;
-                        
-                        };
-
-                        if (event == Input.EVENTS.POINTER_BUTTON_DOWN) ::<= {
-                            @:a = out.pixelCoordsToCursor(x, y);        
-                            out.moveCursor(x:a.x, y:a.y);
-                        };
-                    }
-                );    
+ 
                 return out;                
             }       
         };
@@ -2810,9 +2904,11 @@ return class(
                
                 when (inDebugContext) empty;
                 inDebugContext = true;  
-                
-               
-                @:onDebugPrint::(text, colorHint) {
+                @display;
+                @cursor;
+                @entry;
+                @callbackID;
+                @:onDebugPrint::(text => String, colorHint) {
                     display.addLine(text);
                     display.setScrollBottom();
                 };
@@ -2820,49 +2916,59 @@ return class(
                 @:onDebugClear:: {
                     display.text = '';
                 };
-                       
+                
+                @:onDebugInit :: {
+                    display = Text.createArea();
+                    display. = {
+                        widthChars: (this.resolutionWidth / 6)->floor,
+                        heightChars:((this.resolutionHeight-3) / 8)->floor,
+                        editable : false,
+                        scrollable : true
+                    };
+
+
+                    cursor = Text.createArea(spriteOffset:3999);
+                    cursor. = {
+                        text : '>',
+                        heightChars: 1,
+                        editable : false,
+                        x: 0,
+                        y: this.resolutionHeight - 8,            
+                        widthChars: 1,
+                    };         
+
+                    entry = Text.createArea(spriteOffset:4000);
+                    entry. = {
+                        widthChars: (this.resolutionWidth / 6)->floor,
+                        heightChars: 1,
+                        editable : true,
+                        x: 6,
+                        y: this.resolutionHeight - 8               
+                    };
+
+
+
+                    callbackID = Input.addCallback(
+                        device: Input.DEVICES.KEYBOARD,
+                        callback:::(event, text, key) {
+                            when(event != Input.EVENTS.KEY_DOWN) empty;
+                            if (key == Input.KEYS.RETURN) ::<= {
+                                ses_native__debug_context_query(a:entry.text => String);
+                                entry.text = '';
+                                entry.scrollY = 0;
+                                entry.moveCursor(x:0, y:0);       
+                            };
+                        }
+                    );                
+                };
+                    
+                ses_native__debug_context_enter(a:onDebugPrint, b:onDebugClear, c:onDebugInit);
+                
+               
+   
 
                 // for debug context
-                @:display = Text.createArea();
-                display. = {
-                    widthChars: (this.resolutionWidth / 8)->floor,
-                    heightChars:((this.resolutionHeight-3) / 8)->floor,
-                    editable : false
-                };
 
-
-                @:cursor = Text.createArea(spriteOffset:3999);
-                cursor. = {
-                    text : '>',
-                    heightChars: 1,
-                    editable : false,
-                    x: 0,
-                    y: this.resolutionHeight - 8               
-                };         
-
-                @:entry = Text.createArea(spriteOffset:4000);
-                entry. = {
-                    widthChars: (this.resolutionWidth / 8)->floor,
-                    heightChars: 1,
-                    editable : true,
-                    x: 8,
-                    y: this.resolutionHeight - 8               
-                };
-
-                ses_native__debug_context_enter(a:onDebugPrint, b:onDebugClear);
-
-
-                Input.addCallback(
-                    device: Input.DEVICES.KEYBOARD,
-                    callback:::(event, text, key) {
-                        when(event != Input.EVENTS.KEY_DOWN) empty;
-                        if (key == Input.KEYS.RETURN) ::<= {
-                            ses_native__debug_context_query(a:entry.text => String);
-                            entry.text = '';       
-                            entry.scrollY = 0;                 
-                        };
-                    }
-                );
 
                 [::] {
                     forever(do:::{
@@ -2870,6 +2976,11 @@ return class(
                         ses_native__debug_context_update();                                   
                     });
                 };
+                Input.removeCallback(id:callbackID, device:Input.DEVICES.KEYBOARD);
+                entry.editable = false;
+                display.text = '';
+                entry.text = '';
+                cursor.text = '';
                 ses_native__debug_context_leave();
                 inDebugContext = false;         
 

@@ -1,4 +1,5 @@
 #include "debug.h"
+#include "dump.h"
 #include "matte/src/matte_vm.h"
 #include "matte/src/matte_string.h"
 #include "matte/src/matte_array.h"
@@ -31,6 +32,7 @@ typedef struct {
     
     
     uint32_t callstackLevel;
+    uint32_t callstackLimit;
     
 } SESDebug;
 
@@ -108,13 +110,22 @@ static void ses_matte_query__error(
 }
 
 
-
-static int ses_matte_debug_dump() {
-
-    const matteString_t * name = matte_vm_get_script_name_by_id(debug.vm, debug.currentFileid);
-    return 0;    
-    
+static matteArray_t * split_lines(const uint8_t * data, uint32_t size) {
+    matteArray_t * localLines = matte_array_create(sizeof(matteString_t *));
+    uint32_t i;
+    matteString_t * line = matte_string_create();
+    for(i = 0; i < size; ++i) {
+        if (data[i] == '\n') {
+            matte_array_push(localLines, line);
+            line = matte_string_create();
+        } else {
+            if (data[i] != '\r')
+                matte_string_append_char(line, data[i]);
+        }
+    }
+    return localLines;
 }
+
 
 
 static void ses_matte_backtrace() {
@@ -126,7 +137,8 @@ static void ses_matte_backtrace() {
         return;
     }
     
-    for(i = 0; i < len; ++i) {
+    uint32_t start = len - debug.callstackLimit;
+    for(i = start; i < len; ++i) {
         matteVMStackFrame_t frame = matte_vm_get_stackframe(debug.vm, i);
         uint32_t fileid = matte_bytecode_stub_get_file_id(frame.stub);
         uint32_t instCount;
@@ -137,13 +149,79 @@ static void ses_matte_backtrace() {
         
         const matteString_t * filename = matte_vm_get_script_name_by_id(debug.vm, fileid);
         if (filename == NULL) {
-            debug_println("%s????: %d", (i == debug.callstackLevel ? "> " : "  "),  lineNumber);        
+            debug_println("%s????: %d", (i-start == debug.callstackLevel ? "> " : "  "),  lineNumber);        
         } else {
-            debug_println("%s%s: %d", (i == debug.callstackLevel ? "> " : "  "), matte_string_get_c_str(filename), lineNumber);
+            debug_println("%s%s: %d", (i-start == debug.callstackLevel ? "> " : "  "), matte_string_get_c_str(filename), lineNumber);
         }    
         
     }
 }
+
+static int ses_matte_debug_dump() {
+    matteVM_t * vm = debug.vm;        
+    matteVMStackFrame_t frame = matte_vm_get_stackframe(vm, debug.callstackLevel + (matte_vm_get_stackframe_size(vm) - debug.callstackLimit));
+    uint32_t fileid = matte_bytecode_stub_get_file_id(frame.stub);
+
+    const matteString_t * name = matte_vm_get_script_name_by_id(debug.vm, fileid);
+    if (!name) goto L_FAIL;
+    matteString_t * path = matte_string_create_from_c_str("%s/%s", debug.directory, matte_string_get_c_str(name));
+    matteArray_t  * data = matte_table_find(debug.files, path);
+    if (!data) {
+        uint32_t rawlen;
+        uint8_t * raw = dump_bytes(matte_string_get_c_str(path), &rawlen);
+        
+        if (raw && rawlen) {
+            data = split_lines(raw, rawlen);
+            free(raw);
+        }
+
+        matte_table_insert(debug.files, path, data);
+        
+    }
+
+    matte_string_destroy(path);
+    
+    if (!data)
+        goto L_FAIL;
+
+    uint32_t numinst;
+    const matteBytecodeStubInstruction_t * inst = matte_bytecode_stub_get_instructions(frame.stub, &numinst);
+    uint32_t line = 0;
+    if (frame.pc-1 >= 0 && frame.pc-1 < numinst)
+        line = inst[frame.pc-1].lineNumber;
+
+    debug_println("<file %s, line %d>", 
+        matte_string_get_c_str(name),
+        line
+    );
+    int i = line;
+
+    const int PRINT_AREA_LINES = 7;
+
+    matteArray_t * localLines = data;
+    if (localLines) {
+        for(i = ((int)line) - PRINT_AREA_LINES/2; i < ((int)line) + PRINT_AREA_LINES/2 + 1; ++i) {
+            if (i < 0 || i >= matte_array_get_size(localLines)) {
+                debug_println("  ---- | \n");
+            } else {
+                if (i == line-1) {
+                    debug_println("->%4d | %s", i+1, matte_string_get_c_str(matte_array_at(localLines, matteString_t *, i)));
+                } else {
+                    debug_println("  %4d | %s", i+1, matte_string_get_c_str(matte_array_at(localLines, matteString_t *, i)));
+                }
+            }
+        }
+    }     
+    return 1;   
+    
+  L_FAIL:
+    debug_println("<File not found>");
+    debug_println("");
+    ses_matte_backtrace();
+  
+}
+
+
 
 static void ses_debug_unhandled_error(
     matteVM_t * vm, 
@@ -180,26 +258,28 @@ static void ses_debug_unhandled_error(
 
 static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData){
     debug.active = 1;
+    ses_native_swap_context();
     debug.requestedExit = 0;
     
     debug.onPrint = args[0];
-    debug.onClear = args[0];
-    debug.callstackLevel = 1;
+    debug.onClear = args[1];
+    debug.callstackLevel = 0;
+    debug.callstackLimit = matte_vm_get_stackframe_size(debug.vm)-1;
     
     matteHeap_t * heap = matte_vm_get_heap(vm);
     matte_value_object_push_lock(heap, debug.onPrint);    
     matte_value_object_push_lock(heap, debug.onClear);
+
+
+    matte_vm_call(debug.vm, args[2], matte_array_empty(), matte_array_empty(), NULL);
     
     debug_println("SES. (debug console)");
     debug_println("http://github.com/jcorks/");
     debug_println("sprite-entertainment-system");    
     debug_println("");
     
-    if (!ses_matte_debug_dump()) {
-        debug_println("<File not found>");
-        debug_println("");
-        ses_matte_backtrace();
-    }
+    ses_matte_backtrace();
+    ses_matte_debug_dump();
 }
 static matteValue_t ses_native__debug_context_update(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     debug.requestedExit |= !ses_native_update(debug.matte);    
@@ -211,27 +291,62 @@ static matteValue_t ses_native__debug_context_leave(matteVM_t * vm, matteValue_t
     
     debug.onPrint.binID = 0;
     debug.onClear.binID = 0;
+    ses_native_swap_context();
+
 }
 static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    debug_println(matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, args[0])));
-
+    const char * query = matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, args[0]));
+    debug_println(query);
 
 
     // continue normal execution
-    if (!strcmp(matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, args[0])), "!c\n") ||
-        !strcmp(matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, args[0])), "!continue\n")) {
+    if (!strcmp(query, ":c\n") ||
+        !strcmp(query, ":continue\n")) {
         debug.requestedExit = 1;
         return matte_heap_new_value(debug.heap);
     }
+    
+    // print callstack
+    if (!strcmp(query, ":bt\n") ||
+        !strcmp(query, ":backtracew\n")) {
+        
+        ses_matte_backtrace();
+        return matte_heap_new_value(debug.heap);
+    }    
+
+    // up the callstack
+    if (!strcmp(query, ":up\n") ||
+        !strcmp(query, ":u\n")) {
+        debug.callstackLevel += 1;
+
+        if (debug.callstackLevel >= debug.callstackLimit)
+            debug.callstackLevel = debug.callstackLimit-1;
+        debug_clear();
+        ses_matte_debug_dump();            
+        return matte_heap_new_value(debug.heap);
+    }
+
+
+    // down the callstack
+    if (!strcmp(query, ":down\n") ||
+        !strcmp(query, ":d\n")) {
+        if (debug.callstackLevel)
+            debug.callstackLevel -= 1;
+        debug_clear();
+
+        ses_matte_debug_dump();            
+        return matte_heap_new_value(debug.heap);
+    }
+
 
     matteString_t * src = matte_string_create();
-    matte_string_concat_printf(src, "return import(module:'Matte.Core.Introspect')(value:%s);", matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, args[0])));
+    matte_string_concat_printf(src, "return import(module:'Matte.Core.Introspect')(value:%s);", query);
 
 
     matteValue_t result = matte_vm_run_scoped_debug_source(
         debug.vm,
         src,
-        debug.callstackLevel,
+        debug.callstackLevel + (matte_vm_get_stackframe_size(debug.vm) - debug.callstackLimit),
         ses_matte_query__error,
         NULL
     );   
@@ -242,6 +357,7 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
     } else {
         debug_println("  (invalid value)");
     }
+    return matte_heap_new_value(debug.heap);
     
     
 }
@@ -298,7 +414,7 @@ void ses_debug_init(matte_t * m, int enabled, const char * romPath) {
     
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_is_allowed"), 0, ses_native__debug_context_is_allowed, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_is_done"),    0, ses_native__debug_context_is_done, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_enter"),      2, ses_native__debug_context_enter, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_enter"),      3, ses_native__debug_context_enter, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_update"),     0, ses_native__debug_context_update, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_leave"),      0, ses_native__debug_context_leave, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_query"),      1, ses_native__debug_context_query, NULL);

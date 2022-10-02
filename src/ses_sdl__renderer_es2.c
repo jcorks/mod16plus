@@ -698,10 +698,19 @@ void ses_sdl_gl_render_sprite(
     sesMatrix_t m;
     ses_matrix_set_identity(&m);
 
-    ses_matrix_translate(&m, x, y, 0);
-    ses_matrix_scale(&m, scaleX, scaleY, 1);
-    ses_matrix_rotate_by_angles(&m, 0, 0, rotation);
-    ses_matrix_translate(&m, centerX, centerY, 0);
+    //ses_matrix_translate(&m, x, y, 0);
+    m.data[3]  = x;
+    m.data[7]  = y;
+     
+    
+    if (scaleX != 1. || scaleY != 1.)
+        ses_matrix_scale(&m, scaleX, scaleY, 1);
+
+    if (rotation != 0)
+        ses_matrix_rotate_by_angles(&m, 0, 0, rotation);
+
+    if (centerX != 0 || centerY != 0)
+        ses_matrix_translate(&m, centerX, centerY, 0);
     
     
 

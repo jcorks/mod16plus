@@ -42,29 +42,10 @@ typedef struct {
 
 
 typedef struct {
-    // SDL window
-    SDL_Window    * window;
-    
-    // SDL GLES context
-    SDL_GLContext * ctx;
 
-    
-    matteVM_t * vm;
-
-    // user function called every frame    
-    matteValue_t updateFunc;
-    
-    
     // array of user callbacks for input.
     SES_InputCallbackSet inputs[SES_DEVICE__GAMEPAD3+1];
-    
-    // delay before updating the next frame
-    uint32_t frameUpdateDelayMS;
-    
-    // callback ID for the timer event emitter
-    SDL_TimerID frameUpdateID;
-    
-    
+
     // an array of SES_Sprite, representing all accessed 
     // sprites.
     matteArray_t * sprites;
@@ -81,6 +62,37 @@ typedef struct {
     // an array of SES_Palette, representing all accessed 
     // palettes
     matteArray_t * palettes;
+    
+    // user function called every frame    
+    matteValue_t updateFunc;
+
+
+} SES_Context;
+
+typedef struct {
+    // SDL window
+    SDL_Window    * window;
+    
+    // SDL GLES context
+    SDL_GLContext * ctx;
+
+    
+    matteVM_t * vm;
+
+    
+    SES_Context main;
+    
+    SES_Context aux;
+    
+    
+    // delay before updating the next frame
+    uint32_t frameUpdateDelayMS;
+    
+    // callback ID for the timer event emitter
+    SDL_TimerID frameUpdateID;
+    
+    
+
 } SES_SDL;
 
 static SES_SDL sdl = {};
@@ -219,24 +231,24 @@ static void ses_sdl_render() {
     // re-sort sprites and bgs into layer buckets;
     ses_sdl_gl_render_begin();
     uint32_t i, n;
-    uint32_t len = matte_array_get_size(sdl.sprites);
-    SES_Sprite * iter = matte_array_get_data(sdl.sprites);
+    uint32_t len = matte_array_get_size(sdl.main.sprites);
+    SES_Sprite * iter = matte_array_get_data(sdl.main.sprites);
     for(i = 0; i < len; ++i, iter++) {
         if (iter->enabled == 0) continue;
 
-        SES_GraphicsLayer * layer = sdl.layers+iter->layer;
+        SES_GraphicsLayer * layer = sdl.main.layers+iter->layer;
         matte_array_push(layer->sprites, iter);
     }
 
 
 
-    SES_Background * bg = matte_array_get_data(sdl.bgs);
-    len = matte_array_get_size(sdl.bgs);
+    SES_Background * bg = matte_array_get_data(sdl.main.bgs);
+    len = matte_array_get_size(sdl.main.bgs);
     for(i = 0; i < len; ++i, bg++) {
         if (bg->enabled == 0) continue;
 
 
-        SES_GraphicsLayer * layer = sdl.layers+bg->layer;
+        SES_GraphicsLayer * layer = sdl.main.layers+bg->layer;
         matte_array_push(layer->bgs, bg);
     }
 
@@ -245,7 +257,7 @@ static void ses_sdl_render() {
 
     // draw each layer in order
     for(i = 0; i < 32; ++i) {
-        SES_GraphicsLayer * layer = sdl.layers+i;
+        SES_GraphicsLayer * layer = sdl.main.layers+i;
     
         // start with backgrounds
         len = matte_array_get_size(layer->bgs);
@@ -254,8 +266,8 @@ static void ses_sdl_render() {
                 bg = matte_array_at(layer->bgs, SES_Background *, n);
             
                 SES_Palette p = {};
-                if (bg->palette < matte_array_get_size(sdl.palettes)) {
-                    p = matte_array_at(sdl.palettes, SES_Palette, bg->palette);
+                if (bg->palette < matte_array_get_size(sdl.main.palettes)) {
+                    p = matte_array_at(sdl.main.palettes, SES_Palette, bg->palette);
                 }
                 
                 ses_sdl_gl_render_background(
@@ -281,8 +293,8 @@ static void ses_sdl_render() {
             iter = matte_array_at(layer->sprites, SES_Sprite *, n);
         
             SES_Palette p = {};
-            if (iter->palette < matte_array_get_size(sdl.palettes)) {
-                p = matte_array_at(sdl.palettes, SES_Palette, iter->palette);
+            if (iter->palette < matte_array_get_size(sdl.main.palettes)) {
+                p = matte_array_at(sdl.main.palettes, SES_Palette, iter->palette);
             }
             
             ses_sdl_gl_render_sprite(
@@ -347,11 +359,11 @@ matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteV
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
     uint32_t id = matte_value_as_number(heap, args[0]);
-    while(id >= matte_array_get_size(sdl.sprites)) {
+    while(id >= matte_array_get_size(sdl.main.sprites)) {
         SES_Sprite spr = {};
-        matte_array_push(sdl.sprites, spr);
+        matte_array_push(sdl.main.sprites, spr);
     }
-    SES_Sprite * spr = &matte_array_at(sdl.sprites, SES_Sprite, id);
+    SES_Sprite * spr = &matte_array_at(sdl.main.sprites, SES_Sprite, id);
     switch((int)matte_value_as_number(heap, args[1])) {
       case SESNSA_ENABLE:
         spr->enabled = matte_value_as_number(heap, args[2]);
@@ -428,9 +440,9 @@ matteValue_t ses_sdl_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteV
 
       // function to call to update each frame, according to the user.
       case SESNEA_UPDATEFUNC:
-        matte_value_object_pop_lock(heap, sdl.updateFunc);
-        sdl.updateFunc = args[1];
-        matte_value_object_push_lock(heap, sdl.updateFunc);
+        matte_value_object_pop_lock(heap, sdl.main.updateFunc);
+        sdl.main.updateFunc = args[1];
+        matte_value_object_push_lock(heap, sdl.main.updateFunc);
         break;
         
       case SESNEA_UPDATERATE:
@@ -456,11 +468,11 @@ matteValue_t ses_sdl_palette_attrib(matteVM_t * vm, matteValue_t fn, const matte
 
     uint32_t id = matte_value_as_number(heap, args[0]);
     
-    if (id >= matte_array_get_size(sdl.palettes)) {
+    if (id >= matte_array_get_size(sdl.main.palettes)) {
         SES_Palette p = {};
-        matte_array_push(sdl.palettes, p);
+        matte_array_push(sdl.main.palettes, p);
     }
-    SES_Palette * p = &matte_array_at(sdl.palettes, SES_Palette, id);
+    SES_Palette * p = &matte_array_at(sdl.main.palettes, SES_Palette, id);
 
 
 
@@ -550,7 +562,7 @@ matteValue_t ses_sdl_input_attrib(matteVM_t * vm, matteValue_t fn, const matteVa
 
     switch((int)matte_value_as_number(heap, args[0])) {
       case SESNIA_ADD: {
-        SES_InputCallbackSet * set = &sdl.inputs[(int)matte_value_as_number(heap, args[1])];
+        SES_InputCallbackSet * set = &sdl.main.inputs[(int)matte_value_as_number(heap, args[1])];
 
         matteValue_t out = matte_heap_new_value(heap);
         uint32_t id;
@@ -569,7 +581,7 @@ matteValue_t ses_sdl_input_attrib(matteVM_t * vm, matteValue_t fn, const matteVa
       
       
       case SESNIA_REMOVE: {
-        SES_InputCallbackSet * set = &sdl.inputs[(int)matte_value_as_number(heap, args[1])];
+        SES_InputCallbackSet * set = &sdl.main.inputs[(int)matte_value_as_number(heap, args[1])];
         uint32_t id = matte_value_as_number(heap, args[2]);      
         
         if (id > matte_array_get_size(set->callbacks) ||
@@ -617,12 +629,12 @@ matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue
     */  
 
     uint32_t id = matte_value_as_number(heap, args[0]);
-    while(id >= matte_array_get_size(sdl.bgs)) {
+    while(id >= matte_array_get_size(sdl.main.bgs)) {
         SES_Background bg = {};
         bg.id = id;
-        matte_array_push(sdl.bgs, bg);
+        matte_array_push(sdl.main.bgs, bg);
     }
-    SES_Background * bg = &matte_array_at(sdl.bgs, SES_Background, id);
+    SES_Background * bg = &matte_array_at(sdl.main.bgs, SES_Background, id);
     switch((int)matte_value_as_number(heap, args[1])) {
       case SESNBA_ENABLE:
         bg->enabled = matte_value_as_number(heap, args[2]);
@@ -680,7 +692,25 @@ matteValue_t ses_sdl_tile_query(matteVM_t * vm, matteValue_t fn, const matteValu
 
 
 
+static SES_Context context_create() {
+    SES_Context ctx = {};
 
+    ctx.sprites = matte_array_create(sizeof(SES_Sprite));
+    ctx.bgs = matte_array_create(sizeof(SES_Background));
+    ctx.palettes = matte_array_create(sizeof(SES_Palette));
+    int i;
+    for(i = 0; i <= SES_DEVICE__GAMEPAD3; ++i) {
+        ctx.inputs[i].callbacks = matte_array_create(sizeof(matteValue_t));    
+        ctx.inputs[i].dead = matte_array_create(sizeof(uint32_t));
+    }
+    
+    for(i = 0; i < 32; ++i) {
+        SES_GraphicsLayer * layer = &ctx.layers[i];
+        layer->sprites = matte_array_create(sizeof(SES_Sprite *));
+        layer->bgs = matte_array_create(sizeof(SES_Background *));
+    }
+    return ctx;
+}
 
 void ses_native_commit_rom(matte_t * m) {
     // nothing yet!
@@ -709,22 +739,8 @@ void ses_native_commit_rom(matte_t * m) {
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_query"), 2, ses_sdl_tile_query, NULL);
 
 
-
-    sdl.sprites = matte_array_create(sizeof(SES_Sprite));
-    sdl.bgs = matte_array_create(sizeof(SES_Background));
-    sdl.palettes = matte_array_create(sizeof(SES_Palette));
-    int i;
-    for(i = 0; i <= SES_DEVICE__GAMEPAD3; ++i) {
-        sdl.inputs[i].callbacks = matte_array_create(sizeof(matteValue_t));    
-        sdl.inputs[i].dead = matte_array_create(sizeof(uint32_t));
-    }
-    
-    for(i = 0; i < 32; ++i) {
-        SES_GraphicsLayer * layer = &sdl.layers[i];
-        layer->sprites = matte_array_create(sizeof(SES_Sprite *));
-        layer->bgs = matte_array_create(sizeof(SES_Background *));
-    }
-    
+    sdl.main = context_create();
+    sdl.aux = context_create();    
     ses_sdl_gl_init(
         &sdl.window,
         &sdl.ctx
@@ -736,12 +752,18 @@ void ses_native_commit_rom(matte_t * m) {
    
 }
 
+void ses_native_swap_context() {
+    SES_Context c = sdl.main;
+    sdl.main = sdl.aux;
+    sdl.aux = c;
+}
 
 int ses_native_update(matte_t * m) {
     sdl.vm = matte_get_vm(m);
     matteHeap_t * heap = matte_vm_get_heap(sdl.vm);
     SDL_Event evt;
 
+    
     while(SDL_PollEvent(&evt) != 0) {
         if (evt.type == SDL_QUIT) {
             return 0;
@@ -751,11 +773,11 @@ int ses_native_update(matte_t * m) {
         
         
         switch(evt.type) {
-          case SDL_KEYDOWN: {
-          
+          case SDL_KEYUP: 
+          case SDL_KEYDOWN: {          
           
             uint32_t i;
-            uint32_t len = matte_array_get_size(sdl.inputs[SES_DEVICE__KEYBOARD].callbacks);
+            uint32_t len = matte_array_get_size(sdl.main.inputs[SES_DEVICE__KEYBOARD].callbacks);
             if (len == 0) break;
             
             matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "key");
@@ -777,7 +799,7 @@ int ses_native_update(matte_t * m) {
             
             
             matte_value_into_number(heap, &textval, evt.key.keysym.sym);
-            matte_value_into_number(heap, &eventVal, 2);// key down
+            matte_value_into_number(heap, &eventVal, (evt.type == SDL_KEYDOWN ? 2 : 6));// key down
 
 
 
@@ -785,7 +807,7 @@ int ses_native_update(matte_t * m) {
             matteValue_t valsArr[] = {eventVal, textval};                
             
             for(i = 0; i < len; ++i) {
-                matteValue_t val = matte_array_at(sdl.inputs[SES_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
+                matteValue_t val = matte_array_at(sdl.main.inputs[SES_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
                 if (val.binID == 0) continue;
 
                 // for safety
@@ -802,7 +824,7 @@ int ses_native_update(matte_t * m) {
           
           
             uint32_t i;
-            uint32_t len = matte_array_get_size(sdl.inputs[SES_DEVICE__KEYBOARD].callbacks);
+            uint32_t len = matte_array_get_size(sdl.main.inputs[SES_DEVICE__KEYBOARD].callbacks);
             if (len == 0) break;
             
             matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "text");
@@ -834,7 +856,7 @@ int ses_native_update(matte_t * m) {
             matteValue_t valsArr[] = {eventVal, textval};                
             
             for(i = 0; i < len; ++i) {
-                matteValue_t val = matte_array_at(sdl.inputs[SES_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
+                matteValue_t val = matte_array_at(sdl.main.inputs[SES_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
                 if (val.binID == 0) continue;
 
                 // for safety
@@ -853,7 +875,7 @@ int ses_native_update(matte_t * m) {
           
           
             uint32_t i;
-            uint32_t len = matte_array_get_size(sdl.inputs[SES_DEVICE__POINTER0].callbacks);
+            uint32_t len = matte_array_get_size(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks);
             if (len == 0) break;
             
             matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "x");
@@ -887,6 +909,14 @@ int ses_native_update(matte_t * m) {
             matte_value_into_number(heap, &xval, (evt.button.x / (float) w) * ses_sdl_gl_get_render_width());
             matte_value_into_number(heap, &yval, (evt.button.y / (float) h) * ses_sdl_gl_get_render_height());
             matte_value_into_number(heap, &eventVal, evt.button.type == SDL_MOUSEBUTTONDOWN ? 3 : 4);
+
+            int which;
+            switch(evt.button.button) {
+              case SDL_BUTTON_LEFT:   which = 0; break;
+              case SDL_BUTTON_MIDDLE: which = 1; break;
+              case SDL_BUTTON_RIGHT:  which = 2; break;
+            }
+
             matte_value_into_number(heap, &buttonval, evt.button.button);
 
 
@@ -895,7 +925,7 @@ int ses_native_update(matte_t * m) {
             matteValue_t valsArr[] = {eventVal, xval, yval, buttonval};                
             
             for(i = 0; i < len; ++i) {
-                matteValue_t val = matte_array_at(sdl.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
+                matteValue_t val = matte_array_at(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
                 if (val.binID == 0) continue;
 
                 // for safety
@@ -913,7 +943,7 @@ int ses_native_update(matte_t * m) {
           
           
             uint32_t i;
-            uint32_t len = matte_array_get_size(sdl.inputs[SES_DEVICE__POINTER0].callbacks);
+            uint32_t len = matte_array_get_size(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks);
             if (len == 0) break;
             
             matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "x");
@@ -947,7 +977,7 @@ int ses_native_update(matte_t * m) {
             matteValue_t valsArr[] = {eventVal, xval, yval};                
             
             for(i = 0; i < len; ++i) {
-                matteValue_t val = matte_array_at(sdl.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
+                matteValue_t val = matte_array_at(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
                 if (val.binID == 0) continue;
 
                 // for safety
@@ -965,7 +995,7 @@ int ses_native_update(matte_t * m) {
           
           
             uint32_t i;
-            uint32_t len = matte_array_get_size(sdl.inputs[SES_DEVICE__POINTER0].callbacks);
+            uint32_t len = matte_array_get_size(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks);
             if (len == 0) break;
             
             matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "x");
@@ -1002,7 +1032,7 @@ int ses_native_update(matte_t * m) {
             matteValue_t valsArr[] = {eventVal, xval, yval};                
             
             for(i = 0; i < len; ++i) {
-                matteValue_t val = matte_array_at(sdl.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
+                matteValue_t val = matte_array_at(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
                 if (val.binID == 0) continue;
 
                 // for safety
@@ -1019,10 +1049,10 @@ int ses_native_update(matte_t * m) {
         
         // frame update controlled by timer
         if (evt.type == SDL_USEREVENT) {
-            if (sdl.updateFunc.binID) {
+            if (sdl.main.updateFunc.binID) {
                 matte_vm_call(
                     sdl.vm,
-                    sdl.updateFunc,
+                    sdl.main.updateFunc,
                     matte_array_empty(),
                     matte_array_empty(),
                     NULL
@@ -1033,6 +1063,8 @@ int ses_native_update(matte_t * m) {
             SDL_GL_SwapWindow(sdl.window);
         }
     }
+    SDL_Delay(1);
+    
     return 1;
 }
 
