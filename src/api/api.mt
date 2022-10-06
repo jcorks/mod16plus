@@ -2288,7 +2288,6 @@
 
 
                 @:redrawLines :: {
-                    clearCanvas();
                     @spr = spriteOffset;
                     @i = 0;
                     [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
@@ -2322,6 +2321,13 @@
                             effect: Sprite.EFFECTS.Color
                         );                    
                     };
+                    [spr+1, lastSpriteCount]->for(do:::(i) {
+                        Sprite.set(
+                            index:i,
+                            show:false
+                        );
+                    });                    
+                    
                     lastSpriteCount = spr+1;
                         
                 };

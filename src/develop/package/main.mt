@@ -26,7 +26,8 @@ textarea. = {
 SES.Input.addCallback(
     device:SES.Input.DEVICES.POINTER0,
     callback:::(event, x, y, button) {
-        SES.debug();
+        if (event == SES.Input.EVENTS.POINTER_BUTTON_DOWN) 
+            SES.debug();
     }
 );
 
