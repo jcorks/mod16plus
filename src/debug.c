@@ -41,13 +41,13 @@ static SESDebug debug = {};
 
 
 // prints to the debug console once active.
-static void debug_println(const char * format, ...) {
+static void debug_println(const char * format, int colorHint, ...) {
     
     const int MAX_STR_LEN = 2048;
     char * text = malloc(MAX_STR_LEN+1);
     text[0] = 0;
     va_list args = {};
-    va_start(args, format);
+    va_start(args, colorHint);
     vsnprintf(text, MAX_STR_LEN, format, args);
     va_end(args);
     
@@ -62,6 +62,11 @@ static void debug_println(const char * format, ...) {
     matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(debug.vm, "text");
     matteValue_t textval = matte_heap_new_value(debug.heap);
     matte_value_into_string(debug.heap, &textval, textStr);
+
+    matteString_t * colhintStr = (matteString_t*)MATTE_VM_STR_CAST(debug.vm, "colorHint");
+    matte_value_into_number(debug.heap, &textval, colhStr);
+
+
 
     matteValue_t namesArr[] = {textval};
     matteValue_t valsArr[] = {strval};                

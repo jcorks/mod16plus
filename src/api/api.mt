@@ -2167,7 +2167,6 @@
                 @chX = 0;
                 @chY = 0;
 
-
                 @:drawChar::(px, py, code) {
                     Sprite.set(
                         index: spr,
@@ -2195,7 +2194,7 @@
                 return spr;
             },
             
-            createArea ::(spriteOffset) {
+            createArea ::(spriteOffset, defaultPalette, onChange) {
                 if (spriteOffset == empty) spriteOffset = 0;
                 @TEXT_AREA_HEIGHT = 10;
                 @TEXT_AREA_WIDTH = 10;
@@ -2204,6 +2203,10 @@
                 @LAYER = 31;
                 @GLYPH_WIDTH  = 6;
                 @GLYPH_HEIGHT = 8;
+                
+                if (defaultPalette == empty)
+                    defaultPalette = 0;
+                
                 
                 Palette.set(
                     index: 0,
@@ -2216,6 +2219,7 @@
                 );
 
                 @lines = [''];
+                @colors = [[]];
                 
                 @offsetX = 0;
                 @offsetY = 0;
@@ -2236,14 +2240,15 @@
 
 
 
-                @:drawString::(string, x, y, offset) {
+                @:drawString::(string, x, y, offset, colors) {
+                     
                     @spr = offset;
                     
                     @chX = 0;
                     @chY = 0;
 
 
-                    @:drawChar::(px, py, code) {
+                    @:drawChar::(px, py, code, color) {
                         Sprite.set(
                             index: spr,
                             tile: code,
@@ -2255,17 +2260,22 @@
                             centerY: 0,
                             x: px,
                             y: py,
-                            effect: Sprite.EFFECTS.Color
+                            effect: Sprite.EFFECTS.Color,
+                            palette: color
                         );
                         spr += 1;
+                        
                     };
                     
                     [0, string->length]->for(do:::(i) {
                         drawChar(
                             px: chX * GLYPH_WIDTH  + x,
                             py: chY * GLYPH_HEIGHT + y,
-                            code: string->charCodeAt(index:i)
+                            code: string->charCodeAt(index:i),
+                            color: colors[i]
                         );        
+
+
                         chX += 1;
                     });
                     return spr;
@@ -2292,16 +2302,19 @@
                     @i = 0;
                     [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
                         @:line = lines[index];
+                        @:colorPath = colors[index];
                         when(line->length == 0) ::<= {
                             i+=1;
                         };
                         
                         @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
+                        @scrolledColor = colorPath->subset(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
                         when(scrolledLine == empty || scrolledLine->length == 0) ::<= {
                             i+=1;
                         };
 
-                        spr = drawString(offset:spr, x:offsetX, y: i*8 + offsetY, string:scrolledLine);
+                        if (scrolledColor != empty)
+                            spr = drawString(offset:spr, x:offsetX, y: i*8 + offsetY, string:scrolledLine, colors:scrolledColor);
                         i+=1;
                     });
                     
@@ -2318,7 +2331,8 @@
                             centerY: 0,
                             x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
                             y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
-                            effect: Sprite.EFFECTS.Color
+                            effect: Sprite.EFFECTS.Color,
+                            palette:defaultPalette
                         );                    
                     };
                     [spr+1, lastSpriteCount]->for(do:::(i) {
@@ -2338,6 +2352,11 @@
                     when(at == 0) text + src;
                        
                     return src->substr(from:0, to:at-1) + text + src->substr(from:at, to:src->length-1);
+                };
+                
+                @:insertColors ::(src, at, color) {
+                    when(at >= src->keycount-1) src->push(value:color);
+                    src->insert(at, value:color);
                 };
 
 
@@ -2436,8 +2455,12 @@
                         match(key) {
                           (Input.KEYS.TAB):::<= {
                             lines[cursorY] = insertText(src:lines[cursorY], at:cursorX, text:'  ');
+                            insertColors(src:colors[cursorY], at:cursorX, color:defaultPalette);
                             cursorX += 2;
                             movedRight();
+                            
+                            if (onChange != empty) onChange();
+                                
                             redrawLines();
                           },
 
@@ -2506,7 +2529,8 @@
                             when(cursorX >= lines[cursorY]->length) ::<= {
                                 cursorY += 1;
                                 cursorX = 0;
-                                lines->insert(value:'', at:cursorY);                
+                                lines->insert(value:'', at:cursorY);  
+                                colors->insert(value:[], at:cursorY);              
                                 movedDown();
                                 movedLeft();
 
@@ -2516,9 +2540,12 @@
                             when(cursorX == 0) ::<= {
                                 @line = lines[cursorY];
                                 lines[cursorY] = '';
+                                @color = colors[cursorY];
+                                colors[cursorY] = [];
                                 cursorY += 1;
                                 cursorX = 0;
                                 lines->insert(value:line, at:cursorY);
+                                colors->insert(value:color, at:cursorY);
                                 
                                 movedDown();
                                 movedLeft();
@@ -2528,9 +2555,17 @@
                             
                             @portion = lines[cursorY]->substr(from:cursorX, to:lines[cursorY]->length-1);
                             lines[cursorY] = lines[cursorY]->substr(from:0, to:cursorX-1);
+
+                            @colorPortion = colors[cursorY]->subset(from:cursorX, to:lines[cursorY]->length-1);
+                            colors[cursorY] = colors[cursorY]->subset(from:0, to:cursorX-1);
+
+                            if (colors[cursorY] == empty)
+                                colors[cursorY] = [];
+
                             cursorY += 1;
                             cursorX = 0;
-                            lines->insert(value:portion, at:cursorY);
+                            lines->insert(value:portion, at:cursorY);                            
+                            colors->insert(value:colorPortion, at:cursorY);
 
                             movedDown();
                             movedLeft();
@@ -2538,19 +2573,22 @@
                           }
                           
                         };
-
+                        if (onChange != empty) onChange();
                         redrawLines();
                     };
 
                     if (text != empty) ::<= {
                         // else, just normal text
                         @:line = lines[cursorY];
+                        @:color = colors[cursorY];
                         lines[cursorY] = insertText(src:line, at:cursorX, text);
+                        [0, text->length]->for(do:::(i) {
+                            insertColors(src:color, at:cursorX, color:defaultPalette);
+                        });
                         cursorX += 1;
                         movedRight();
 
-                    
-
+                        if (onChange != empty) onChange();
                         redrawLines();
                     };
                 };
@@ -2729,12 +2767,12 @@
                             
                             text : {
                                 get :: {
-                                    @text = '';
+                                    @linesReal = [];
                                     lines->foreach(do:::(i, line) {
-                                        if (text != '') text = text + '\n';
-                                        text = text + line;
+                                        linesReal->push(value:line);
+                                        linesReal->push(value:'\n');
                                     });
-                                    return text;
+                                    return String.combine(strings:linesReal);
                                 },
                                 
                                 
@@ -2742,22 +2780,48 @@
                                     cursorX = 1;
                                     cursorY = 0;
 
-                                    if (value == '' || value == '\n')
-                                        lines = ['']
-                                    else                                                                       
+                                    if (value == '' || value == '\n') ::<= {
+                                        lines = [''];
+                                        colors = [[]];
+                                    } else ::<= {                                                                       
                                         lines = value->split(token:'\n');
+                                        [0, lines->keycount]->for(do:::(i) {
+                                            @:color = [];;
+                                            @:line = lines[i];
+                                            [0, line->length]->for(do:::(n) {
+                                                color->push(value:defaultPalette);
+                                            });
+                                            
+                                            colors[i] = color;
+                                        });
+                                    };
 
-                                    if (LINE_LIMIT > 0)
+                                    if (LINE_LIMIT > 0) ::<= {
                                         lines = lines->subset(from:0, to:LINE_LIMIT);
+                                        colors = colors->subset(from:0, to:LINE_LIMIT);
+                                    };
+
+
                                     redrawLines();  
                                 },
                             },
                             
                             addLine ::(text) {
                                 lines->push(value:text);
+                                @:colorLine = [];
+                                [0, text->length]->for(do:::(i) {
+                                    colorLine->push(value:defaultPalette);
+                                });
+                                colors->push(value:colorLine);
+                                
                                 if (LINE_LIMIT > 0)
                                     lines = lines->subset(from:0, to:LINE_LIMIT);
+                                                                    
                                 redrawLines();  
+                            },
+                            
+                            getLine ::(index => Number) => String {
+                                return lines[index];
                             },
                             
                             lineLimit : {
@@ -2793,8 +2857,49 @@
                                 cursorX = x;
                                 cursorY = y;
                                 redrawLines();
-                            }
+                            },
+                            
+                            cursorY : {
+                                get :: <- cursorY
+                            },
 
+                            
+                            
+                            
+                            setColor ::(paletteID => Number, fromX => Number, fromY => Number, toX => Number, toY => Number) {
+                                when(toY < fromY) empty;
+                                when(toY >= colors->keycount || fromY >= colors->keycount) empty;
+                                
+                                when(fromY == toY) ::<= {
+                                    @color = colors[fromY];
+                                    [fromX, toX+1]->for(do:::(x) {
+                                        color[x] = paletteID;
+                                    });
+                                };
+                                
+                                
+                                when(fromY < toY) ::<= {
+                                    @color = colors[fromY];
+                                    [fromX, color->length]->for(do:::(x) {
+                                        color[x] = paletteID;
+                                    });
+
+
+                                    [fromY, toY]->for(do:::(y) {
+                                        color = colors[y];
+                                        [0, color->length]->for(do:::(x) {
+                                            color[x] = paletteID;
+                                        });
+                                    });
+
+                                    color = colors[toY];
+                                    [0, toX+1]->for(do:::(x) {
+                                        color[x] = paletteID;
+                                    });
+
+                                };
+                            
+                            }
 
                         };
                     }
@@ -2809,7 +2914,7 @@
 
 
 
-return class(
+@:SES = class(
     name: 'SES',
     
     define:::(this) {
@@ -2914,8 +3019,57 @@ return class(
                 @cursor;
                 @entry;
                 @callbackID;
+                
+                
+                // normal                
+                Palette.set(
+                    index: 0,
+                    colors: [
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0.6, 0.6, 0.6]
+                    ]
+                );
+
+                // code
+                Palette.set(
+                    index: 1,
+                    colors: [
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0.8, 0.5, 0.85]
+                    ]
+                );
+
+                // error
+                Palette.set(
+                    index: 2,
+                    colors: [
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [1, 0.3, 0.3]
+                    ]
+                );
+
+                // enter
+                Palette.set(
+                    index: 3,
+                    colors: [
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [1, 1, 1]
+                    ]
+                );
+
+
+                
                 @:onDebugPrint::(text => String, colorHint) {
                     display.addLine(text);
+                    display.setColor(paletteID:colorHint, fromX:0, toX:text->length-1, fromY:display.cursorY, toY:display.cursorY);
                     display.setScrollBottom();
                 };
                 
@@ -2943,7 +3097,7 @@ return class(
                         widthChars: 1,
                     };         
 
-                    entry = Text.createArea(spriteOffset:4000);
+                    entry = Text.createArea(spriteOffset:4000. defaultPalette:3);
                     entry. = {
                         widthChars: (this.resolutionWidth / 6)->floor,
                         heightChars: 1,
@@ -2962,7 +3116,7 @@ return class(
                                 ses_native__debug_context_query(a:entry.text => String);
                                 entry.text = '';
                                 entry.scrollY = 0;
-                                entry.moveCursor(x:0, y:0);       
+                                entry.moveCursor(x:0, y:0); 
                             };
                         }
                     );                
@@ -3015,3 +3169,5 @@ return class(
     
     }
 ).new();
+
+return SES;
