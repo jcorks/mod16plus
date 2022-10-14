@@ -2208,15 +2208,7 @@
                     defaultPalette = 0;
                 
                 
-                Palette.set(
-                    index: 0,
-                    colors: [
-                        [0, 0, 0],
-                        [0, 1, 0],
-                        [0, 0, 1],
-                        [1, 1, 1]
-                    ]
-                );
+
 
                 @lines = [''];
                 @colors = [[]];
@@ -2554,9 +2546,9 @@
                             };
                             
                             @portion = lines[cursorY]->substr(from:cursorX, to:lines[cursorY]->length-1);
-                            lines[cursorY] = lines[cursorY]->substr(from:0, to:cursorX-1);
-
                             @colorPortion = colors[cursorY]->subset(from:cursorX, to:lines[cursorY]->length-1);
+
+                            lines[cursorY] = lines[cursorY]->substr(from:0, to:cursorX-1);
                             colors[cursorY] = colors[cursorY]->subset(from:0, to:cursorX-1);
 
                             if (colors[cursorY] == empty)
@@ -2824,6 +2816,10 @@
                                 return lines[index];
                             },
                             
+                            getLineCount:: {
+                                return lines->keycount;
+                            },
+                            
                             lineLimit : {
                                 set ::(value) <- LINE_LIMIT = value
                             },
@@ -2867,9 +2863,9 @@
                             
                             
                             setColor ::(paletteID => Number, fromX => Number, fromY => Number, toX => Number, toY => Number) {
-                                when(toY < fromY) empty;
-                                when(toY >= colors->keycount || fromY >= colors->keycount) empty;
-                                
+                                when(toY < fromY) print(message:'toY'+toY+' fromY'+fromY);
+                                when(toY >= colors->keycount || fromY >= colors->keycount) print(message:'toY'+toY+' numColLines'+colors->keycount);
+                                when(toY < 0) empty;
                                 when(fromY == toY) ::<= {
                                     @color = colors[fromY];
                                     [fromX, toX+1]->for(do:::(x) {
@@ -3021,55 +3017,13 @@
                 @callbackID;
                 
                 
-                // normal                
-                Palette.set(
-                    index: 0,
-                    colors: [
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [0.6, 0.6, 0.6]
-                    ]
-                );
 
-                // code
-                Palette.set(
-                    index: 1,
-                    colors: [
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [0.8, 0.5, 0.85]
-                    ]
-                );
-
-                // error
-                Palette.set(
-                    index: 2,
-                    colors: [
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [1, 0.3, 0.3]
-                    ]
-                );
-
-                // enter
-                Palette.set(
-                    index: 3,
-                    colors: [
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [1, 1, 1]
-                    ]
-                );
 
 
                 
                 @:onDebugPrint::(text => String, colorHint) {
                     display.addLine(text);
-                    display.setColor(paletteID:colorHint, fromX:0, toX:text->length-1, fromY:display.cursorY, toY:display.cursorY);
+                    display.setColor(paletteID:colorHint, fromX:0, toX:text->length-1, fromY:display.getLineCount()-1, toY:display.getLineCount()-1);
                     display.setScrollBottom();
                 };
                 
@@ -3078,6 +3032,8 @@
                 };
                 
                 @:onDebugInit :: {
+           
+                
                     display = Text.createArea();
                     display. = {
                         widthChars: (this.resolutionWidth / 6)->floor,
@@ -3097,7 +3053,7 @@
                         widthChars: 1,
                     };         
 
-                    entry = Text.createArea(spriteOffset:4000. defaultPalette:3);
+                    entry = Text.createArea(spriteOffset:4000, defaultPalette:3);
                     entry. = {
                         widthChars: (this.resolutionWidth / 6)->floor,
                         heightChars: 1,
@@ -3124,8 +3080,50 @@
                     
                 ses_native__debug_context_enter(a:onDebugPrint, b:onDebugClear, c:onDebugInit);
                 
-               
-   
+           
+                // normal                
+                Palette.set(
+                    index: 0,
+                    colors: [
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0.6, 0.6, 0.6]
+                    ]
+                );
+
+                // code
+                Palette.set(
+                    index: 1,
+                    colors: [
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0.87, 0.8, 0.5]
+                    ]
+                );
+
+                // error
+                Palette.set(
+                    index: 2,
+                    colors: [
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [1, 0.3, 0.3]
+                    ]
+                );
+
+                // enter
+                Palette.set(
+                    index: 3,
+                    colors: [
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [1, 1, 1]
+                    ]
+                );     
 
                 // for debug context
 
