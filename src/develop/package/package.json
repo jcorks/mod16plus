@@ -1,5 +1,9 @@
 {
   "sources" : [
-    "main.mt"
+    "main.mt",
+    "view.mt",
+    "editor.mt",
+    "window.mt",
+    "fetcher.mt"
   ]
 }

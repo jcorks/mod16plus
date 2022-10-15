@@ -319,6 +319,7 @@ static SES_GLTile *              bound_tile = NULL;
 static uint32_t                  bound_tile_id = 0;
 static int                       bound_tile_dirty = 0;
 static SES_GLBackgroundTexture * bound_tile_background = NULL;
+static uint8_t                   background_empty[BACKGROUND_TILE_WIDTH * BACKGROUND_TILE_HEIGHT * TILE_SIZE * TILE_SIZE] = {};
 
 void ses_sdl_gl_bind_tile(uint32_t id) {
     if (id > TILE_SPRITE_MAX_ID) {
@@ -343,7 +344,7 @@ void ses_sdl_gl_bind_tile(uint32_t id) {
                 0,
                 GL_ALPHA,
                 GL_UNSIGNED_BYTE,
-                NULL
+                background_empty
             );
 
             glTexParameteri(

@@ -2463,6 +2463,7 @@
                                 when(lines->keycount == 1) empty;
 
                                 lines->remove(key:cursorY);
+                                colors->remove(key:cursorY);
                                 cursorY-=1;
                                 cursorX = lines[cursorY]->length;
                                 movedUp();
@@ -2473,11 +2474,17 @@
                             // remove newline + merge previous line
                             when(cursorX == 0) ::<= {
                                 when(lines->keycount == 1) empty;
+                                when(cursorY == 0) empty;
                                 @oldText = lines[cursorY];
                                 lines->remove(key:cursorY);
+                                @oldColor = colors[cursorY];
+                                colors->remove(key:cursorY);
                                 cursorY-=1;
                                 cursorX = lines[cursorY]->length;
                                 lines[cursorY] = lines[cursorY] + oldText;
+                                oldColor->foreach(do:::(i, color) {
+                                    colors[cursorY]->push(value:color);
+                                });
                                 movedUp();
                                 movedLeft();
                             

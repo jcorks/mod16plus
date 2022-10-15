@@ -468,7 +468,7 @@ matteValue_t ses_sdl_palette_attrib(matteVM_t * vm, matteValue_t fn, const matte
 
     uint32_t id = matte_value_as_number(heap, args[0]);
     
-    if (id >= matte_array_get_size(sdl.main.palettes)) {
+    while (id >= matte_array_get_size(sdl.main.palettes)) {
         SES_Palette p = {};
         matte_array_push(sdl.main.palettes, p);
     }
