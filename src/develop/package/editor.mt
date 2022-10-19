@@ -2,7 +2,6 @@
 @:SES = import(module:'SES.Core');
 @:class = import(module:'Matte.Core.Class');
 @:Fetcher = import(module:'fetcher.mt');
-
 @:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
 SES.Palette.set(
     index: PALETTE__NORMAL_TEXT,
@@ -203,7 +202,7 @@ Fetcher.Sprite.claimIDs(amount:30*18);
                 });
             };
             
-            @title = SES.Text.createArea(defaultPalette:PALETTE__NORMAL_TEXT, spriteOffset:SPRITE__BEGIN_TITLE);
+            @title = SES.Text.createArea(defaultPalette:PALETTE__COMMENT, spriteOffset:SPRITE__BEGIN_TITLE);
             title.text = 'main.mt';
 
 
@@ -306,7 +305,16 @@ Fetcher.Sprite.claimIDs(amount:30*18);
 
 
         
-        @:newFile ::{};
+        @:newFile ::{
+            @:Window = import(module:'window.mt');
+            Window.question(
+                text: 'Is this working?',
+                onResponse:::(which){
+                
+                }
+            );
+        
+        };
         @:removeFile ::{};
         @:switchFile ::{};
         
@@ -318,14 +326,9 @@ Fetcher.Sprite.claimIDs(amount:30*18);
             // called when clicking the actions.
             menus : {
                 get :: <- [
-                    ['File', 
-                        [
-                            ['New', newFile],
-                            ['Remove', removeFile]
-                        ]
-                    ],
-                    
-                    ['Switch', switchFile]
+                    [' New ' , newFile],
+                    [' Del.', removeFile],                 
+                    [' Open', switchFile]
                 ]
             },
             
@@ -343,5 +346,7 @@ Fetcher.Sprite.claimIDs(amount:30*18);
     }
     
 );
+
+
 
 return Editor;

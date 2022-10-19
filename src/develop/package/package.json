@@ -4,6 +4,7 @@
     "view.mt",
     "editor.mt",
     "window.mt",
-    "fetcher.mt"
+    "fetcher.mt",
+    "button.mt"
   ]
 }

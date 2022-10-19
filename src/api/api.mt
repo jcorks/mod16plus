@@ -2327,7 +2327,7 @@
                             palette:defaultPalette
                         );                    
                     };
-                    [spr+1, lastSpriteCount]->for(do:::(i) {
+                    [spr, lastSpriteCount]->for(do:::(i) {
                         Sprite.set(
                             index:i,
                             show:false

@@ -631,7 +631,7 @@ matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue
     uint32_t id = matte_value_as_number(heap, args[0]);
     while(id >= matte_array_get_size(sdl.main.bgs)) {
         SES_Background bg = {};
-        bg.id = id;
+        bg.id = matte_array_get_size(sdl.main.bgs);
         matte_array_push(sdl.main.bgs, bg);
     }
     SES_Background * bg = &matte_array_at(sdl.main.bgs, SES_Background, id);
