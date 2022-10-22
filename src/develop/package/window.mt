@@ -12,11 +12,9 @@
 
 
 @BACKGROUND_TOP0 = Fetcher.Background.newID();
-@BACKGROUND_TOP1 = Fetcher.Background.newID();
 
 
 @BACKGROUND_BOTTOM0 = Fetcher.Background.newID();
-@BACKGROUND_BOTTOM1 = Fetcher.Background.newID();
 
 
 SES.Tile.set(
@@ -75,33 +73,22 @@ SES.Palette.set(
 
 
     // sets tile background
-    [0, 16]->for(do:::(i) {
+    [0, 32]->for(do:::(i) {
         SES.Tile.copy(from:TILE_BG, to: Fetcher.backgroundIDtoTileID(id:BACKGROUND_TOP0)+i);
     });
     SES.Background.set(index:BACKGROUND_TOP0, show:true, x:0, y:0, layer:0, effect:SES.Background.EFFECTS.COLOR, palette:PALETTE_GRAY);
 
-    // sets tile background
-    [0, 16]->for(do:::(i) {
-        SES.Tile.copy(from:TILE_BG, to: Fetcher.backgroundIDtoTileID(id:BACKGROUND_TOP1)+i);
-    });
-    SES.Background.set(index:BACKGROUND_TOP1, show:true, x:16*8, y:0, layer:0, effect:SES.Background.EFFECTS.COLOR, palette:PALETTE_GRAY);
-
 
 
 
 
 
     // sets tile background
-    [0, 16]->for(do:::(i) {
+    [0, 32]->for(do:::(i) {
         SES.Tile.copy(from:TILE_BG, to: Fetcher.backgroundIDtoTileID(id:BACKGROUND_BOTTOM0)+i);
     });
     SES.Background.set(index:BACKGROUND_BOTTOM0, show:true, x:0, y:19*8, layer:0, effect:SES.Background.EFFECTS.COLOR, palette:PALETTE_GRAY);
 
-    // sets tile background
-    [0, 16]->for(do:::(i) {
-        SES.Tile.copy(from:TILE_BG, to: Fetcher.backgroundIDtoTileID(id:BACKGROUND_BOTTOM1)+i);
-    });
-    SES.Background.set(index:BACKGROUND_BOTTOM1, show:true, x:16*8, y:19*8, layer:0, effect:SES.Background.EFFECTS.COLOR, palette:PALETTE_GRAY);
 
 };
 
@@ -135,21 +122,26 @@ SES.Palette.set(
     });
 };
 
-@:views = [
-    Editor.new()
-];
+@:views = [];
 
 
-selectView(view:views[0]);
 
 
 return class(
     define:::(this) {
         @dialogButtons = {
             yes: Button.new(),
-            no: Button.new()  
+            no: Button.new(),
+            ok: Button.new()
         };
-        
+        dialogButtons.yes.enabled = false;
+        dialogButtons.no.enabled = false;
+        dialogButtons.ok.enabled = false;
+
+        dialogButtons.yes.text = ' yes ';
+        dialogButtons.no.text =  ' no  ';
+        dialogButtons.ok.text =  ' ok  ';
+
         dialogButtons.yes.enabled = false;
         dialogButtons.no.enabled = false;
         @dialogBG = Fetcher.Background.newID();
@@ -158,81 +150,129 @@ return class(
         
         // populate bg
         @bgOffset = Fetcher.backgroundIDtoTileID(id:dialogBG);
-        [0, 16*8]->for(do:::(i) {
+        [0, 32*16]->for(do:::(i) {
             SES.Tile.copy(from:TILE_BG, to:bgOffset+i);
         });
         
-        @dialogQuestion = SES.Text.createArea(spriteOffset:dialogOffset, defaultPalette:PALETTE_GRAY);
-        dialogQuestion. = {
+        @dialogPrompt = SES.Text.createArea(spriteOffset:dialogOffset, defaultPalette:PALETTE_GRAY);
+        dialogPrompt. = {
             editable : false,
             text : '',
             widthChars : 30
         };
 
-        this.interface = {
-            question::(text => String, onResponse => Function) {
-                Button.allowOnly(
-                    which:[dialogButtons.yes, dialogButtons.no]
+
+        @:prepareDialog ::(buttons, prompt) {
+            textBoxes->foreach(do:::(index, box) {
+                box.editable = false;
+            });
+            Button.allowOnly(
+                which:[...buttons]->map(to:::(value) <- value[0])
+            );
+
+            SES.Background.set(
+                index:dialogBG, 
+                show:true,
+                palette:PALETTE_GRAY,
+                x: (30*8)/2 - (32*8)/2,
+                y: (20*8)/2 - (16*8)/2
+            );
+            
+            dialogPrompt.text = prompt;                
+            dialogPrompt. = {
+                x: (30 * 8) / 2 - prompt->length * 3,
+                y: (20 * 8) / 2 - 12,                
+                
+            };
+                    
+            buttons->foreach(do:::(index, button) {
+                button[0].enabled = true;
+                button[0].setup(
+                    x: (30 * 8) / 2 - 15,
+                    y: (20 * 8) / 2 + 10*index,
+                    onClick : button[1]
                 );
-                SES.Background.set(
-                    index:dialogBG, 
-                    show:true,
-                    palette:PALETTE_GRAY,
-                    x: (30*8)/2 - (16*8)/2,
-                    y: (20*8)/2 - (8*8)/2
-                );
-                
-                dialogQuestion.text = text;                
-                dialogQuestion. = {
-                    x: (30 * 8) / 2 - text->length * 3,
-                    y: (20 * 8) / 2 - 12,                
-                    
-                };
-                
-                
+            });
 
+        };
+        
+        @:putAwayDialog :: {
+            textBoxes->foreach(do:::(index, box) {
+                box.editable = true;
+            });
+            
 
-                @:response ::(which) {
-                    dialogQuestion.text = ' ';
-                    dialogButtons.yes.enabled = false;
-                    dialogButtons.no.enabled = false;
-                    
-                    dialogQuestion.x = -1000;
-                    dialogButtons.yes.setup(
-                        string: ' ',
-                        x: -1000,
-                        y: 0
-                    );
-
-                    dialogButtons.no.setup(
-                        string: ' ',
-                        x: -1000,
-                        y: 0
-                    );                    
-                    onResponse(which);
-                    Button.allowAgain();
-                    
-                    SES.Background.set(index:dialogBG, show:false);
-                    
+            dialogPrompt.text = ' ';
+            dialogButtons->foreach(do:::(i, button) {
+                button.enabled = false;
+            });
+                        
+            dialogPrompt.x = -1000;           
+            Button.allowAgain();
+            
+            SES.Background.set(index:dialogBG, show:false);
+            
                    
-                };
+        };
+
+
+
+        @:textBoxes = [];
+
+
+        this.interface = {
+            start :: {
+                views->push(value:Editor.new());
+                selectView(view:views[0]);
+            },
+            
+            createTextBox::(
+                defaultPalette,
+                onChange
+            ) {
+                @:spriteOffset = Fetcher.Sprite.newID();
+                Fetcher.Sprite.claimIDs(amount:(30*8 / 6) * 20);
+                @:out = SES.Text.createArea(
+                    defaultPalette,
+                    spriteOffset,
+                    onChange
+                );      
+                textBoxes->push(value:out);
+                return out; 
+            },
+        
+            question::(text => String, onResponse => Function) {
                 
-                dialogButtons.yes.setup(
-                    string: ' yes ',
-                    x: (30 * 8) / 2 - 15,
-                    y: (20 * 8) / 2,
-                    onClick : response
+                prepareDialog(
+                    buttons: [
+                        [dialogButtons.yes, ::{
+                            putAwayDialog();
+                            onResponse(which:true);
+                        }],
+                        [dialogButtons.no, ::{
+                            putAwayDialog();
+                            onResponse(which:false);
+                        }],
+                    ],
+                    prompt: text
                 );
 
-                dialogButtons.no.setup(
-                    string: ' no  ',
-                    x: (30 * 8) / 2 - 15,
-                    y: (20 * 8) / 2 + 10,
-                    
-                    onClick : response
+            },
+            
+            alert::(text => String, onOkay) {
+                
+                prepareDialog(
+                    buttons: [
+                        [dialogButtons.ok, ::{
+                            putAwayDialog();
+                            if (onOkay != empty) onOkay();
+                        }]
+                    ],
+                    prompt: text
                 );
 
-            }
+            },
+            
         };
     }
 

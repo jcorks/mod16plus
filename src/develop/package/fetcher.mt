@@ -49,6 +49,6 @@ return {
     // that the given background starts at.
     // Backgrounds are always 16 x 8 tiles.
     backgroundIDtoTileID::(id) {
-        return 0x40000 + (id * 8*16);
+        return 0x40000 + (id * 32*16);
     }
 };

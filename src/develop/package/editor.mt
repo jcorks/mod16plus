@@ -108,8 +108,6 @@ SES.Palette.set(
 @:SPRITE__BEGIN_TITLE = Fetcher.Sprite.newID();
 Fetcher.Sprite.claimIDs(amount:30);
 
-@:SPRITE__BEGIN_TEXT = Fetcher.Sprite.newID();
-Fetcher.Sprite.claimIDs(amount:30*18);
 
 
 
@@ -205,9 +203,8 @@ Fetcher.Sprite.claimIDs(amount:30*18);
             @title = SES.Text.createArea(defaultPalette:PALETTE__COMMENT, spriteOffset:SPRITE__BEGIN_TITLE);
             title.text = 'main.mt';
 
-
-            @textarea = SES.Text.createArea(
-              spriteOffset: SPRITE__BEGIN_TEXT,
+            @:Window = import(module:'window.mt');
+            @textarea = Window.createTextBox(
               defaultPalette : PALETTE__NORMAL_TEXT,  
               onChange:: {
 
@@ -278,7 +275,7 @@ Fetcher.Sprite.claimIDs(amount:30*18);
 
             // full GBA screen
             textarea. = {
-                widthChars  : this.width,
+                widthChars  : this.width * (8 / 6)-1,
                 heightChars : this.height,    
                 x : this.x * 8,
                 y : this.y * 8,
@@ -315,7 +312,10 @@ Fetcher.Sprite.claimIDs(amount:30*18);
             );
         
         };
-        @:removeFile ::{};
+        @:removeFile ::{
+            @:Window = import(module:'window.mt');
+            Window.alert(text:'Cannot remove the main script.');
+        };
         @:switchFile ::{};
         
         this.interface = {

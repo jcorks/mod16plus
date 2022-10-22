@@ -12,8 +12,8 @@
 #define TILE_SPRITE_MAX_ID (TILES_PER_TEXTURE*TEXTURE_COUNT-1)
 
 #define BACKGROUND_COUNT 512
-#define BACKGROUND_TILE_WIDTH 16
-#define BACKGROUND_TILE_HEIGHT 8
+#define BACKGROUND_TILE_WIDTH 32
+#define BACKGROUND_TILE_HEIGHT 16
 #define REAL_BACKGROUND_SIZE 128
 #define TILES_PER_BACKGROUND (BACKGROUND_TILE_HEIGHT * BACKGROUND_TILE_WIDTH)
 typedef struct {
@@ -312,7 +312,7 @@ void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
 
 
 
-static uint8_t NO_TILE_DATA[64] = {};
+static uint8_t NO_TILE_DATA[TILE_SIZE*TILE_SIZE] = {};
 
 static SES_GLTileTexture *       bound_tile_texture = NULL;
 static SES_GLTile *              bound_tile = NULL;
@@ -745,11 +745,11 @@ void ses_sdl_gl_render_sprite(
     glBindBuffer(GL_ARRAY_BUFFER, gl.spriteProgram.vbo);
     SES_VBOvertex vboData[] = {
         {0, 0, u,      v},
-        {8, 0, u+unit, v},
-        {8, 8, u+unit, v+unit},
+        {TILE_SIZE, 0, u+unit, v},
+        {TILE_SIZE, TILE_SIZE, u+unit, v+unit},
 
-        {8, 8, u+unit, v+unit},
-        {0, 8, u,      v+unit},
+        {TILE_SIZE, TILE_SIZE, u+unit, v+unit},
+        {0, TILE_SIZE, u,      v+unit},
         {0, 0, u,      v}
     };
     

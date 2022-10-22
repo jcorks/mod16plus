@@ -575,7 +575,7 @@
 // corresponding to the expected IDs.
 //
 // IDs are ordered from topleft to bottomright
-// in rows, where each row is 16 tiles with 8 rows 
+// in rows, where each row is 32 tiles with 16 rows 
 // per background.
 //
 // NOTE: background tiles CANNOT be used as 
@@ -605,6 +605,10 @@
     
     return class(
         name: 'SES.Background',
+        statics : {
+            WIDTH_TILES:32,
+            HEIGHT_TILES:16
+        },
         define:::(this) {
             this.interface = {
                 set::(
@@ -2310,6 +2314,13 @@
                         i+=1;
                     });
                     
+                    [spr, lastSpriteCount]->for(do:::(i) {
+                        Sprite.set(
+                            index:i,
+                            show:false
+                        );
+                    });                    
+                    
                     // cursor
                     if (inputCallbackID != empty) ::<= {
                         Sprite.set(
@@ -2326,15 +2337,11 @@
                             effect: Sprite.EFFECTS.Color,
                             palette:defaultPalette
                         );                    
-                    };
-                    [spr, lastSpriteCount]->for(do:::(i) {
-                        Sprite.set(
-                            index:i,
-                            show:false
-                        );
-                    });                    
-                    
-                    lastSpriteCount = spr+1;
+                        lastSpriteCount = spr+1;
+                    } else 
+                        lastSpriteCount = spr;
+
+
                         
                 };
 
@@ -2461,13 +2468,14 @@
                             // remove "newline"
                             when (lines[cursorY] == '') ::<={
                                 when(lines->keycount == 1) empty;
+                                when(cursorY == 0) empty;
 
                                 lines->remove(key:cursorY);
                                 colors->remove(key:cursorY);
                                 cursorY-=1;
-                                cursorX = lines[cursorY]->length;
                                 movedUp();
                                 movedLeft();
+                                cursorX = lines[cursorY]->length;
                             };
                             
                             

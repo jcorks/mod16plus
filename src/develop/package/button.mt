@@ -136,15 +136,16 @@ return class(
                 onClick,
                 x => Number, 
                 y => Number,
-                string => String
+                string
             ) {
-                when(string->length > 15) 
+                when(string != empty && string->length > 15) 
                     error(detail:'Button text only allowed to be 15 characters');
             
                 if (onEnter != empty) _onEnter = onEnter => Function;
                 if (onLeave != empty) _onLeave = onLeave => Function;
                 if (onClick != empty) _onClick = onClick => Function;
-                text.text = string;                
+                if (string != empty)
+                    text.text = string => String;                
                 widthtiles = ((text.text->length * 6) / 8)->floor;
                 _x = x;
                 _y = y;
@@ -160,20 +161,53 @@ return class(
                     show:true,
                     x: _x,
                     y: _y,
+                    layer:15,
                     palette: PALETTE_TEXT
                 );
                 
                 redrawBackground();
             },
-            
+            text : {
+                get ::<- text.text,
+                set ::(value) {
+                    this.setup(x:_x, y:_y, string:value);
+                }
+            },
             
             enabled : {
                 get ::<- enabled,
                 set ::(value) {
-                    enabled = value;
-                    entered = false;
+                    if (enabled != value) ::<= {
+                    
+                        enabled = value;
+                        entered = false;
+                        if (value == false)     
+                            this.x -= 10000
+                        else 
+                            this.x += 10000
+                        ;
+                    };
+                }
+            },
+            
+            x : {
+                get ::<- _x,
+                set ::(value) {
+                    _x = value;
+                    text.x = value;
+                    SES.Background.set(index:bg, x:_x);
                     redrawBackground();
                 }
+            }, 
+            
+            y : {
+                get ::<- _y,
+                set ::(value) {
+                    _y = value;
+                    text.y = value;
+                    SES.Background.set(index:bg, y:_y);
+                    redrawBackground();
+                }            
             },
             
             
