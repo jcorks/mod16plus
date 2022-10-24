@@ -67,7 +67,7 @@ static void ses_native__print(matteVM_t * vm, const matteString_t * str, void * 
 
 int main(int argc, char ** argv) {
     printf("Sprite Entertainment System\nJohnathan Corkery, 2022\njcorkery@umich.edu\n\n");
-    
+    int developRom = 0;;
     if (argc < 3||
             (
                 strcmp(argv[1], "run") &&
@@ -96,6 +96,7 @@ int main(int argc, char ** argv) {
         return ses_package(argv[2]);
         
     } else if (!strcmp(argv[1], "develop")) {
+        
         romBytes = ses_develop_get_rom(&romLength);
     } else {
         romBytes = dump_bytes(argv[2], &romLength);
@@ -105,7 +106,7 @@ int main(int argc, char ** argv) {
         printf("The ROM was empty or unreadable. Exiting.\n");
         return 1;
     }
-
+developRom = 1;
     matte_t * m = matte_create();
     matteVM_t * vm = matte_get_vm(m);
     matte_vm_set_print_callback(vm, ses_native__print, NULL);
@@ -156,10 +157,16 @@ int main(int argc, char ** argv) {
     );
     
     
-    // run main.mt
+    
+    if (developRom) {
+        // enable extra features needed for development 
+        ses_package_bind_natives(vm);
+    }
+    
+    // run main
     matteValue_t output = matte_vm_import(
         vm,
-        MATTE_VM_STR_CAST(vm, "main.mt"),
+        MATTE_VM_STR_CAST(vm, "main"),
         matte_heap_new_value(matte_vm_get_heap(vm))
     );
     

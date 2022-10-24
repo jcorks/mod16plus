@@ -1,10 +1,11 @@
 {
   "sources" : [
-    "main.mt",
-    "view.mt",
-    "editor.mt",
-    "window.mt",
-    "fetcher.mt",
-    "button.mt"
+    "main",
+    "view",
+    "editor",
+    "window",
+    "fetcher",
+    "button",
+    "project"
   ]
 }

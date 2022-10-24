@@ -1,7 +1,7 @@
-@:View = import(module:'view.mt');
+@:View = import(module:'view');
 @:SES = import(module:'SES.Core');
 @:class = import(module:'Matte.Core.Class');
-@:Fetcher = import(module:'fetcher.mt');
+@:Fetcher = import(module:'fetcher');
 @:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
 SES.Palette.set(
     index: PALETTE__NORMAL_TEXT,
@@ -114,8 +114,9 @@ Fetcher.Sprite.claimIDs(amount:30);
 @:Editor = class(
     inherits : [View],
     define:::(this) {
-        
-
+        @filename = 'main';
+        @getSourceData;
+        @setSourceData;
         this.constructor = ::{
             @:searches = [
                 {token: 'if', palette: PALETTE__KEYWORD},
@@ -201,9 +202,9 @@ Fetcher.Sprite.claimIDs(amount:30);
             };
             
             @title = SES.Text.createArea(defaultPalette:PALETTE__COMMENT, spriteOffset:SPRITE__BEGIN_TITLE);
-            title.text = 'main.mt';
+            title.text = filename;
 
-            @:Window = import(module:'window.mt');
+            @:Window = import(module:'window');
             @textarea = Window.createTextBox(
               defaultPalette : PALETTE__NORMAL_TEXT,  
               onChange:: {
@@ -292,31 +293,67 @@ Fetcher.Sprite.claimIDs(amount:30);
                 scrollable : false
             };
 
-
+            getSourceData = ::{
+                return textarea.text;
+            };
             
+            setSourceData = ::(text) {
+                textarea.text = text;
+            };
             return this;
         };
 
 
 
-
+        @:allWhitespace ::(text){
+            return [::] {
+                [0, text->length]->for(do:::(i) {
+                    match(text->charAt(index:i)) {
+                      (' ', '\t', '\n', '\r'): empty,
+                      default: send(message:false)
+                    };
+                });
+                return true;
+            };
+        
+        };
 
         
         @:newFile ::{
-            @:Window = import(module:'window.mt');
+            @:Window = import(module:'window');
+            Window.entryDialog(
+                text: 'Enter a name for the new script:',
+                onEntry:::(text){
+
+                    when (allWhitespace(text)) 
+                        Window.alert(text:'Name cannot be empty.');
+                        
+                    Window.alert(text:'New file: ' + text);
+                    
+                }
+            );                
+            
+        
+        };
+        @:removeFile ::{
+            @:Window = import(module:'window');
+            Window.alert(text:'Cannot remove the main script.');
+        };
+        @:switchFile ::{
+            @:Window = import(module:'window');
             Window.question(
                 text: 'Is this working?',
                 onResponse:::(which){
                 
                 }
-            );
+            );                
+        };
         
+        @:saveFile :: {
+            @:Project = import(module:'project');
+            Project.saveSource(name:filename, data:getSourceData());
+            
         };
-        @:removeFile ::{
-            @:Window = import(module:'window.mt');
-            Window.alert(text:'Cannot remove the main script.');
-        };
-        @:switchFile ::{};
         
         this.interface = {
             // All the menus within the 
@@ -326,9 +363,10 @@ Fetcher.Sprite.claimIDs(amount:30);
             // called when clicking the actions.
             menus : {
                 get :: <- [
-                    [' New ' , newFile],
-                    [' Del.', removeFile],                 
-                    [' Open', switchFile]
+                    [' New  ' , newFile],
+                    [' Save ' , saveFile],
+                    [' Del. ', removeFile],                 
+                    [' Open ', switchFile]
                 ]
             },
             
@@ -341,7 +379,15 @@ Fetcher.Sprite.claimIDs(amount:30);
             },
             
             // called when a view is left.
-            onViewPause ::{}    
+            onViewPause ::{},
+            
+            
+            openFile ::(name) {
+                filename = name;
+                @:Project = import(module:'project');
+                setSourceData(text:Project.openSource(name));
+                
+            }
         };
     }
     

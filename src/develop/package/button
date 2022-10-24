@@ -1,6 +1,6 @@
 @:SES = import(module:'SES.Core');
 @:class = import(module:'Matte.Core.Class');
-@:Fetcher = import(module:'fetcher.mt');
+@:Fetcher = import(module:'fetcher');
 
 @:PALETTE_TEXT = Fetcher.Palette.newID();
 

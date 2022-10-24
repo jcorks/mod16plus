@@ -14,6 +14,97 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __unix__
+    const char * BASE_DIR = "/usr/share/SES/projects/";
+    #include <unistd.h>
+    static void make_project_dir(const char * name) {
+        matteString_t * path = matte_string_create_from_c_str("%s%s", BASE_DIR, name);
+        mkdir(matte_string_get_c_str(path));
+        matte_string_destroy(path);
+    };
+    
+    static matteString_t * build_path(const matteString_t * project, const matteString_t * file) {
+        matteString_t * out = matte_string_create_from_c_str("%s", BASE_DIR);
+        matte_string_concat(out, project);
+        matteString_t * slash = matte_string_create_from_c_str("/");
+        matte_string_concat(out, slash);
+        matte_string_concat(out, file);
+        matte_string_destroy(slash);
+        return out;
+    }
+#elif __WIN32__
+    const char * BASE_DIR = "C:\\SES\\projects\\";
+#endif
+
+
+static matteValue_t package_native__save_source (matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteString_t * fullpath = build_path(
+        matte_value_string_get_string_unsafe(heap, args[0]),
+        matte_value_string_get_string_unsafe(heap, args[1])    
+    );
+    
+    // make a byte array
+    const matteString_t * data = matte_value_string_get_string_unsafe(heap, args[2]);
+    
+    
+    int result = dump_file(
+        matte_string_get_c_str(fullpath),
+        matte_string_get_c_str(data),
+        strlen(matte_string_get_c_str(data))
+    );
+    
+    matteValue_t out = matte_heap_new_value(heap);
+    matte_value_into_boolean(heap, &out, result);
+    return out;
+
+}
+static matteValue_t package_native__save_project(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    return matte_heap_new_value(heap);
+
+}
+static matteValue_t package_native__open_source (matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteString_t * fullpath = matte_string_create_from_c_str("%s", BASE_DIR);
+    matte_string_concat(fullpath, matte_value_string_get_string_unsafe(heap, args[0]));
+    matte_string_concat(fullpath, matte_value_string_get_string_unsafe(heap, args[1]));
+    
+    // make a byte array
+    const matteString_t * data = matte_value_string_get_string_unsafe(heap, args[2]);
+    
+    uint32_t len = 0;
+    void * bytes = dump_bytes(
+        matte_string_get_c_str(fullpath),
+        &len
+    );
+    
+    char * str = malloc(len+1);
+    memcpy(str, bytes, len);
+    str[len] = 0;
+    free(bytes);
+    
+    matteString_t * strval = matte_string_create_from_c_str("%s", str);
+    free(str);
+    
+    
+    matteValue_t out = matte_heap_new_value(heap);
+    matte_value_into_string(heap, &out, strval);
+    matte_string_destroy(strval);
+    return out;
+}
+
+
+void ses_package_bind_natives(matteVM_t * vm) {
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__save_source"), 3, package_native__save_source, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__save_project"), 2, package_native__save_project, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__open_source"), 2, package_native__open_source, NULL);
+    
+}
+
+
+
+
 // given bytes to a text file, returns an array of matteString_t * of 
 // each line.
 static matteArray_t * package_split(const char * dir, const char * sub) {

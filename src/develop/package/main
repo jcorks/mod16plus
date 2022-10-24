@@ -1,0 +1,6 @@
+@:Window = import(module:'window');
+
+
+Window.start();
+
+

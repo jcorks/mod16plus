@@ -1,7 +1,7 @@
 #ifndef H_SES_PACKAGE_INCLUDED
 #define H_SES_PACKAGE_INCLUDED
 
-
+typedef struct matteVM_t matteVM_t;
 // Creates a rom.ses based on the files 
 // within the given directory.
 //
@@ -12,5 +12,12 @@
 // files relevant to each resource to be packed into the 
 // resultant rom.
 int ses_package(const char * dir);
+
+
+
+// adds the external functions required for 
+// development features.
+void ses_package_bind_natives(matteVM_t * vm);
+
 
 #endif
