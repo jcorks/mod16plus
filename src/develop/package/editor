@@ -328,8 +328,8 @@ Fetcher.Sprite.claimIDs(amount:30);
                     when (allWhitespace(text)) 
                         Window.alert(text:'Name cannot be empty.');
                         
-                    Window.alert(text:'New file: ' + text);
-                    
+                    @:Project = import(module:'project');
+                    Project.newSource(name:text);
                 }
             );                
             
@@ -385,7 +385,9 @@ Fetcher.Sprite.claimIDs(amount:30);
             openFile ::(name) {
                 filename = name;
                 @:Project = import(module:'project');
-                setSourceData(text:Project.openSource(name));
+                @text = Project.openSource(name);
+                if (text != empty)
+                    setSourceData(text);
                 
             }
         };

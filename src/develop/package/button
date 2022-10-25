@@ -215,12 +215,12 @@ return class(
                 @in = (x >= _x && x <= _x + widthtiles*8 &&
                        y >= _y && y <= _y + height);
         
-                if (entered == false && in == true) ::<= {
+                when (entered == false && in == true) ::<= {
                     _onEnter();
                     entered = in;
                     redrawBackground();
                 };
-                if (entered == true && in == false) ::<= {
+                when (entered == true && in == false) ::<= {
                     _onLeave();
                     entered = in;
                     redrawBackground();

@@ -2,7 +2,7 @@
 @:JSON = import(module:'Matte.Core.JSON');
 
 @:package_native__save_source  = getExternalFunction(name:"package_native__save_source");
-@:package_native__save_project = getExternalFunction(name:"package_native__save_project");
+@:package_native__make_project = getExternalFunction(name:"package_native__make_project");
 @:package_native__open_source  = getExternalFunction(name:"package_native__open_source");
 
 
@@ -31,6 +31,7 @@ return class(
                 get ::<- directory,
                 set ::(value) {
                     checkNameAllowed(name:value);
+                    package_native__make_project(a:value=>String);                    
                     directory = value;
                 }
             },
@@ -39,8 +40,8 @@ return class(
             newSource ::(name) {
                 checkNameAllowed(name);            
                 sources->push(value:name);
-                this.saveSource(name, data:'');
                 this.save();
+                this.saveSource(name, data:'');
             },
         
             openSource ::(name) {
@@ -54,7 +55,6 @@ return class(
                     error(detail:'No such filename. Internal error');
                 
                 package_native__save_source(a:directory, b:name, c:data); 
-                this.save
             },
         
         
@@ -68,7 +68,8 @@ return class(
                 };
                 // make object for json
                 // save project.json file
-                package_native__save_source(a:directory, b:'project.json', c:JSON.encode(value:obj));
+
+                package_native__save_source(a:directory, b:'project.json', c:JSON.encode(object:obj));
                 // package command native function
             },
             

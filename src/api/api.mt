@@ -2776,8 +2776,10 @@
                                 get :: {
                                     @linesReal = [];
                                     lines->foreach(do:::(i, line) {
+                                        if (i != 0)
+                                            linesReal->push(value:'\n');
                                         linesReal->push(value:line);
-                                        linesReal->push(value:'\n');
+                                        
                                     });
                                     return String.combine(strings:linesReal);
                                 },

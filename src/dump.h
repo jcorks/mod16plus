@@ -5,7 +5,7 @@
 
 // Given a file path, returns a dump of the file 
 // into a byte array. len is populated with its length.
-// Exits the program on failure with a message to stdout.
+// Returns NULL on failure with a message to stdout.
 void * dump_bytes(const char * filename, uint32_t * len);
 
 

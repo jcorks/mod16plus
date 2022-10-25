@@ -316,6 +316,7 @@ return class(
                                     Project.name = text;
                                     views[0].openFile(name:'main');
                                     Project.save();
+                                    selectView(view:views[0]);
                                 }
                             );
                         } else ::<= {
@@ -325,9 +326,12 @@ return class(
                                     Project.name = text;
                                     Project.load();                                
                                     views[0].openFile(name:'main');
+                                    selectView(view:views[0]);
                                 }
                             );
                         };
+                        
+                        
                     }
                 );
             
