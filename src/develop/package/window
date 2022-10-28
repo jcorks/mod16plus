@@ -303,7 +303,8 @@ return class(
 
         this.interface = {
             start :: {
-                views->push(value:Editor.new());
+                if (views->keycount == 0) 
+                    views->push(value:Editor.new());
                 @:Project = import(module:'project');
                 this.question(
                     text: 'Open existing?',
@@ -313,6 +314,9 @@ return class(
                             this.entryDialog(
                                 text: 'Name of project:',
                                 onEntry::(text){
+                                    when (!Project.isNameAllowed(name:text))
+                                        this.alert(text: 'Invalid name', onOkay: ::<-this.start());
+
                                     Project.name = text;
                                     views[0].openFile(name:'main');
                                     Project.save();
@@ -323,10 +327,21 @@ return class(
                             this.entryDialog(
                                 text: 'Open project:',
                                 onEntry::(text) {
-                                    Project.name = text;
-                                    Project.load();                                
-                                    views[0].openFile(name:'main');
-                                    selectView(view:views[0]);
+                                    when (!Project.isNameAllowed(name:text))
+                                        this.alert(text: 'Invalid name', onOkay: ::<-this.start());
+
+                                    [::] {
+                                        Project.name = text;
+                                        Project.load();                                
+                                        views[0].openFile(name:'main');
+                                        selectView(view:views[0]);
+                                    } : {
+                                        onError ::(message) {
+                                            SES.debug();
+                                            this.alert(text: 'Couldnt open.', onOkay: ::<-this.start());
+                                            
+                                        }
+                                    };
                                 }
                             );
                         };

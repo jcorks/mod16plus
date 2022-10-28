@@ -177,6 +177,7 @@ Fetcher.Sprite.claimIDs(amount:30);
                 {token: '<', palette:PALETTE__SYMBOL},
                 {token: '>', palette:PALETTE__SYMBOL},
                 {token: ',', palette:PALETTE__SYMBOL},
+                {token: ';', palette:PALETTE__SYMBOL},
                 {token: '|', palette:PALETTE__SYMBOL}
 
 
@@ -322,14 +323,15 @@ Fetcher.Sprite.claimIDs(amount:30);
         @:newFile ::{
             @:Window = import(module:'window');
             Window.entryDialog(
-                text: 'Enter a name for the new script:',
+                text: 'New script:',
                 onEntry:::(text){
 
-                    when (allWhitespace(text)) 
-                        Window.alert(text:'Name cannot be empty.');
-                        
                     @:Project = import(module:'project');
+                    when (!Project.isNameAllowed(name:text)) 
+                        Window.alert(text:'Name not allowed.');
+                        
                     Project.newSource(name:text);
+                    setSourceData(text:'');
                 }
             );                
             
@@ -341,12 +343,17 @@ Fetcher.Sprite.claimIDs(amount:30);
         };
         @:switchFile ::{
             @:Window = import(module:'window');
-            Window.question(
-                text: 'Is this working?',
-                onResponse:::(which){
-                
+            Window.entryDialog(
+                text: 'Open which?',
+                onEntry:::(text){
+
+                    @:Project = import(module:'project');
+                    when (!Project.isNameAllowed(name:text)) 
+                        Window.alert(text:'Name not allowed.');
+                    setSourceData(text:'');
+                    this.openFile(name:text);
                 }
-            );                
+            );               
         };
         
         @:saveFile :: {

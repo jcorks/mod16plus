@@ -7,12 +7,16 @@
 
 
 @:checkNameAllowed = ::(name) {
-    [0, name->length]->for(do:::(i) {
-        match(name->charAt(index:i)) {
-          (',', '.', '/', '\\'): 
-            error(detail:'Name contains disallowed characters.')
-        };
-    });
+    when(name == '') false;
+    return [::] {
+        [0, name->length]->for(do:::(i) {
+            match(name->charAt(index:i)) {
+              (',', '.', '/', '\\', '\n', '\t'): 
+                send(message:false)
+            };
+        });
+        return true;
+    };
 };
 
 return class(
@@ -27,10 +31,13 @@ return class(
         ];
     
         this.interface = {
+            isNameAllowed ::(name) {
+                return checkNameAllowed(name);
+            },
+
             name : {
                 get ::<- directory,
                 set ::(value) {
-                    checkNameAllowed(name:value);
                     package_native__make_project(a:value=>String);                    
                     directory = value;
                 }
@@ -38,7 +45,8 @@ return class(
         
         
             newSource ::(name) {
-                checkNameAllowed(name);            
+                when(!checkNameAllowed(name))
+                    error(detail:'Invalid name.');
                 sources->push(value:name);
                 this.save();
                 this.saveSource(name, data:'');
