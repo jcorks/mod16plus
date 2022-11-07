@@ -1,0 +1,274 @@
+@:Fetcher = import(module:'fetcher');
+@:SES = import(module:'SES.Core');
+@:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
+SES.Palette.set(
+    index: PALETTE__NORMAL_TEXT,
+    colors: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0.9, 0.9, 0.9]
+
+    ]
+);
+
+
+
+@:PALETTE__VARIABLE = Fetcher.Palette.newID();
+SES.Palette.set(
+    index: PALETTE__VARIABLE,
+    colors: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [1, 0, 0.5]
+
+    ]
+);
+
+
+@:PALETTE__TYPE = Fetcher.Palette.newID();
+SES.Palette.set(
+    index: PALETTE__TYPE,
+    colors: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0.5, 1]
+
+    ]
+);
+
+@:PALETTE__NAME = Fetcher.Palette.newID();
+SES.Palette.set(
+    index: PALETTE__NAME,
+    colors: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0.5, 0.5, 1]
+
+    ]
+);
+
+@:PALETTE__KEYWORD = Fetcher.Palette.newID();
+SES.Palette.set(
+    index: PALETTE__KEYWORD,
+    colors: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 1, 0.5]
+
+    ]
+);
+
+@:PALETTE__COMMENT = Fetcher.Palette.newID();
+SES.Palette.set(
+    index: PALETTE__COMMENT,
+    colors: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0.5, 0.5, 0.5]
+
+    ]
+);
+
+@:PALETTE__INTROSPECT = Fetcher.Palette.newID();
+SES.Palette.set(
+    index: PALETTE__INTROSPECT,
+    colors: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [1, 0.5, 1]
+
+    ]
+);
+
+
+@:PALETTE__SYMBOL = Fetcher.Palette.newID();
+SES.Palette.set(
+    index: PALETTE__SYMBOL,
+    colors: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0.6, 0.6, 0.6]
+
+    ]
+);
+
+@:PALETTE__FUNCTION = Fetcher.Palette.newID();
+SES.Palette.set(
+    index: PALETTE__FUNCTION,
+    colors: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [1, 1, 0.5]
+
+    ]
+);
+
+
+@:searches = [
+    {token: 'if', palette: PALETTE__KEYWORD},
+    {token: 'else', palette: PALETTE__KEYWORD},
+    {token: 'return', palette: PALETTE__KEYWORD},
+    {token: 'when', palette: PALETTE__KEYWORD},
+    {token: 'match', palette: PALETTE__KEYWORD},
+    {token: 'default', palette: PALETTE__KEYWORD},
+    {token: '=>', palette: PALETTE__KEYWORD},
+    {token: '<-', palette:PALETTE__KEYWORD},
+
+
+    {token: ':::', palette:PALETTE__TYPE},
+    {token: '::', palette:PALETTE__TYPE},
+    {token: ':', palette:PALETTE__TYPE},
+    {token: 'Function', palette:PALETTE__TYPE},
+    {token: 'Object', palette:PALETTE__TYPE},
+    {token: 'Number', palette:PALETTE__TYPE},
+    {token: 'Empty', palette:PALETTE__TYPE},
+    {token: 'String', palette:PALETTE__TYPE},
+    {token: '::<=', palette:PALETTE__TYPE},
+    
+    {token: '@', palette:PALETTE__VARIABLE},
+    {token: 'empty', palette: PALETTE__VARIABLE},
+
+    {token: 'length', palette:PALETTE__INTROSPECT},
+    {token: 'keycount', palette:PALETTE__INTROSPECT},
+    {token: 'find', palette:PALETTE__INTROSPECT},
+    {token: 'search', palette:PALETTE__INTROSPECT},
+    {token: 'parse', palette:PALETTE__INTROSPECT},
+    {token: 'random', palette:PALETTE__INTROSPECT},
+    {token: 'floor', palette:PALETTE__INTROSPECT},
+    {token: 'ceil', palette:PALETTE__INTROSPECT},
+    {token: 'round', palette:PALETTE__INTROSPECT},
+    {token: 'push', palette:PALETTE__INTROSPECT},
+    {token: 'foreach', palette: PALETTE__INTROSPECT},
+    {token: 'for', palette: PALETTE__INTROSPECT},
+
+    {token: '.', palette:PALETTE__SYMBOL},
+    {token: '}', palette:PALETTE__SYMBOL},
+    {token: '{', palette:PALETTE__SYMBOL},
+    {token: '~', palette:PALETTE__SYMBOL},
+    {token: '%', palette:PALETTE__SYMBOL},
+    {token: '^', palette:PALETTE__SYMBOL},
+    {token: '&', palette:PALETTE__SYMBOL},
+    {token: '*', palette:PALETTE__SYMBOL},
+    {token: '(', palette:PALETTE__SYMBOL},
+    {token: ')', palette:PALETTE__SYMBOL},
+    {token: '-', palette:PALETTE__SYMBOL},
+    {token: '+', palette:PALETTE__SYMBOL},
+    {token: '=', palette:PALETTE__SYMBOL},
+    {token: '[', palette:PALETTE__SYMBOL},
+    {token: ']', palette:PALETTE__SYMBOL},
+    {token: "'", palette:PALETTE__SYMBOL},
+    {token: '"', palette:PALETTE__SYMBOL},
+    {token: '/', palette:PALETTE__SYMBOL},
+    {token: '?', palette:PALETTE__SYMBOL},
+    {token: '<', palette:PALETTE__SYMBOL},
+    {token: '>', palette:PALETTE__SYMBOL},
+    {token: ',', palette:PALETTE__SYMBOL},
+    {token: ';', palette:PALETTE__SYMBOL},
+    {token: '|', palette:PALETTE__SYMBOL}
+
+];
+
+
+
+
+return ::(textarea, yIndex) {
+
+    @:applySearches::(string, yIndex) {
+        searches->foreach(do:::(i, search) {
+            string->searchAll(key:search.token)->foreach(do:::(i, ind) {
+                textarea.setColor(
+                    paletteID: search.palette,
+                    fromY: yIndex,
+                    toY: yIndex,
+                    fromX: ind,
+                    toX: ind+search.token->length-1
+                );
+            });
+        
+        });
+    };
+
+    
+
+    @:line = textarea.getLine(index:yIndex);
+    textarea.setColor(
+        paletteID: PALETTE__NORMAL_TEXT,
+        fromY: yIndex,
+        toY: yIndex,
+        fromX: 0,
+        toX: line->length-1
+    );
+
+
+
+
+    @lastNameStart = -1;
+    [::] {
+        [0, line->length]->for(do:::(i) {
+        
+            @:ch = line->charAt(index:i);
+        
+
+                                      
+            if (ch == '(' && lastNameStart != -1) ::<= {
+                textarea.setColor(paletteID:PALETTE__FUNCTION, 
+                    fromX: lastNameStart,
+                    toX: i-1,
+                    fromY: yIndex,
+                    toY: yIndex
+                );
+            };
+            
+            if (ch == ':' && lastNameStart != -1) ::<= {
+                textarea.setColor(paletteID:PALETTE__NAME, 
+                    fromX: lastNameStart,
+                    toX: i-1,
+                    fromY: yIndex,
+                    toY: yIndex
+                );
+            };                    
+
+
+            
+            if (i < line->length-1 &&
+                line->substr(from:i, to:i+1) == '//'
+            ) ::<= {
+                textarea.setColor(paletteID:PALETTE__COMMENT, 
+                    fromX: i,
+                    toX: line->length-1,
+                    fromY: yIndex,
+                    toY: yIndex
+                );
+                send();
+                  
+            };
+            
+            match(ch) {
+              ('-', '+', '!', '@', '#', '$', '%', '^', '&',
+               '*', '(', ')', ';', '"', "'", '/', '?', ':', 
+               '<', '>', ',', '.', '=', '[', ']', '{', '}', 
+               '|', '\n', '\t', '\r')::<= {
+                lastNameStart = -1;
+              },
+              default:
+                if (lastNameStart == -1)
+                    lastNameStart = i
+            };
+            
+
+
+        });
+
+        applySearches(string:line, yIndex);    
+    };          
+};
+

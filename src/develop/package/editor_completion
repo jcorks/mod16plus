@@ -1,0 +1,124 @@
+
+@:SUGGEST_COUNT = 5;
+
+
+@:splitWords ::(text) {
+    @:out = [];
+    @lastStart = empty;
+    [0, text->length]->for(do:::(i) {
+        match(text->charAt(index:i)) {
+          ('-', '+', '!', '@', '#', '$', '%', '^', '&',
+           '*', '(', ')', ';', '"', "'", '/', '?', ':', 
+           '<', '>', ',', '.', '=', '[', ']', '{', '}', 
+           '|', ' ', '\n', '\t', '\r'):::<= {
+            
+            // end the word if present
+            if (lastStart != empty) ::<= {
+                out->push(value:text->substr(from:lastStart, to:i-1));
+                lastStart = empty;
+            };  
+          },
+           
+          default:
+            if (lastStart == empty)
+                lastStart = i
+        
+        };
+    });
+    if (lastStart != empty) ::<= {
+        out->push(value:text->substr(from:lastStart, to:text->length-1));
+        lastStart = empty;
+    };  
+    
+    return out;    
+};
+
+
+@:cmprank ::(word, test) {
+    return [::] {
+        @:maxrank = if(word->length < test->length) word->length else test->length;
+        [1, maxrank]->for(do:::(i) {
+            if (word->charAt(index:i) != 
+                test->charAt(index:i))
+              send(message:i);
+                
+        });
+        // prioritize shorter words
+        return maxrank + if (test->length == word->length) 0 else 0.4;
+    };
+};
+
+@:class = import(module:'Matte.Core.Class');
+
+return class(
+    define:::(this) {
+        // each line has an array of tokens
+        @tokenIndex = [];
+
+        // list of all tokens.
+        // indexed by letter, then by the full word, which 
+        // holds how many references refer to that word
+        @tokenList = [];
+        
+        
+        
+        this.interface = {
+            retokenizeLine ::(index, text) {
+                @:line = tokenIndex[index];
+                if (line != empty) ::<= {
+                    line->foreach(do:::(i, token) {
+                        @:localTokens = tokenList[token->charAt(index:0)];
+                        localTokens[token] -= 1;
+                        if (localTokens[token] <= 0)
+                            localTokens->remove(key:token);
+                    });
+                };
+
+
+
+                
+                @:tokens = splitWords(text);    
+                tokenIndex[index] = tokens;
+                
+                tokens->foreach(do:::(i, token) {
+                    @localTokens = tokenList[token->charAt(index:0)];
+                    if (localTokens == empty) ::<= {
+                        localTokens = [];
+                        tokenList[token->charAt(index:0)] = localTokens;
+                    };                   
+                    
+                    if (localTokens[token] == empty)
+                        localTokens[token] = 0
+                    else 
+                        localTokens[token] += 1
+                    ;
+                });
+            },
+            
+            clear :: {
+                tokenIndex = [];
+                tokenList = [];
+            },
+            
+            // gets 5 suggested words
+            getSuggestions ::(word) {
+                when (word->length == 0) [];
+                @:localTokens = tokenList[word->charAt(index:0)];
+                when(localTokens == empty) [];
+                @:ranks = localTokens->keys;
+                
+                ranks->sort(
+                    comparator:::(a, b) {
+                        @:arank = cmprank(word, test:a);
+                        @:brank = cmprank(word, test:b);
+                        
+                        when (arank < brank) 1;
+                        when (arank > brank) -1;
+                        return 0;
+                    }
+                );
+                return ranks;
+            }
+        };
+    }
+);

@@ -2810,6 +2810,7 @@
                                         colors = colors->subset(from:0, to:LINE_LIMIT);
                                     };
 
+                                    if (onChange != empty) onChange();
 
                                     redrawLines();  
                                 },

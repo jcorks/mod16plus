@@ -2,6 +2,8 @@
 @:SES = import(module:'SES.Core');
 @:class = import(module:'Matte.Core.Class');
 @:Fetcher = import(module:'fetcher');
+@:highlightLine = import(module:'editor_highlight');
+@:completer = import(module:'editor_completion').new();
 @:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
 SES.Palette.set(
     index: PALETTE__NORMAL_TEXT,
@@ -9,94 +11,7 @@ SES.Palette.set(
         [0, 0, 0],
         [0, 0, 0],
         [0, 0, 0],
-        [1, 0.9, 0.8]
-
-    ]
-);
-
-@:PALETTE__VARIABLE = Fetcher.Palette.newID();
-SES.Palette.set(
-    index: PALETTE__VARIABLE,
-    colors: [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [1, 0, 0.5]
-
-    ]
-);
-
-
-@:PALETTE__TYPE = Fetcher.Palette.newID();
-SES.Palette.set(
-    index: PALETTE__TYPE,
-    colors: [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0.5, 1]
-
-    ]
-);
-
-
-@:PALETTE__KEYWORD = Fetcher.Palette.newID();
-SES.Palette.set(
-    index: PALETTE__KEYWORD,
-    colors: [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 1, 0.5]
-
-    ]
-);
-
-@:PALETTE__COMMENT = Fetcher.Palette.newID();
-SES.Palette.set(
-    index: PALETTE__COMMENT,
-    colors: [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [0.5, 0.5, 0.5]
-
-    ]
-);
-
-@:PALETTE__INTROSPECT = Fetcher.Palette.newID();
-SES.Palette.set(
-    index: PALETTE__INTROSPECT,
-    colors: [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [1, 0.70, 0.5]
-
-    ]
-);
-
-
-@:PALETTE__SYMBOL = Fetcher.Palette.newID();
-SES.Palette.set(
-    index: PALETTE__SYMBOL,
-    colors: [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [0.6, 0.6, 0.6]
-
-    ]
-);
-
-@:PALETTE__FUNCTION = Fetcher.Palette.newID();
-SES.Palette.set(
-    index: PALETTE__FUNCTION,
-    colors: [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [1, 1, 0.5]
+        [0.9, 0.9, 0.9]
 
     ]
 );
@@ -117,162 +32,35 @@ Fetcher.Sprite.claimIDs(amount:30);
         @filename = 'main';
         @getSourceData;
         @setSourceData;
+
+        
         this.constructor = ::{
-            @:searches = [
-                {token: 'if', palette: PALETTE__KEYWORD},
-                {token: 'else', palette: PALETTE__KEYWORD},
-                {token: 'return', palette: PALETTE__KEYWORD},
-                {token: 'when', palette: PALETTE__KEYWORD},
-                {token: 'match', palette: PALETTE__KEYWORD},
-                {token: 'default', palette: PALETTE__KEYWORD},
-                {token: 'foreach', palette: PALETTE__KEYWORD},
-                {token: 'for', palette: PALETTE__KEYWORD},
-                {token: '=>', palette: PALETTE__KEYWORD},
-                {token: '<-', palette:PALETTE__KEYWORD},
-
-
-                {token: ':::', palette:PALETTE__TYPE},
-                {token: '::', palette:PALETTE__TYPE},
-                {token: ':', palette:PALETTE__TYPE},
-                {token: 'Function', palette:PALETTE__TYPE},
-                {token: 'Object', palette:PALETTE__TYPE},
-                {token: 'Number', palette:PALETTE__TYPE},
-                {token: 'Empty', palette:PALETTE__TYPE},
-                {token: 'String', palette:PALETTE__TYPE},
-                {token: '::<=', palette:PALETTE__TYPE},
-                
-                {token: '@', palette:PALETTE__VARIABLE},
-                {token: 'empty', palette: PALETTE__VARIABLE},
-
-                {token: '->', palette:PALETTE__INTROSPECT},
-                {token: 'length', palette:PALETTE__INTROSPECT},
-                {token: 'keycount', palette:PALETTE__INTROSPECT},
-                {token: 'find', palette:PALETTE__INTROSPECT},
-                {token: 'search', palette:PALETTE__INTROSPECT},
-                {token: 'parse', palette:PALETTE__INTROSPECT},
-                {token: 'random', palette:PALETTE__INTROSPECT},
-                {token: 'floor', palette:PALETTE__INTROSPECT},
-                {token: 'ceil', palette:PALETTE__INTROSPECT},
-                {token: 'round', palette:PALETTE__INTROSPECT},
-
-                {token: '.', palette:PALETTE__SYMBOL},
-                {token: '}', palette:PALETTE__SYMBOL},
-                {token: '{', palette:PALETTE__SYMBOL},
-                {token: '~', palette:PALETTE__SYMBOL},
-                {token: '%', palette:PALETTE__SYMBOL},
-                {token: '^', palette:PALETTE__SYMBOL},
-                {token: '&', palette:PALETTE__SYMBOL},
-                {token: '*', palette:PALETTE__SYMBOL},
-                {token: '(', palette:PALETTE__SYMBOL},
-                {token: ')', palette:PALETTE__SYMBOL},
-                {token: '-', palette:PALETTE__SYMBOL},
-                {token: '+', palette:PALETTE__SYMBOL},
-                {token: '=', palette:PALETTE__SYMBOL},
-                {token: '[', palette:PALETTE__SYMBOL},
-                {token: ']', palette:PALETTE__SYMBOL},
-                {token: "'", palette:PALETTE__SYMBOL},
-                {token: '"', palette:PALETTE__SYMBOL},
-                {token: '/', palette:PALETTE__SYMBOL},
-                {token: '?', palette:PALETTE__SYMBOL},
-                {token: '<', palette:PALETTE__SYMBOL},
-                {token: '>', palette:PALETTE__SYMBOL},
-                {token: ',', palette:PALETTE__SYMBOL},
-                {token: ';', palette:PALETTE__SYMBOL},
-                {token: '|', palette:PALETTE__SYMBOL}
 
 
 
-            ];
-
-
-            @:applySearches::(string) {
-                searches->foreach(do:::(i, search) {
-                    @:ind = string->search(key:search.token);
-                    when(ind == -1) empty;
-                    
-                    textarea.setColor(
-                        paletteID: search.palette,
-                        fromY: textarea.cursorY,
-                        toY: textarea.cursorY,
-                        fromX: ind,
-                        toX: ind+search.token->length-1
-                    );
-                    
-                
-                });
-            };
             
-            @title = SES.Text.createArea(defaultPalette:PALETTE__COMMENT, spriteOffset:SPRITE__BEGIN_TITLE);
+            @title = SES.Text.createArea(defaultPalette:PALETTE__NORMAL_TEXT, spriteOffset:SPRITE__BEGIN_TITLE);
             title.text = filename;
 
             @:Window = import(module:'window');
             @textarea = Window.createTextBox(
               defaultPalette : PALETTE__NORMAL_TEXT,  
               onChange:: {
-
-                
-
-                @:line = textarea.getLine(index:textarea.cursorY);
-                textarea.setColor(
-                    paletteID: PALETTE__NORMAL_TEXT,
-                    fromY: textarea.cursorY,
-                    toY: textarea.cursorY,
-                    fromX: 0,
-                    toX: line->length-1
+                highlightLine(
+                    textarea,
+                    yIndex:textarea.cursorY
                 );
+                completer.retokenizeLine(index:textarea.cursorY, text:textarea.getLine(index:textarea.cursorY));
 
+                @:suggestions = completer.getSuggestions(word: textarea.getLine(index:textarea.cursorY));
+                print(message:'');
+                suggestions->foreach(do:::(i, val) {
+                    print(message: '' + i + ': ' + val);
+                });
 
+              }
 
-
-                @lastWhitespace = -1;
-                [::] {
-                    [0, line->length]->for(do:::(i) {
-                    
-                        
-                    
-                    
-                        match(line->charAt(index:i)) {
-                          (' ', '\n', '\t', '\r'): ::<= {
-                            @:token = line->substr(from:lastWhitespace+1, to:i-1);
-                            lastWhitespace = i;
-                          },
-                          
-                          ('('):::<= {
-                            if (i > 0 && match(line->charAt(index:i-1)) {
-                                ('-', '+', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', ':', ';', '"', "'", '/', '?', '<', '>', ',', '.', '=', '[', ']', '{', '}', '|'): false,
-                                default: true
-                            })
-                                textarea.setColor(paletteID:PALETTE__FUNCTION, 
-                                    fromX: lastWhitespace+1,
-                                    toX: i-1,
-                                    fromY: textarea.cursorY,
-                                    toY: textarea.cursorY
-                                );
-                            
-                          } 
-                        };
-                        
-                        
-                        if (i < line->length-1 &&
-                            line->substr(from:i, to:i+1) == '//'
-                        ) ::<= {
-                            textarea.setColor(paletteID:PALETTE__COMMENT, 
-                                fromX: i,
-                                toX: line->length-1,
-                                fromY: textarea.cursorY,
-                                toY: textarea.cursorY
-                            );
-                            send();
-                              
-                        };
-
-                    });
-
-                    applySearches(string:line);  
-
-                };
-
-            });
+            );
 
 
             // full GBA screen
@@ -300,6 +88,11 @@ Fetcher.Sprite.claimIDs(amount:30);
             
             setSourceData = ::(text) {
                 textarea.text = text;
+                completer.clear();
+                [0, textarea.getLineCount()]->for(do:::(i) {
+                    highlightLine(textarea, yIndex:i);
+                    completer.retokenizeLine(index:i, text:textarea.getLine(index:i));
+                });
             };
             return this;
         };

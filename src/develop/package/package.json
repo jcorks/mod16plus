@@ -3,6 +3,8 @@
     "main",
     "view",
     "editor",
+    "editor_highlight",
+    "editor_completion",
     "window",
     "fetcher",
     "button",
