@@ -23,6 +23,7 @@ typedef struct {
     
     matteValue_t onPrint;
     matteValue_t onClear;
+    matteValue_t onCommit;
     matteValue_t activateConsole;
     matteHeap_t * heap;
     matteVM_t * vm;
@@ -89,6 +90,10 @@ static void debug_println(const char * format, int colorHint, ...) {
     
 }
 
+static void debug_show_text() {
+    matte_vm_call(debug.vm, debug.onCommit, matte_array_empty(), matte_array_empty(), NULL);
+}
+
 
 static void debug_clear() {
     matte_vm_call(debug.vm, debug.onClear, matte_array_empty(), matte_array_empty(), NULL);
@@ -122,6 +127,7 @@ static void ses_matte_query__error(
         if (value.binID == MATTE_VALUE_TYPE_STRING) {
             debug_println("Error: %s", SESDebug_Color__Error, matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, value)));
         }
+        debug_show_text();
     }
 }
 
@@ -171,6 +177,8 @@ static void ses_matte_backtrace() {
         }    
         
     }
+    debug_show_text();
+
 }
 
 static int ses_matte_debug_dump() {
@@ -227,13 +235,15 @@ static int ses_matte_debug_dump() {
                 }
             }
         }
-    }     
+    }  
+    debug_show_text();   
     return 1;   
     
   L_FAIL:
     debug_println("<File not found>", SESDebug_Color__Error);
     debug_println("", SESDebug_Color__Error);
     ses_matte_backtrace();
+    debug_show_text();
   
 }
 
@@ -257,6 +267,7 @@ static void ses_debug_unhandled_error(
                 matte_string_get_c_str(matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), s))
             );
             fflush(stdout);
+            debug_show_text();
             return;
         }
     }
@@ -267,6 +278,9 @@ static void ses_debug_unhandled_error(
         matte_string_get_c_str(matte_vm_get_script_name_by_id(vm, file)), 
         lineNumber
     );
+
+    debug_show_text();
+
 }
 
 
@@ -279,14 +293,16 @@ static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t
     ses_native_swap_context();
     debug.requestedExit = 0;
     
-    debug.onPrint = args[0];
-    debug.onClear = args[1];
+    debug.onPrint  = args[0];
+    debug.onClear  = args[1];
+    debug.onCommit = args[3];
     debug.callstackLevel = 0;
     debug.callstackLimit = matte_vm_get_stackframe_size(debug.vm)-1;
     
     matteHeap_t * heap = matte_vm_get_heap(vm);
     matte_value_object_push_lock(heap, debug.onPrint);    
     matte_value_object_push_lock(heap, debug.onClear);
+    matte_value_object_push_lock(heap, debug.onCommit);
 
 
     matte_vm_call(debug.vm, args[2], matte_array_empty(), matte_array_empty(), NULL);
@@ -298,6 +314,7 @@ static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t
     
     ses_matte_backtrace();
     ses_matte_debug_dump();
+    debug_show_text();
 }
 static matteValue_t ses_native__debug_context_update(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     debug.requestedExit |= !ses_native_update(debug.matte);    
@@ -314,7 +331,7 @@ static matteValue_t ses_native__debug_context_leave(matteVM_t * vm, matteValue_t
 }
 static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     const char * src = matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, args[0]));
-    debug_println(src, 3);
+    debug_println(">%s", 3, src);
     uint32_t len = strlen(src);
     char * query = malloc(len+1);
     memcpy(query, src, len+1);
@@ -369,12 +386,28 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
         );   
         
         if (result.binID == MATTE_VALUE_TYPE_STRING) {
-            debug_println("%s", SESDebug_Color__Code, matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, result)));
+            const matteString_t * content = matte_value_string_get_string_unsafe(debug.heap, result);
+            matteString_t * working = matte_string_create();
+
+            int i;
+            int len = matte_string_get_length(content);
+            for(i = 0; i < len; ++i) {
+                if (matte_string_get_char(content, i) == '\n') { 
+                    debug_println("%s", SESDebug_Color__Code, matte_string_get_c_str(working));
+                    matte_string_clear(working);
+                } else {
+                    matte_string_append_char(working, matte_string_get_char(content, i));
+                }
+            }
+            if (matte_string_get_length(working))
+                debug_println("%s", SESDebug_Color__Code, matte_string_get_c_str(working));
+            matte_string_destroy(working);
             
         } else {
             debug_println("  (invalid value)", SESDebug_Color__Error);
         }
     }
+    debug_show_text();
     free(query);    
     return matte_heap_new_value(debug.heap);
     
@@ -433,7 +466,7 @@ void ses_debug_init(matte_t * m, int enabled, const char * romPath) {
     
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_is_allowed"), 0, ses_native__debug_context_is_allowed, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_is_done"),    0, ses_native__debug_context_is_done, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_enter"),      3, ses_native__debug_context_enter, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_enter"),      4, ses_native__debug_context_enter, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_update"),     0, ses_native__debug_context_update, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_leave"),      0, ses_native__debug_context_leave, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_query"),      1, ses_native__debug_context_query, NULL);

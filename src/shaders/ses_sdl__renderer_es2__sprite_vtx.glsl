@@ -7,7 +7,7 @@ varying vec2 uv_frag;
 
 uniform mat4 localMat;
 uniform mat4 proj;
-uniform int effect;
+uniform mediump float effect;
 
 void main() {
     uv_frag = uv;    
@@ -18,7 +18,7 @@ void main() {
     //
     // depth mode success should depend on the effect value
     // before rendering.
-    if (effect == int(1)||
-        effect == int(2))
+    if (effect == 1.0 ||
+        effect == 2.0 )
         gl_Position.z = 1.0;
 }

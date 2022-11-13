@@ -416,12 +416,12 @@ void ses_sdl_gl_bind_tile(uint32_t id) {
     bound_tile = &t->tiles[index];   
 }
 void ses_sdl_gl_set_tile_pixel(uint8_t location, uint8_t value) {
-    bound_tile->data[location] = value;
+    bound_tile->data[location] = value / 4.0 * 255;
     bound_tile_dirty = 1;
 };
 
 uint8_t ses_sdl_gl_get_tile_pixel(uint8_t location) {
-    return bound_tile->data[location];
+    return (int)(bound_tile->data[location] / 255.0 + 0.5);
 }
 
 void ses_sdl_gl_copy_from(uint32_t id) {
@@ -841,7 +841,7 @@ void ses_sdl_gl_render_background(
         (GLfloat*)&m
     );
     
-    glUniform1i(gl.spriteProgram.locationUniformEffect, effect);
+    glUniform1f(gl.spriteProgram.locationUniformEffect, (float)effect);
     
     float paletteReal[] = {
         0, 0, 0, 0,
