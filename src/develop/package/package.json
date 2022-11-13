@@ -5,9 +5,11 @@
     "editor",
     "editor_highlight",
     "editor_completion",
+    "editor_completion_visual",
     "window",
     "fetcher",
     "button",
-    "project"
+    "project",
+    "textarea"
   ]
 }

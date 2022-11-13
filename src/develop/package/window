@@ -1,7 +1,9 @@
 @:SES = import(module:'SES.Core');
+@:Debug = import(module:'SES.Debug');
 @:Fetcher = import(module:'fetcher');
 @:Editor = import(module:'editor');
 @:Button = import(module:'button');
+@:Textarea = import(module:'textarea');
 @:class = import(module:'Matte.Core.Class');
 
 
@@ -154,7 +156,7 @@ return class(
         
         @:dialogEntryOffset = Fetcher.Sprite.newID();
         Fetcher.Sprite.claimIDs(amount:40);                
-        @dialogEntry = SES.Text.createArea(spriteOffset:dialogEntryOffset, defaultPalette:PALETTE_GRAY);
+        @dialogEntry = Textarea.new(spriteOffset:dialogEntryOffset, defaultPalette:PALETTE_GRAY);
         dialogEntry. = {
             editable : false,
             text : '',
@@ -188,7 +190,7 @@ return class(
             SES.Tile.copy(from:TILE_BG, to:bgOffset+i);
         });
         
-        @dialogPrompt = SES.Text.createArea(spriteOffset:dialogOffset, defaultPalette:PALETTE_GRAY);
+        @dialogPrompt = Textarea.new(spriteOffset:dialogOffset, defaultPalette:PALETTE_GRAY);
         dialogPrompt. = {
             editable : false,
             text : '',
@@ -337,7 +339,6 @@ return class(
                                         selectView(view:views[0]);
                                     } : {
                                         onError ::(message) {
-                                            SES.debug();
                                             this.alert(text: 'Couldnt open.', onOkay: ::<-this.start());
                                             
                                         }
@@ -359,7 +360,7 @@ return class(
             ) {
                 @:spriteOffset = Fetcher.Sprite.newID();
                 Fetcher.Sprite.claimIDs(amount:(30*8 / 6) * 20);
-                @:out = SES.Text.createArea(
+                @:out = Textarea.new(
                     defaultPalette,
                     spriteOffset,
                     onChange
@@ -369,7 +370,7 @@ return class(
             },
         
             question::(text => String, onResponse => Function) {
-                
+                Debug.breakpoint();
                 prepareDialog(
                     buttons: [
                         [dialogButtons.yes, ::{

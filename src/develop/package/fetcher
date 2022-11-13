@@ -10,6 +10,12 @@
     define:::(this) {
         @count = 0;
 
+        this.constructor = ::(offset) {
+            if (offset != empty)
+                count = offset => Number;
+
+            return this;
+        };
 
         this.interface = {
         
@@ -42,7 +48,7 @@ return {
     
     // Fetcher for (sprite) IDs. Only "makes sense" 
     // up to 0x40000.
-    Tile : Fetcher.new(),
+    Tile : Fetcher.new(offset:128),
     
     
     // Convenience function that gives the local tile ID 

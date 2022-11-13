@@ -51,16 +51,16 @@ There are 2 kinds of tiles:
   
 . Background tiles. These are used for backgrounds, which are sets of 
   tiles all rendered simultaneously, which is useful for images greater 
-  than 8x8. These can only be translated.
+  than 8x8. Backgrounds can only be translated.
 
 
 The total number of possible tiles able to be 
-stored is 327680. 65536 are exclusive to backgrounds, 
-and 262144 are exclusive to sprites.
+stored is 524288 (0x80000). 262144 (0 - 0x3ffff) sprites are exclusive to backgrounds, 
+and 262144 (0x40000 - 0x8ffff) are exclusive to sprites.
 
 Tiles of any kind can be copied and moved around 
 freely, so sprite tile memory can be used as "overflow"
-or working memory.
+or working tile memory.
 
 Sprites
 -------
@@ -80,22 +80,22 @@ Backgrounds
 Backgrounds may be used to render collections of tiles 
 simulaneously. This can be convenient for background visuals,
 large images, and more. A total of 512 backgrounds may be 
-used at the same time.
+defined and used.
 
 Backgrounds are specifically collections of tiles in 
-a predefined order. Backgrounds are 16 tiles wide and 
-8 tiles tall, so theyre always the same dimensions. They 
+a predefined order. Backgrounds are 32 tiles wide and 
+16 tiles tall, so theyre always the same dimensions. They 
 pull from tiles from topleft, to the right, and down.
 For example:
 
-0  1  2  3  4  5  6  7
-8  9  10 11 12 13 14 15
+0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
+16 17 18 19 20 21 22 23 ...
 ...
 
 And so on.
 
 Backgrounds only use background tiles, which start at 
-tile ID 0x40000 and go until tile 0x50000-1
+tile ID 0x40000 and go until tile 0x80000-1
 
 Effects
 -------

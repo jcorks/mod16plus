@@ -4,7 +4,9 @@
 @:Fetcher = import(module:'fetcher');
 @:highlightLine = import(module:'editor_highlight');
 @:completer = import(module:'editor_completion').new();
+@:completerBox = import(module:'editor_completion_visual');
 @:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
+@:Textarea = import(module:'textarea');
 SES.Palette.set(
     index: PALETTE__NORMAL_TEXT,
     colors: [
@@ -36,10 +38,78 @@ Fetcher.Sprite.claimIDs(amount:30);
         
         this.constructor = ::{
 
+            @:isNonWordChar = ::<= {
+                @:map = {
+                   '-': true, 
+                   '+': true,
+                   '!': true, 
+                   '@': true, 
+                   '#': true, 
+                   '$': true, 
+                   '%': true, 
+                   '^': true, 
+                   '&': true,
+                   '*': true, 
+                   '(': true, 
+                   ')': true, 
+                   ';': true, 
+                   '"': true, 
+                   "'": true, 
+                   '/': true, 
+                   '?': true, 
+                   ':': true, 
+                   '<': true, 
+                   '>': true, 
+                   ',': true, 
+                   '.': true, 
+                   '=': true, 
+                   '[': true, 
+                   ']': true, 
+                   '{': true, 
+                   '}': true, 
+                   '|': true, 
+                   ' ': true,
+                   '\n': true, 
+                   '\t': true, 
+                   '\r': true
+                };
+                
+                return ::(ch) {
+                    when (map[ch] == empty) false;
+                    return true;
+                };
+            };
+            
+            // gets the currently typed over word
+            @:getCurrentWord :: {
+                when(textarea.cursorX == 0) empty;
+                @:text = textarea.getLine(index:textarea.cursorY);
+                when(text == '') empty;
+                when (isNonWordChar(ch:text->charAt(index:textarea.cursorX-1))) empty;
 
+                @:location = [::] {
+                    @i = textarea.cursorX-1;
+                    forever(do:::{                    
+                        if (i <= 0) send(message:0);
+                        if (isNonWordChar(ch:text->charAt(index:i))) send(message:i+1);
+                        i -= 1;
+                    });
+                    
+                    return -1;
+                };
+                when(location == -1) empty;
+                @end =  [::] {
+                    [location, text->length]->for(do:::(i) {
+                        if (isNonWordChar(ch:text->charAt(index:i))) send(message:i-1);
+                    });
+                    return text->length-1;
+                };
+	                
+                return {location:location, text: text->substr(from:location, to:end)};
+            };        
 
             
-            @title = SES.Text.createArea(defaultPalette:PALETTE__NORMAL_TEXT, spriteOffset:SPRITE__BEGIN_TITLE);
+            @title = Textarea.new(defaultPalette:PALETTE__NORMAL_TEXT, spriteOffset:SPRITE__BEGIN_TITLE);
             title.text = filename;
 
             @:Window = import(module:'window');
@@ -52,11 +122,20 @@ Fetcher.Sprite.claimIDs(amount:30);
                 );
                 completer.retokenizeLine(index:textarea.cursorY, text:textarea.getLine(index:textarea.cursorY));
 
-                @:suggestions = completer.getSuggestions(word: textarea.getLine(index:textarea.cursorY));
-                print(message:'');
-                suggestions->foreach(do:::(i, val) {
-                    print(message: '' + i + ': ' + val);
-                });
+                
+                @:word = getCurrentWord();
+                if (word != empty) ::<= {
+                    @:suggestions = completer.getSuggestions(word:word.text);
+                    @:screenLoc = textarea.cursorToPixelCoords();
+                    completerBox.update(
+                        x: word.location*6,
+                        y: screenLoc.y+8,
+                        items: suggestions
+                    );
+                } else ::<= {
+                    completerBox.update(items:[], x:0, y:0);
+                };
+                
 
               }
 

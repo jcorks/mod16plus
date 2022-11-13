@@ -19,6 +19,8 @@
 
 
 #include "api/api_rom"
+#include "debug/debug_rom"
+static int IS_DEBUG = 0;
 static uint8_t * ses_native__import(
     matteVM_t * vm,
     const matteString_t * importPath,
@@ -32,6 +34,12 @@ static uint8_t * ses_native__import(
         *preexistingFileID = matte_vm_get_new_file_id(vm, importPath);
         uint8_t * out = malloc(API_ROM_SIZE);
         memcpy(out, API_ROM_DATA, API_ROM_SIZE);
+        return out;       
+    } else if (IS_DEBUG && matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "SES.Debug"))) {
+        *dataLength = DEBUG_ROM_SIZE;
+        *preexistingFileID = matte_vm_get_new_file_id(vm, importPath);
+        uint8_t * out = malloc(DEBUG_ROM_SIZE);
+        memcpy(out, DEBUG_ROM_DATA, DEBUG_ROM_SIZE);
         return out;       
     }
     
@@ -112,9 +120,13 @@ developRom = 1;
     matte_vm_set_print_callback(vm, ses_native__print, NULL);
     
 
+    IS_DEBUG = !strcmp(argv[1], "debug");
+    ses_debug_init(m, IS_DEBUG, argv[2]);
 
 
-    ses_debug_init(m, !strcmp(argv[1], "debug"), argv[2]);
+
+
+
 
 
 
@@ -157,6 +169,22 @@ developRom = 1;
     );
     
     
+    // ALWAYS import the special scripts before 
+    // the main (for security purposes)
+    matte_vm_import(
+        vm,
+        MATTE_VM_STR_CAST(vm, "SES.Core"),
+        matte_heap_new_value(matte_vm_get_heap(vm))
+    );    
+
+    if (IS_DEBUG)
+        matte_vm_import(
+            vm,
+            MATTE_VM_STR_CAST(vm, "SES.Core"),
+            matte_heap_new_value(matte_vm_get_heap(vm))
+        );    
+
+
     
     if (developRom) {
         // enable extra features needed for development 

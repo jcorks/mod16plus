@@ -1,0 +1,46 @@
+@:SES = import(module:'SES.Core');
+@:class = import(module:'Matte.Core.Class');
+@:Fetcher = import(module:'fetcher');
+@:Textarea = import(module:'textarea');
+
+@:PALETTE_TEXT = Fetcher.Palette.newID();
+
+@textOffset = Fetcher.Sprite.newID();        
+Fetcher.Sprite.claimIDs(amount:50);
+
+SES.Palette.set(
+    index : PALETTE_TEXT,
+    colors : [
+        [0, 0, 0],
+        [0.3, 0.3, 0.3],
+        [0.6, 0.6, 0.6],
+        [1, 1, 1]
+    ]
+);
+
+@:text = Textarea.new(defaultPalette:PALETTE_TEXT, spriteOffset:textOffset);
+
+
+text. = {
+    editable : false
+};
+
+return class(
+    define:::(this) {
+        this.interface = {
+            update ::(x, y, items) {
+                @o = '';
+                items->foreach(do:::(i, item => String) {
+                    if (item != '') ::<= {
+                        o = o + item + '\n';
+                    };
+                });
+                print(message:o);
+                text.text = o;
+                
+                text.x = x;
+                text.y = y;
+            }        
+        };
+    }
+).new();

@@ -1,6 +1,7 @@
 @:SES = import(module:'SES.Core');
 @:class = import(module:'Matte.Core.Class');
 @:Fetcher = import(module:'fetcher');
+@:Textarea = import(module:'textarea');
 
 @:PALETTE_TEXT = Fetcher.Palette.newID();
 
@@ -99,7 +100,7 @@ return class(
         @_onLeave ::{};
 
         @textOffset = Fetcher.Sprite.newID();        
-        @:text = SES.Text.createArea(defaultPalette:PALETTE_TEXT, spriteOffset:textOffset);
+        @:text = Textarea.new(defaultPalette:PALETTE_TEXT, spriteOffset:textOffset);
         Fetcher.Sprite.claimIDs(amount:15);        
         
         @:bg = Fetcher.Background.newID();
