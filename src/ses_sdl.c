@@ -139,7 +139,9 @@ static matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const mat
 static matteValue_t ses_sdl_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 static matteValue_t ses_sdl_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
-
+#define LAYER_MIN -15
+#define LAYER_MID 0
+#define LAYER_MAX 16
 
 
 typedef struct {
@@ -212,6 +214,8 @@ extern void ses_sdl_gl_unbind_tile();
 
 extern void ses_sdl_gl_render_begin();
 
+extern void ses_sdl_gl_render_finish_layer();
+
 extern void ses_sdl_gl_render_sprite(
     float x, float y,
     float scaleX, float scaleY,
@@ -265,7 +269,7 @@ static void ses_sdl_render() {
     for(i = 0; i < len; ++i, iter++) {
         if (iter->enabled == 0) continue;
 
-        SES_GraphicsLayer * layer = sdl.main.layers+iter->layer;
+        SES_GraphicsLayer * layer = sdl.main.layers+iter->layer-(LAYER_MIN);
         matte_array_push(layer->sprites, iter);
     }
 
@@ -277,7 +281,7 @@ static void ses_sdl_render() {
         if (bg->enabled == 0) continue;
 
 
-        SES_GraphicsLayer * layer = sdl.main.layers+bg->layer;
+        SES_GraphicsLayer * layer = sdl.main.layers+bg->layer-(LAYER_MIN);
         matte_array_push(layer->bgs, bg);
     }
 
@@ -341,7 +345,7 @@ static void ses_sdl_render() {
                 iter->tile
             );
         }
-        
+        ses_sdl_gl_render_finish_layer();
         matte_array_set_size(layer->sprites, 0);
     }
 
@@ -392,57 +396,67 @@ matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteV
         SES_Sprite spr = {};
         matte_array_push(sdl.main.sprites, spr);
     }
-    SES_Sprite * spr = &matte_array_at(sdl.main.sprites, SES_Sprite, id);
-    switch((int)matte_value_as_number(heap, args[1])) {
-      case SESNSA_ENABLE:
-        spr->enabled = matte_value_as_number(heap, args[2]);
-        break;
-        
-      case SESNSA_ROTATION:
-        spr->rotation = matte_value_as_number(heap, args[2]);
-        break;
 
-      case SESNSA_SCALEX:
-        spr->scaleX = matte_value_as_number(heap, args[2]);
-        break;
 
-      case SESNSA_SCALEY:
-        spr->scaleY = matte_value_as_number(heap, args[2]);
-        break;
+    uint32_t len = matte_value_object_get_number_key_count(heap, args[1]);
+    uint32_t i;
+    for(i = 0; i < len; i+=2) {
+        matteValue_t * flag  = matte_value_object_array_at_unsafe(heap, args[1], i);
+        matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[1], i+1);
 
-      case SESNSA_POSITIONX:
-        spr->x = matte_value_as_number(heap, args[2]);
-        break;
-      
-      case SESNSA_POSITIONY:
-        spr->y = matte_value_as_number(heap, args[2]);
-        break;
-
-      case SESNSA_CENTERX:
-        spr->centerX = matte_value_as_number(heap, args[2]);
-        break;
-
-      case SESNSA_CENTERY:
-        spr->centerY = matte_value_as_number(heap, args[2]);
-        break;
-
-      case SESNSA_LAYER:
-        spr->layer = matte_value_as_number(heap, args[2]);
-        break;
-
-      case SESNSA_TILEINDEX:
-        spr->tile = matte_value_as_number(heap, args[2]);
-        break;
-      
-      case SESNSA_EFFECT:
-        spr->effect = matte_value_as_number(heap, args[2]);
-        break;
-
-      case SESNSA_PALETTE:
-        spr->palette = matte_value_as_number(heap, args[2]);
-        break;
-
+        SES_Sprite * spr = &matte_array_at(sdl.main.sprites, SES_Sprite, id);
+        switch((int)matte_value_as_number(heap, *flag)) {
+          case SESNSA_ENABLE:
+            spr->enabled = matte_value_as_number(heap, *value);
+            break;
             
+          case SESNSA_ROTATION:
+            spr->rotation = matte_value_as_number(heap, *value);
+            break;
+
+          case SESNSA_SCALEX:
+            spr->scaleX = matte_value_as_number(heap, *value);
+            break;
+
+          case SESNSA_SCALEY:
+            spr->scaleY = matte_value_as_number(heap, *value);
+            break;
+
+          case SESNSA_POSITIONX:
+            spr->x = matte_value_as_number(heap, *value);
+            break;
+          
+          case SESNSA_POSITIONY:
+            spr->y = matte_value_as_number(heap, *value);
+            break;
+
+          case SESNSA_CENTERX:
+            spr->centerX = matte_value_as_number(heap, *value);
+            break;
+
+          case SESNSA_CENTERY:
+            spr->centerY = matte_value_as_number(heap, *value);
+            break;
+
+          case SESNSA_LAYER:
+            spr->layer = matte_value_as_number(heap, *value);
+            if (spr->layer > LAYER_MAX) spr->layer = LAYER_MAX;
+            if (spr->layer < LAYER_MIN) spr->layer = LAYER_MIN;
+            break;
+
+          case SESNSA_TILEINDEX:
+            spr->tile = matte_value_as_number(heap, *value);
+            break;
+          
+          case SESNSA_EFFECT:
+            spr->effect = matte_value_as_number(heap, *value);
+            break;
+
+          case SESNSA_PALETTE:
+            spr->palette = matte_value_as_number(heap, *value);
+            break;
+        }
+
     }
     return matte_heap_new_value(heap);
 }
@@ -717,6 +731,8 @@ matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue
 
       case SESNBA_LAYER:
         bg->layer = matte_value_as_number(heap, args[2]);
+        if (bg->layer > LAYER_MAX) bg->layer = LAYER_MAX;
+        if (bg->layer < LAYER_MIN) bg->layer = LAYER_MIN;
         break;
       
       case SESNBA_EFFECT:
@@ -798,7 +814,7 @@ void ses_native_commit_rom(matte_t * m) {
     matteVM_t * vm = matte_get_vm(m);
 
     // all 3 modes require activating the core features.
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__sprite_attrib"), 3, ses_sdl_sprite_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__sprite_attrib"), 2, ses_sdl_sprite_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__engine_attrib"), 3, ses_sdl_engine_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_attrib"), 5, ses_sdl_palette_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_attrib"), 3, ses_sdl_tile_attrib, NULL);

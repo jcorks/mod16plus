@@ -94,7 +94,7 @@ return class(
     },
     define:::(this) {
         buttons->push(value:this);
-        
+        @_layer = 0;
         @_onEnter ::{};
         @_onClick ::{};
         @_onLeave ::{};
@@ -137,11 +137,13 @@ return class(
                 onClick,
                 x => Number, 
                 y => Number,
+                layer,
                 string
             ) {
                 when(string != empty && string->length > 15) 
                     error(detail:'Button text only allowed to be 15 characters');
             
+                if (layer   != empty) _layer   = layer   => Number;
                 if (onEnter != empty) _onEnter = onEnter => Function;
                 if (onLeave != empty) _onLeave = onLeave => Function;
                 if (onClick != empty) _onClick = onClick => Function;
@@ -154,7 +156,8 @@ return class(
                 
                 text. = {
                     x: _x,
-                    y: _y 
+                    y: _y,
+                    layer: _layer
                 };
                 
                 SES.Background.set(
@@ -162,7 +165,7 @@ return class(
                     show:true,
                     x: _x,
                     y: _y,
-                    layer:15,
+                    layer:_layer,
                     palette: PALETTE_TEXT
                 );
                 

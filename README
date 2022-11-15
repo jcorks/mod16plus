@@ -115,7 +115,8 @@ Layers
 Each background and sprite have a layer upon which theyre drawn.
 Layers are used to control the order in which things appear 
 on-screen. Earlier layers are drawn first, with backgrounds drawn 
-before sprites for each layer. Layers 0-31 exist for use.
+before sprites for each layer. Layers -15 through and including 16 exist for use.
+The default of 0 will place items midway.
 
 
 

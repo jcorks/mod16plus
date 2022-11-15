@@ -4,6 +4,8 @@
 */
 
 @:class = import(module:'Matte.Core.Class');
+@:SES = import(module:'SES.Core');
+
 
 @:Fetcher = class(
     name: 'Fetcher',
@@ -36,9 +38,62 @@
 );
 
 
+@:FetcherSprite = class(
+    name: 'Fetcher::Sprite',
+    define:::(this) {
+        @count = 0;
+
+        this.constructor = ::(offset) {
+            if (offset != empty)
+                count = offset => Number;
+
+            return this;
+        };
+
+        this.interface = {
+        
+            // Fetches the next free Sprite ID and initializes the sprite
+            newID :: {
+                count += 1;
+                SES.Sprite.set(
+                    index: count,                    
+                    scaleX:1,
+                    scaleY:1,
+                    x:-8,
+                    y:-8,
+                    show:false,
+                    centerX: 0,
+                    centerY: 0
+                );
+                return count;
+            },
+            
+            // Skips the next count IDs. Used 
+            // to simulate claiming groups of IDs 
+            // that are off-limits to other users.
+            claimIDs::(amount) {
+                [count, count+amount]->for(do:::(i) {
+                    SES.Sprite.set(
+                        index: i,                    
+                        scaleX:1,
+                        scaleY:1,
+                        x:-8,
+                        y:-8,
+                        show:false,
+                        centerX: 0,
+                        centerY: 0
+                    );
+                
+                });
+                count += amount;
+            }
+        };
+    }
+);
+
 return {
     // Fetcher for sprite IDs
-    Sprite : Fetcher.new(),
+    Sprite : FetcherSprite.new(),
     
     // Fetcher for background IDs
     Background : Fetcher.new(),

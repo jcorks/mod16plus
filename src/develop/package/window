@@ -7,11 +7,11 @@
 @:class = import(module:'Matte.Core.Class');
 
 
-@TILE_BG = Fetcher.Tile.newID();
-@TILE_BG_SOFT = Fetcher.Tile.newID();
-@TILE_FG = Fetcher.Tile.newID();
-@PALETTE_GRAY = Fetcher.Palette.newID();
-
+@:TILE_BG = Fetcher.Tile.newID();
+@:TILE_BG_SOFT = Fetcher.Tile.newID();
+@:TILE_FG = Fetcher.Tile.newID();
+@:PALETTE_GRAY = Fetcher.Palette.newID();
+@:POPUP_DEPTH = 5;
 
 
 @BACKGROUND_TOP0 = Fetcher.Background.newID();
@@ -94,7 +94,7 @@ SES.Palette.set(
     [0, 32]->for(do:::(i) {
         SES.Tile.copy(from:TILE_BG, to: Fetcher.backgroundIDtoTileID(id:BACKGROUND_TOP0)+i);
     });
-    SES.Background.set(index:BACKGROUND_TOP0, show:true, x:0, y:0, layer:0, effect:SES.Background.EFFECTS.COLOR, palette:PALETTE_GRAY);
+    SES.Background.set(index:BACKGROUND_TOP0, show:true, x:0, y:0, layer:1, effect:SES.Background.EFFECTS.COLOR, palette:PALETTE_GRAY);
 
 
 
@@ -105,7 +105,7 @@ SES.Palette.set(
     [0, 32]->for(do:::(i) {
         SES.Tile.copy(from:TILE_BG, to: Fetcher.backgroundIDtoTileID(id:BACKGROUND_BOTTOM0)+i);
     });
-    SES.Background.set(index:BACKGROUND_BOTTOM0, show:true, x:0, y:19*8, layer:0, effect:SES.Background.EFFECTS.COLOR, palette:PALETTE_GRAY);
+    SES.Background.set(index:BACKGROUND_BOTTOM0, show:true, x:0, y:19*8, layer:1, effect:SES.Background.EFFECTS.COLOR, palette:PALETTE_GRAY);
 
 
 };
@@ -126,6 +126,7 @@ SES.Palette.set(
         menuButtons[index].setup(
             x: iterX,
             y: 0,
+            layer:1,
             string: menu[0],
             onClick :: {
                 menu[1]();
@@ -194,7 +195,8 @@ return class(
         dialogPrompt. = {
             editable : false,
             text : '',
-            widthChars : 30
+            widthChars : 30,
+            layer : POPUP_DEPTH
         };
 
 
@@ -211,6 +213,7 @@ return class(
             SES.Background.set(
                 index:dialogBG, 
                 show:true,
+                layer:POPUP_DEPTH,
                 palette:PALETTE_GRAY,
                 x: (30*8)/2 - (32*8)/2,
                 y: (20*8)/2 - (16*8)/2
@@ -224,12 +227,14 @@ return class(
                     editable : true,
                     x: (30 * 8) / 2 - 22 * 3,
                     y: (20 * 8) / 2 - 12,                
-                    text : ''
+                    text : '',
+                    layer:POPUP_DEPTH+1
                 };
                 SES.Background.set(
                     index:dialogEntryBG,
                     palette:PALETTE_GRAY,
                     show:true,
+                    layer:POPUP_DEPTH,
                     x: (30 * 8) / 2 - 22 * 3,
                     y: (20 * 8) / 2 - 12            
                                         
@@ -249,6 +254,7 @@ return class(
                 SES.Background.set(
                     index:dialogEntryBG,
                     palette:PALETTE_GRAY,
+                    layer:POPUP_DEPTH,
                     show:false
                 );
                 dialogPrompt.text = prompt;                
@@ -264,6 +270,7 @@ return class(
             buttons->foreach(do:::(index, button) {
                 button[0].enabled = true;
                 button[0].setup(
+                    layer:POPUP_DEPTH+1,
                     x: (30 * 8) / 2 - 15,
                     y: (20 * 8) / 2 + 10*index,
                     onClick : button[1]
@@ -370,7 +377,6 @@ return class(
             },
         
             question::(text => String, onResponse => Function) {
-                Debug.breakpoint();
                 prepareDialog(
                     buttons: [
                         [dialogButtons.yes, ::{

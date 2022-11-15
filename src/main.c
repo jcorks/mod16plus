@@ -177,13 +177,15 @@ developRom = 1;
         matte_heap_new_value(matte_vm_get_heap(vm))
     );    
 
-    if (IS_DEBUG)
+    if (IS_DEBUG) {
+        ses_native_swap_context();
         matte_vm_import(
             vm,
-            MATTE_VM_STR_CAST(vm, "SES.Core"),
+            MATTE_VM_STR_CAST(vm, "SES.Debug"),
             matte_heap_new_value(matte_vm_get_heap(vm))
         );    
-
+        ses_native_swap_context();
+    }
 
     
     if (developRom) {

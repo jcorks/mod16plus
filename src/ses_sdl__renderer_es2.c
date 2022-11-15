@@ -882,5 +882,9 @@ void ses_sdl_gl_render_background(
 
 }
 
+void ses_sdl_gl_render_finish_layer() {
+    glFinish();
+}
+
 
 

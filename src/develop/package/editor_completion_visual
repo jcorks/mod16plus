@@ -3,11 +3,10 @@
 @:Fetcher = import(module:'fetcher');
 @:Textarea = import(module:'textarea');
 
+
+@:LAYER = 3;
+
 @:PALETTE_TEXT = Fetcher.Palette.newID();
-
-@textOffset = Fetcher.Sprite.newID();        
-Fetcher.Sprite.claimIDs(amount:50);
-
 SES.Palette.set(
     index : PALETTE_TEXT,
     colors : [
@@ -18,11 +17,105 @@ SES.Palette.set(
     ]
 );
 
+@textOffset = Fetcher.Sprite.newID();        
+Fetcher.Sprite.claimIDs(amount:100);
+
+
+
+// 2 BGs are used:
+// 1 is always there,
+// the second one is translated
+// from the topleft position as needed.
+
+// each BG is 10x5
+@:BG_TILE_ON = Fetcher.Tile.newID();
+@:BG_TILE_OFF = Fetcher.Tile.newID();
+@:PALETTE_BG = Fetcher.Palette.newID();
+@:BG_LEFT = Fetcher.Background.newID();
+@:BG_RIGHT = Fetcher.Background.newID();
+SES.Palette.set(
+    index : PALETTE_BG,
+    colors : [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0]
+    ]
+);
+
+SES.Tile.set(
+    index:BG_TILE_OFF,
+    data : [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0
+    ]
+);
+
+SES.Tile.set(
+    index:BG_TILE_ON,
+    data : [
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1
+    ]
+);
+
+
+
+// setup backgrounds
+@:BG_LEFT__TILE_OFFSET = Fetcher.backgroundIDtoTileID(id:BG_LEFT);
+@:BG_RIGHT__TILE_OFFSET = Fetcher.backgroundIDtoTileID(id:BG_RIGHT);
+::<= {
+    @iter = BG_LEFT__TILE_OFFSET;
+    [0, 16]->for(do:::(y) {
+        [0, 32]->for(do:::(x) {
+            if (x <= 15 && y <= 5) 
+                SES.Tile.copy(from:BG_TILE_ON, to:iter)
+            else 
+                SES.Tile.copy(from:BG_TILE_OFF, to:iter);
+
+            iter += 1;
+        });
+    });
+
+
+    iter = BG_RIGHT__TILE_OFFSET;
+    [0, 16]->for(do:::(y) {
+        [0, 32]->for(do:::(x) {
+            if (x <= 15 && y <= 5) 
+                SES.Tile.copy(from:BG_TILE_ON, to:iter)
+            else 
+                SES.Tile.copy(from:BG_TILE_OFF, to:iter);
+
+            iter += 1;
+        });
+    });
+
+};
+
+
+
+
+
 @:text = Textarea.new(defaultPalette:PALETTE_TEXT, spriteOffset:textOffset);
 
 
 text. = {
-    editable : false
+    editable : false,
+    layer: LAYER
 };
 
 return class(
@@ -31,15 +124,19 @@ return class(
             update ::(x, y, items) {
                 @o = '';
                 items->foreach(do:::(i, item => String) {
+                    when(i > 5) empty;
                     if (item != '') ::<= {
                         o = o + item + '\n';
                     };
                 });
-                print(message:o);
                 text.text = o;
                 
                 text.x = x;
                 text.y = y;
+                if (o == '')
+                    SES.Background.set(index:BG_LEFT, show: false)
+                else
+                    SES.Background.set(index:BG_LEFT, show: true, x, y, palette:PALETTE_BG, layer:LAYER, effect: SES.Sprite.EFFECTS.Color);
             }        
         };
     }

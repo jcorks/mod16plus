@@ -16,7 +16,7 @@ return class(
         @TEXT_AREA_WIDTH = 10;
         
         @LINE_LIMIT = 0;
-        @LAYER = 31;
+        @layer = 0;
         @GLYPH_WIDTH  = 6;
         @GLYPH_HEIGHT = 8;
         
@@ -58,11 +58,7 @@ return class(
                     index: spr,
                     tile: code,
                     show:true,
-                    scaleX:1,
-                    scaleY:1,
-                    centerX: 0,
-                    layer: LAYER,
-                    centerY: 0,
+                    layer,
                     x: px,
                     y: py,
                     effect: SES.Sprite.EFFECTS.Color,
@@ -101,57 +97,65 @@ return class(
 
         @:MIN ::(a, b) <- if (a < b) a else b;
 
-
+        @redrawLinesUpdateID = -1;
         @:redrawLines :: {
-            @spr = spriteOffset_;
-            @i = 0;
-            [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
-                @:line = lines[index];
-                @:colorPath = colors[index];
-                when(line->length == 0) ::<= {
-                    i+=1;
-                };
-                
-                @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
-                @scrolledColor = colorPath->subset(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
-                when(scrolledLine == empty || scrolledLine->length == 0) ::<= {
-                    i+=1;
-                };
-
-
-                if (scrolledColor != empty)
-                    spr = drawString(offset:spr, x:offsetX, y: i*8 + offsetY, string:scrolledLine, colors:scrolledColor);
-                i+=1;
-            });
+            when(redrawLinesUpdateID >= 0) empty;
+            redrawLinesUpdateID = SES.addAlarm(
+                expireMS:25,
+                callback::{
             
-            [spr, lastSpriteCount]->for(do:::(i) {
-                SES.Sprite.set(
-                    index:i,
-                    show:false
-                );
-            });                    
-            
-            // cursor
-            if (inputCallbackID != empty) ::<= {
-                SES.Sprite.set(
-                    index: spr,
-                    tile: 0,
-                    show:true,
-                    scaleX:1,
-                    scaleY:1,
-                    centerX: 0,
-                    layer: 0,
-                    centerY: 0,
-                    x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
-                    y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
-                    effect: SES.Sprite.EFFECTS.Color,
-                    palette:defaultPalette_
-                );                    
-                lastSpriteCount = spr+1;
-            } else 
-                lastSpriteCount = spr;
+                    @spr = spriteOffset_;
+                    @i = 0;
+                    [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
+                        @:line = lines[index];
+                        @:colorPath = colors[index];
+                        when(line->length == 0) ::<= {
+                            i+=1;
+                        };
+                        
+                        @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
+                        @scrolledColor = colorPath->subset(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
+                        when(scrolledLine == empty || scrolledLine->length == 0) ::<= {
+                            i+=1;
+                        };
 
 
+                        if (scrolledColor != empty)
+                            spr = drawString(offset:spr, x:offsetX, y: i*8 + offsetY, string:scrolledLine, colors:scrolledColor);
+                        i+=1;
+                    });
+                    
+                    [spr, lastSpriteCount]->for(do:::(i) {
+                        SES.Sprite.set(
+                            index:i,
+                            show:false
+                        );
+                    });                    
+                    
+                    // cursor
+                    if (inputCallbackID != empty) ::<= {
+                        SES.Sprite.set(
+                            index: spr,
+                            tile: 0,
+                            show:true,
+                            scaleX:1,
+                            scaleY:1,
+                            centerX: 0,
+                            layer,
+                            centerY: 0,
+                            x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
+                            y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
+                            effect: SES.Sprite.EFFECTS.Color,
+                            palette:defaultPalette_
+                        );                    
+                        lastSpriteCount = spr+1;
+                    } else 
+                        lastSpriteCount = spr;
+
+                    redrawLinesUpdateID = -1;
+
+                }
+            );
                 
         };
 
@@ -451,12 +455,19 @@ return class(
                 },
                 get ::<- offsetY
             },
+            
+            layer : {
+                set ::(value => Number) {
+                    layer = value;
+                }
+            },
 
             scrollX : {
                 get ::<- scrollX,
                 set ::(value) {
+                    if (value < 0) value = 0;
+                    when (value->floor == scrollX->floor) empty;
                     scrollX = value;
-                    if (scrollX < 0) scrollX = 0;
                     redrawLines();
                     
                 }
@@ -466,22 +477,17 @@ return class(
                 get ::<- scrollY,
                 set ::(value) {
                     when (lines->keycount <= TEXT_AREA_HEIGHT) scrollY = 0;
+                    if (value > lines->keycount - TEXT_AREA_HEIGHT) value = lines->keycount - TEXT_AREA_HEIGHT;
+                    if (value < 0) value = 0;
+                    when (value->floor == scrollY->floor) empty;
                     scrollY = value;
-                    if (scrollY > lines->keycount - TEXT_AREA_HEIGHT) scrollY = lines->keycount - TEXT_AREA_HEIGHT;
-                    if (scrollY < 0) scrollY = 0;
                     redrawLines();
                 }
             },
             
             setScroll ::(x, y) {
-                scrollX = x;
-                if (scrollX < 0) scrollX = 0;
-                when (lines->keycount <= TEXT_AREA_HEIGHT) scrollY = 0;
-                scrollY = y;
-                if (scrollY > lines->keycount - TEXT_AREA_HEIGHT) scrollY = lines->keycount - TEXT_AREA_HEIGHT;
-                if (scrollY < 0) scrollY = 0;
-                redrawLines();
-                
+                this.scrollX = x;
+                this.scrollY = y;
             },
                         
                         

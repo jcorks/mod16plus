@@ -705,42 +705,22 @@
                     effect,
                     palette
                 ) {
-                    if (show != empty) 
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.ENABLE, c:if((show => Boolean) == true) 1 else 0);
+                    @commands = [];
+                    @iter = 0;
+                    if (show != empty) commands     = [...commands, ATTRIBS.ENABLE, if((show => Boolean) == true) 1 else 0];
+                    if (tile != empty) commands     = [...commands, ATTRIBS.TILEINDEX, tile=>Number];
+                    if (scaleX != empty) commands   = [...commands, ATTRIBS.SCALEX, scaleX=>Number];
+                    if (scaleY != empty) commands   = [...commands, ATTRIBS.SCALEY, scaleY=>Number];
+                    if (x != empty) commands        = [...commands, ATTRIBS.POSITIONX, x=>Number];
+                    if (y != empty) commands        = [...commands, ATTRIBS.POSITIONY, y=>Number];
+                    if (rotation != empty) commands = [...commands, ATTRIBS.ROTATION, rotation=>Number];
+                    if (centerX != empty) commands  = [...commands, ATTRIBS.CENTERX, centerX=>Number];
+                    if (centerY != empty) commands  = [...commands, ATTRIBS.CENTERY, centerY=>Number];
+                    if (layer != empty) commands    = [...commands, ATTRIBS.LAYER, layer=>Number];            
+                    if (effect != empty) commands   = [...commands, ATTRIBS.EFFECT, effect=>Number];                        
+                    if (palette != empty) commands  = [...commands, ATTRIBS.PALETTE, palette=>Number];
 
-                    if (tile != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.TILEINDEX, c:tile=>Number);            
-
-                    if (scaleX != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.SCALEX, c:scaleX=>Number);
-
-                    if (scaleY != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.SCALEY, c:scaleY=>Number);
-
-                    if (x != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.POSITIONX, c:x=>Number);
-
-                    if (y != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.POSITIONY, c:y=>Number);
-
-                    if (rotation != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.ROTATION, c:rotation=>Number);
-
-                    if (centerX != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.CENTERX, c:centerX=>Number);
-
-                    if (centerY != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.CENTERY, c:centerY=>Number);
-
-
-                    if (layer != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.LAYER, c:layer=>Number);            
-
-                    if (effect != empty)                        
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.EFFECT, c:effect=>Number);                        
-
-                    if (palette != empty)
-                        ses_native__sprite_attrib(a:index, b:ATTRIBS.PALETTE, c:palette=>Number);
+                    ses_native__sprite_attrib(a:index, b:commands);
 
                 },
                 

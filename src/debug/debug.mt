@@ -13,6 +13,19 @@
 @inDebugContext = false;
 
 
+[0, 4100]->for(do:::(i) {
+    SES.Sprite.set(
+        index: i,
+        scaleX:1,
+        scaleY:1,
+        centerX: 0,
+        centerY: 0
+    );
+});
+
+
+
+
 
 @:Text = class(
     name: 'TextArea',
@@ -69,11 +82,6 @@
                     index: spr,
                     tile: string->charCodeAt(index:i),
                     show:true,
-                    scaleX:1,
-                    scaleY:1,
-                    centerX: 0,
-                    layer: LAYER,
-                    centerY: 0,
                     x: chX * GLYPH_WIDTH  + x,
                     y: chY * GLYPH_HEIGHT + y,
                     effect: SES.Sprite.EFFECTS.Color,
@@ -136,11 +144,7 @@
                         index: spr,
                         tile: 0,
                         show:true,
-                        scaleX:1,
-                        scaleY:1,
-                        centerX: 0,
                         layer: 0,
-                        centerY: 0,
                         x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
                         y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
                         effect: SES.Sprite.EFFECTS.Color,
@@ -537,28 +541,36 @@
                         
                         @isDown = false;
                         
-                        @lastX = 0;
-                        @lastY = 0;
+                        @initialX = 0;
+                        @initialY = 0;
+                        @initialScrollX = 0;
+                        @initialScrollY = 0;
                         @ripple = false;
                         scrollCallbackID = SES.Input.addCallback(
                             device:SES.Input.DEVICES.POINTER0,
                             callback:::(event, x, y, button) {
-                                if (event == SES.Input.EVENTS.POINTER_BUTTON_DOWN) holdMod = true;
+                                if (event == SES.Input.EVENTS.POINTER_BUTTON_DOWN) ::<= {
+                                    if (holdMod == false) ::<= {
+                                        initialX = x;
+                                        initialY = y;
+                                        initialScrollX = this.scrollX;
+                                        initialScrollY = this.scrollY;
+                                    };
+                                    holdMod = true;
+                                };
                                 if (event == SES.Input.EVENTS.POINTER_BUTTON_UP  ) holdMod = false;
 
                                 if (event == SES.Input.EVENTS.POINTER_MOTION) ::<= {
                                     if (holdMod && ctrlMod) ::<= {
                                         if (ripple) ::<= {
                                             this.setScroll(
-                                                x: this.scrollX - (x - lastX)/2,
-                                                y: this.scrollY - (y - lastY)/2
+                                                x: (initialScrollX + (initialX - x)/4)->floor,
+                                                y: (initialScrollY + (initialY - y)/4)->floor
                                             );
                                         };
                                         ripple = !ripple;
                                     };
                                     
-                                    lastX = x;
-                                    lastY = y;
                                 };
 
                                 if (event == SES.Input.EVENTS.POINTER_SCROLL) ::<= {
@@ -754,6 +766,7 @@
     };
     
     @:onDebugInit :: {
+
 
     
         display = Text.new();
