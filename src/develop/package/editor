@@ -1,5 +1,6 @@
 @:View = import(module:'view');
 @:SES = import(module:'SES.Core');
+@:Debug = import(module:'SES.Debug');
 @:class = import(module:'Matte.Core.Class');
 @:Fetcher = import(module:'fetcher');
 @:highlightLine = import(module:'editor_highlight');
@@ -111,8 +112,8 @@ Fetcher.Sprite.claimIDs(amount:30);
             
             @title = Textarea.new(defaultPalette:PALETTE__NORMAL_TEXT, spriteOffset:SPRITE__BEGIN_TITLE);
             title.text = filename;
-
             @:Window = import(module:'window');
+            @lastWord = '';
             @textarea = Window.createTextBox(
               defaultPalette : PALETTE__NORMAL_TEXT,  
               onChange:: {
@@ -124,8 +125,9 @@ Fetcher.Sprite.claimIDs(amount:30);
 
                 
                 @:word = getCurrentWord();
-                if (word != empty) ::<= {
+                if (word != empty && word.text != empty && word.text->length > 1) ::<= {
                     textarea.completionMode = true;
+                    lastWord = word.text;
                     @:suggestions = completer.getSuggestions(word:word.text);
                     @:screenLoc = textarea.cursorToPixelCoords();
                     completerBox.update(
@@ -139,6 +141,24 @@ Fetcher.Sprite.claimIDs(amount:30);
                 };
                 
 
+              },
+
+              onNav :: {
+                textarea.completionMode = false;
+                completerBox.update(items:[], x:0, y:0);
+              },
+
+              onEnter :: {
+                when(!textarea.completionMode) empty;
+                if (textarea.completionMode) ::<= {
+                    @:last = completerBox.getCurrentSuggestion();
+                    when(last == empty) empty;
+                    textarea.deleteLineText(numChars:lastWord->length);
+                    textarea.addText(text:last);
+                    textarea.completionMode = false;
+                    completerBox.update(items:[], x:0, y:0);
+
+                };
               }
 
             );

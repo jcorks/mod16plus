@@ -363,14 +363,18 @@ return class(
             
             createTextBox::(
                 defaultPalette,
-                onChange
+                onChange,
+                onNav,
+                onEnter
             ) {
                 @:spriteOffset = Fetcher.Sprite.newID();
                 Fetcher.Sprite.claimIDs(amount:(30*8 / 6) * 20);
                 @:out = Textarea.new(
                     defaultPalette,
                     spriteOffset,
-                    onChange
+                    onChange,
+                    onNav,
+                    onEnter
                 );      
                 textBoxes->push(value:out);
                 return out; 

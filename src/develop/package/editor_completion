@@ -44,7 +44,8 @@
                 
         });
         // prioritize shorter words
-        return maxrank + if (test->length == word->length) 0 else 0.4;
+        //return maxrank + if (test->length == word->length) 0 else 0.4;
+        return maxrank;
     };
 };
 
@@ -118,7 +119,9 @@ return class(
                         return 0;
                     }
                 );
-                return ranks;
+
+                ranks->remove(key:ranks->findIndex(value:word));
+                return if (ranks->keycount > 5) ranks->subset(from:0, to:4) else ranks;
             },
             
             

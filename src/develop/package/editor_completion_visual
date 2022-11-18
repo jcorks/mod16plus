@@ -118,26 +118,32 @@ text. = {
     layer: LAYER
 };
 
+
+@current = 0;
+@currentList = [];
 return class(
     define:::(this) {
         this.interface = {
             update ::(x, y, items) {
                 @o = '';
                 items->foreach(do:::(i, item => String) {
-                    when(i > 5) empty;
                     if (item != '') ::<= {
-                        o = o + item + '\n';
+                        o = o + (if(current == i) '>>' else '  ') + item + '\n';
                     };
                 });
                 text.text = o;
-                
+                currentList = [...items];
                 text.x = x;
                 text.y = y;
                 if (o == '')
                     SES.Background.set(index:BG_LEFT, show: false)
                 else
                     SES.Background.set(index:BG_LEFT, show: true, x, y, palette:PALETTE_BG, layer:LAYER, effect: SES.Sprite.EFFECTS.Color);
-            }        
+            },
+
+            getCurrentSuggestion :: {
+                return currentList[current]; // for now. normally, its the one highlighted.
+            }
         };
     }
 ).new();

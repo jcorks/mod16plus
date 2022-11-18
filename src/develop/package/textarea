@@ -1,6 +1,6 @@
 @:class = import(module:'Matte.Core.Class');
 @:SES = import(module:'SES.Core');
-
+@:Debug = import(module:'SES.Debug');
 
 
 
@@ -9,6 +9,8 @@ return class(
     define:::(this) {
         @spriteOffset_ = 0;
         @onChange_;
+        @onNav_;
+        @onEnter_;
         @defaultPalette_ = 0;
 
 
@@ -324,6 +326,7 @@ return class(
                     when (completionMode) empty;
                     cursorY -= 1;
                     movedUp();
+                    if (onNav_ != empty) onNav_();
                     
                   },
                   
@@ -331,23 +334,27 @@ return class(
                     when (completionMode) empty;
                     cursorY += 1;
                     movedDown();
+                    if (onNav_ != empty) onNav_();
                   },
 
                   (SES.Input.KEYS.LEFT):::<= {
                     cursorX -= 1;
                     movedLeft();             
+                    if (onNav_ != empty) onNav_();
                    },
                   
                   (SES.Input.KEYS.RIGHT):::<= {
                     cursorX += 1;
                     movedRight();
+                    if (onNav_ != empty) onNav_();
 
                   },
 
 
                   
                   (SES.Input.KEYS.RETURN):::<= {
-                    when(completionMode) empty;
+                    when(completionMode) if (onEnter_) onEnter_();;
+                    if (onEnter_) onEnter_();
                     when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
                   
                     // return at end
@@ -403,18 +410,7 @@ return class(
             };
 
             if (text != empty) ::<= {
-                // else, just normal text
-                @:line = lines[cursorY];
-                @:color = colors[cursorY];
-                lines[cursorY] = insertText(src:line, at:cursorX, text);
-                [0, text->length]->for(do:::(i) {
-                    insertColors(src:color, at:cursorX, color:defaultPalette_);
-                });
-                cursorX += 1;
-                movedRight();
-
-                if (onChange_ != empty) onChange_();
-                redrawLines();
+                this.addCh(ch:text);    
             };
         };
 
@@ -433,8 +429,10 @@ return class(
 
     
         
-        this.constructor = ::(spriteOffset, defaultPalette, onChange) {
+        this.constructor = ::(spriteOffset, defaultPalette, onChange, onNav, onEnter) {
             onChange_ = onChange;
+            onNav_ = onNav;
+            onEnter_ = onEnter;
             spriteOffset_ = spriteOffset;
             defaultPalette_ = defaultPalette;
             
@@ -664,6 +662,66 @@ return class(
                                                     
                 redrawLines();  
             },
+            addCh ::(ch) {
+                // else, just normal text
+                @:line = lines[cursorY];
+                @:color = colors[cursorY];
+                lines[cursorY] = insertText(src:line, at:cursorX, text:ch);
+                insertColors(src:color, at:cursorX, color:defaultPalette_);
+                cursorX += 1;
+                movedRight();
+
+                if (onChange_ != empty) onChange_();
+                redrawLines();
+
+            },
+
+            addText ::(text) {
+                // else, just normal text
+
+                @:line = lines[cursorY];
+                lines[cursorY] = insertText(src:line, at:cursorX, text);
+                
+                [0, text->length]->for(do:::(i) {
+                    @:color = colors[cursorY];
+                    insertColors(src:color, at:cursorX, color:defaultPalette_);
+                    cursorX += 1;
+                });
+                movedRight();
+
+                if (onChange_ != empty) onChange_();
+                redrawLines();
+
+            },
+
+            deleteLineText::(numChars => Number) {
+                
+                when(cursorX == 0) empty;
+                when(lines[cursorY]->length == 0) empty;
+
+                when(numChars >= lines[cursorY]->length-1 && cursorX >= lines[cursorY]->length-1) ::<= {
+                    lines[cursorY] = '';
+                    cursorX = 0;
+                };
+
+                when(numChars >= cursorX) ::<= {
+                    lines[cursorY] = lines[cursorY]->substr(from:cursorX, to: lines[cursorY]->length-1);
+                    cursorX = 0;
+                };
+
+                when(cursorX >= lines[cursorY]->length-1) ::<={
+                    lines[cursorY] = lines[cursorY]->substr(from:0, to:lines[cursorY]->length-numChars-1);
+                    cursorX -= numChars;
+                };
+                
+
+                lines[cursorY] = 
+                    lines[cursorY]->substr(from:0, to:cursorX-numChars-1) +
+                    lines[cursorY]->substr(from:cursorX, to: lines[cursorY]->length-1)
+                ;
+                cursorX -= numChars;
+
+            },
             
             getLine ::(index => Number) => String {
                 return lines[index];
@@ -719,6 +777,8 @@ return class(
                 cursorX = x;
                 cursorY = y;
                 redrawLines();
+                if (onNav_ != empty) onNav_();
+
             },
             
             cursorY : {
@@ -732,7 +792,8 @@ return class(
             // in completion mode, the up / down / enter keys 
             // are ignored            
             completionMode : {
-                set ::(value) <- completionMode = value
+                set ::(value) <- completionMode = value,
+                get ::(value) <- completionMode
             },
             
             
