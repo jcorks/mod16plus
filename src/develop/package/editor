@@ -125,6 +125,7 @@ Fetcher.Sprite.claimIDs(amount:30);
                 
                 @:word = getCurrentWord();
                 if (word != empty) ::<= {
+                    textarea.completionMode = true;
                     @:suggestions = completer.getSuggestions(word:word.text);
                     @:screenLoc = textarea.cursorToPixelCoords();
                     completerBox.update(
@@ -133,6 +134,7 @@ Fetcher.Sprite.claimIDs(amount:30);
                         items: suggestions
                     );
                 } else ::<= {
+                    textarea.completionMode = false;
                     completerBox.update(items:[], x:0, y:0);
                 };
                 

@@ -19,7 +19,7 @@ return class(
         @layer = 0;
         @GLYPH_WIDTH  = 6;
         @GLYPH_HEIGHT = 8;
-        
+        @completionMode = false;
         
         
 
@@ -321,14 +321,16 @@ return class(
                   },
                   
                   (SES.Input.KEYS.UP):::<= {
+                    when (completionMode) empty;
                     cursorY -= 1;
                     movedUp();
+                    
                   },
                   
                   (SES.Input.KEYS.DOWN):::<= {
+                    when (completionMode) empty;
                     cursorY += 1;
                     movedDown();
-
                   },
 
                   (SES.Input.KEYS.LEFT):::<= {
@@ -345,6 +347,7 @@ return class(
 
                   
                   (SES.Input.KEYS.RETURN):::<= {
+                    when(completionMode) empty;
                     when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
                   
                     // return at end
@@ -724,6 +727,12 @@ return class(
 
             cursorX : {
                 get :: <- cursorX
+            },
+
+            // in completion mode, the up / down / enter keys 
+            // are ignored            
+            completionMode : {
+                set ::(value) <- completionMode = value
             },
             
             
