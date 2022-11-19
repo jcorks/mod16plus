@@ -364,7 +364,8 @@ return class(
             createTextBox::(
                 defaultPalette,
                 onChange,
-                onNav,
+                onNavHorizontal,
+                onNavVertical,
                 onEnter
             ) {
                 @:spriteOffset = Fetcher.Sprite.newID();
@@ -373,7 +374,8 @@ return class(
                     defaultPalette,
                     spriteOffset,
                     onChange,
-                    onNav,
+                    onNavHorizontal,
+                    onNavVertical,
                     onEnter
                 );      
                 textBoxes->push(value:out);

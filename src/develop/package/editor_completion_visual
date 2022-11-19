@@ -123,23 +123,41 @@ text. = {
 @currentList = [];
 return class(
     define:::(this) {
+
+        @:rebuildList :: {
+            @o = '';
+            currentList->foreach(do:::(i, item => String) {
+                if (item != '') ::<= {
+                    o = o + (if(current == i) '> ' else '  ') + item + '\n';
+                };
+            });
+            text.text = o;
+        };
         this.interface = {
             update ::(x, y, items) {
-                @o = '';
-                items->foreach(do:::(i, item => String) {
-                    if (item != '') ::<= {
-                        o = o + (if(current == i) '>>' else '  ') + item + '\n';
-                    };
-                });
-                text.text = o;
+                current = 0;
                 currentList = [...items];
+                rebuildList();
                 text.x = x;
                 text.y = y;
-                if (o == '')
+                if (text.text == '')
                     SES.Background.set(index:BG_LEFT, show: false)
                 else
                     SES.Background.set(index:BG_LEFT, show: true, x, y, palette:PALETTE_BG, layer:LAYER, effect: SES.Sprite.EFFECTS.Color);
             },
+
+            selectDown ::() {
+                when (current == currentList->keycount-1) empty;
+                current += 1;
+                rebuildList();
+            },
+
+            selectUp ::() {
+                when (current == 0) empty;
+                current -= 1;
+                rebuildList();
+            },
+
 
             getCurrentSuggestion :: {
                 return currentList[current]; // for now. normally, its the one highlighted.

@@ -113,7 +113,7 @@ Fetcher.Sprite.claimIDs(amount:30);
             @title = Textarea.new(defaultPalette:PALETTE__NORMAL_TEXT, spriteOffset:SPRITE__BEGIN_TITLE);
             title.text = filename;
             @:Window = import(module:'window');
-            @lastWord = '';
+            @lastWord = {};
             @textarea = Window.createTextBox(
               defaultPalette : PALETTE__NORMAL_TEXT,  
               onChange:: {
@@ -127,7 +127,7 @@ Fetcher.Sprite.claimIDs(amount:30);
                 @:word = getCurrentWord();
                 if (word != empty && word.text != empty && word.text->length > 1) ::<= {
                     textarea.completionMode = true;
-                    lastWord = word.text;
+                    lastWord = word;
                     @:suggestions = completer.getSuggestions(word:word.text);
                     @:screenLoc = textarea.cursorToPixelCoords();
                     completerBox.update(
@@ -143,17 +143,30 @@ Fetcher.Sprite.claimIDs(amount:30);
 
               },
 
-              onNav :: {
+              onNavHorizontal :: {
                 textarea.completionMode = false;
                 completerBox.update(items:[], x:0, y:0);
               },
+
+              onNavVertical ::(dir) {
+                if (textarea.completionMode == true) ::<= {
+                    if (dir == 1)
+                        completerBox.selectUp()
+                    else 
+                        completerBox.selectDown()
+                    ;
+                };
+              },
+
 
               onEnter :: {
                 when(!textarea.completionMode) empty;
                 if (textarea.completionMode) ::<= {
                     @:last = completerBox.getCurrentSuggestion();
                     when(last == empty) empty;
-                    textarea.deleteLineText(numChars:lastWord->length);
+                    // need to move the cursor to the end of the word before deletion
+                    textarea.moveCursor(x:lastWord.location  + lastWord.text->length);
+                    textarea.deleteLineText(numChars:lastWord.text->length);
                     textarea.addText(text:last);
                     textarea.completionMode = false;
                     completerBox.update(items:[], x:0, y:0);

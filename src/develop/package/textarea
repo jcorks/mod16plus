@@ -9,7 +9,8 @@ return class(
     define:::(this) {
         @spriteOffset_ = 0;
         @onChange_;
-        @onNav_;
+        @onNavHor_;
+        @onNavVer_;
         @onEnter_;
         @defaultPalette_ = 0;
 
@@ -323,30 +324,30 @@ return class(
                   },
                   
                   (SES.Input.KEYS.UP):::<= {
+                    if (onNavVer_ != empty) onNavVer_(dir:1);
                     when (completionMode) empty;
                     cursorY -= 1;
                     movedUp();
-                    if (onNav_ != empty) onNav_();
                     
                   },
                   
                   (SES.Input.KEYS.DOWN):::<= {
+                    if (onNavVer_ != empty) onNavVer_(dir:-1);
                     when (completionMode) empty;
                     cursorY += 1;
                     movedDown();
-                    if (onNav_ != empty) onNav_();
                   },
 
                   (SES.Input.KEYS.LEFT):::<= {
+                    if (onNavHor_ != empty) onNavHor_();
                     cursorX -= 1;
                     movedLeft();             
-                    if (onNav_ != empty) onNav_();
                    },
                   
                   (SES.Input.KEYS.RIGHT):::<= {
+                    if (onNavHor_ != empty) onNavHor_();
                     cursorX += 1;
                     movedRight();
-                    if (onNav_ != empty) onNav_();
 
                   },
 
@@ -429,9 +430,10 @@ return class(
 
     
         
-        this.constructor = ::(spriteOffset, defaultPalette, onChange, onNav, onEnter) {
+        this.constructor = ::(spriteOffset, defaultPalette, onChange, onNavVertical, onNavHorizontal, onEnter) {
             onChange_ = onChange;
-            onNav_ = onNav;
+            onNavVer_ = onNavVertical;
+            onNavHor_ = onNavHorizontal;
             onEnter_ = onEnter;
             spriteOffset_ = spriteOffset;
             defaultPalette_ = defaultPalette;
@@ -695,11 +697,11 @@ return class(
             },
 
             deleteLineText::(numChars => Number) {
-                
+                // cursor can be [0, line->length]
                 when(cursorX == 0) empty;
                 when(lines[cursorY]->length == 0) empty;
 
-                when(numChars >= lines[cursorY]->length-1 && cursorX >= lines[cursorY]->length-1) ::<= {
+                when(numChars >= lines[cursorY]->length-1 && cursorX >= lines[cursorY]->length) ::<= {
                     lines[cursorY] = '';
                     cursorX = 0;
                 };
@@ -774,10 +776,11 @@ return class(
             
             
             moveCursor ::(x, y) {
-                cursorX = x;
-                cursorY = y;
+                cursorX = if (x == empty) cursorX else x;
+                cursorY = if (y == empty) cursorY else y;
                 redrawLines();
-                if (onNav_ != empty) onNav_();
+                if (onNavVer_ != empty) onNavVer_(dir:0);
+                if (onNavHor_ != empty) onNavHor_();
 
             },
             
