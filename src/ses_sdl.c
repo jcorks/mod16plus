@@ -468,7 +468,9 @@ typedef enum {
     SESNEA_UPDATEFUNC,
     SESNEA_RESOLUTION,
     SESNEA_ADDALARM,
-    SESNEA_REMOVEALARM    
+    SESNEA_REMOVEALARM,
+    SESNEA_CLIPBOARDGET,
+    SESNEA_CLIPBOARDSET 
 } SESNative_EngineAttribs_t;
 
 
@@ -529,6 +531,25 @@ matteValue_t ses_sdl_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteV
             }
         }
       };
+
+      case SESNEA_CLIPBOARDGET: {
+        char * clipboardRaw = SDL_GetClipboardText();
+        matteValue_t strOut = matte_heap_new_value(heap);
+        matteString_t * strVal = matte_string_create_from_c_str("%s", clipboardRaw ? clipboardRaw : "");
+        matte_value_into_string(heap, &strOut, strVal);
+        matte_string_destroy(strVal);
+        SDL_free(clipboardRaw);
+
+        return strOut;
+      };
+
+      case SESNEA_CLIPBOARDSET: {
+        const matteString_t * str = matte_value_string_get_string_unsafe(heap, args[1]);
+        SDL_SetClipboardText(matte_string_get_c_str(str));
+      };
+
+
+
         
     }
     

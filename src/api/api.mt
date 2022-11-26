@@ -747,6 +747,8 @@
             RESOLUTION:  2,
             ADDALARM:    3,
             REMOVEALARM: 4,
+            CLIPBOARDGET:5,
+            CLIPBOARDSET:6
         };
         
         @:RESOLUTION = {
@@ -828,7 +830,10 @@
                 ses_native__engine_attrib(a:ATTRIBS.REMOVEALARM, b:id);
             },
             
-            
+            clipboard : {
+                get ::<- ses_native__engine_attrib(a:ATTRIBS.CLIPBOARDGET),
+                set ::(value => String) <- ses_native__engine_attrib(a:ATTRIBS.CLIPBOARDSET, b:value)
+            },
 
             
             

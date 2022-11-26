@@ -131,7 +131,7 @@ Fetcher.Sprite.claimIDs(amount:30);
                     @:suggestions = completer.getSuggestions(word:word.text);
                     @:screenLoc = textarea.cursorToPixelCoords();
                     completerBox.update(
-                        x: word.location*6,
+                        x: screenLoc.x ,
                         y: screenLoc.y+8,
                         items: suggestions
                     );
