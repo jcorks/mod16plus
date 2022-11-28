@@ -52,7 +52,7 @@ static matteValue_t package_native__save_source (matteVM_t * vm, matteValue_t fn
     
     int result = dump_file(
         matte_string_get_c_str(fullpath),
-        matte_string_get_c_str(data),
+        (void*)matte_string_get_c_str(data),
         strlen(matte_string_get_c_str(data))
     );
     
@@ -149,7 +149,7 @@ static matteArray_t * package_split(const char * dir, const char * sub) {
     return arr;    
 }
 
-static matteString_t * currentCompiled = NULL;
+static const matteString_t * currentCompiled = NULL;
 static void ses_package__compile_error(
     const matteString_t * str,
     uint32_t line, 
@@ -435,7 +435,7 @@ int ses_package(const char * dir) {
             );
             currentCompiled = NULL;
             
-            matteString_t * line = matte_value_string_get_string_unsafe(heap, name);
+            const matteString_t * line = matte_value_string_get_string_unsafe(heap, name);
             
             matte_array_push(bytecodeSegments, bytes);
             matte_array_push(bytecodeSegmentSizes, segmentLength);

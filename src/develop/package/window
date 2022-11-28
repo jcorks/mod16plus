@@ -346,6 +346,7 @@ return class(
                                         selectView(view:views[0]);
                                     } : {
                                         onError ::(message) {
+                                            print(message);
                                             this.alert(text: 'Couldnt open.', onOkay: ::<-this.start());
                                             
                                         }

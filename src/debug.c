@@ -1,16 +1,19 @@
 #include "debug.h"
 #include "dump.h"
 #include "matte/src/matte_vm.h"
+#include "matte/src/matte_compiler.h"
+#include "matte/src/matte_bytecode_stub.h"
 #include "matte/src/matte_string.h"
 #include "matte/src/matte_array.h"
 #include "matte/src/matte_table.h"
+#include "matte/src/matte_heap.h"
 #include "matte/src/matte_bytecode_stub.h"
 #include "native.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <ctype.h>
 
 typedef struct {
     int enabled;
@@ -24,6 +27,8 @@ typedef struct {
     matteValue_t onPrint;
     matteValue_t onClear;
     matteValue_t onCommit;
+    matteValue_t onEnter;
+    matteValue_t onLeave;
     matteValue_t activateConsole;
     matteHeap_t * heap;
     matteVM_t * vm;
@@ -102,6 +107,7 @@ static void debug_clear() {
 }
 
 
+static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 static void ses_matte_debug_event(
     matteVM_t * vm, 
     matteVMDebugEvent_t event, 
@@ -112,6 +118,14 @@ static void ses_matte_debug_event(
 ) {
     debug.currentFileid = file;
     debug.currentLine = lineNumber;
+
+    if (event == MATTE_VM_DEBUG_EVENT__ERROR_RAISED) {
+        if (!debug.active) {
+            ses_native__debug_context_enter(debug.vm, matte_heap_new_value(debug.heap), NULL, NULL);
+        }
+
+    }
+
 }
 
 
@@ -128,6 +142,8 @@ static void ses_matte_query__error(
             debug_println("Error: %s", SESDebug_Color__Error, matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, value)));
         }
         debug_show_text();
+
+
     }
 }
 
@@ -184,6 +200,8 @@ static void ses_matte_backtrace() {
 static int ses_matte_debug_dump() {
     matteVM_t * vm = debug.vm;        
     matteVMStackFrame_t frame = matte_vm_get_stackframe(vm, debug.callstackLevel + (matte_vm_get_stackframe_size(vm) - debug.callstackLimit));
+    if (!frame.stub)
+        goto L_FAIL;
     uint32_t fileid = matte_bytecode_stub_get_file_id(frame.stub);
 
     const matteString_t * name = matte_vm_get_script_name_by_id(debug.vm, fileid);
@@ -249,6 +267,77 @@ static int ses_matte_debug_dump() {
 
 
 
+
+
+
+
+
+static matteValue_t ses_native__debug_context_bind(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData){
+    debug.onPrint  = args[0];
+    debug.onClear  = args[1];
+    debug.onEnter  = args[2];
+    debug.onCommit = args[3];
+    debug.onLeave  = args[4];
+
+
+    matte_value_object_push_lock(debug.heap, debug.onPrint);    
+    matte_value_object_push_lock(debug.heap, debug.onClear);
+    matte_value_object_push_lock(debug.heap, debug.onCommit);
+    matte_value_object_push_lock(debug.heap, debug.onEnter);
+    matte_value_object_push_lock(debug.heap, debug.onLeave);
+
+
+};
+
+
+
+
+static void ses_native_debug_context_leave() {
+    debug.active = 0;
+    matte_value_object_pop_lock(debug.heap, debug.onPrint);    
+    matte_value_object_pop_lock(debug.heap, debug.onClear);
+    
+    debug.onPrint.binID = 0;
+    debug.onClear.binID = 0;
+
+    
+    matte_vm_call(debug.vm, debug.onLeave, matte_array_empty(), matte_array_empty(), NULL);
+
+    ses_native_swap_context();
+
+}
+
+static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData){
+    debug.active = 1;
+    ses_native_swap_context();
+    debug.requestedExit = 0;
+    
+    debug.callstackLevel = 0;
+    debug.callstackLimit = matte_vm_get_stackframe_size(debug.vm)-1;
+    
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+
+    matte_vm_call(debug.vm, debug.onEnter, matte_array_empty(), matte_array_empty(), NULL);
+    
+    debug_println("SES. (debug console)", SESDebug_Color__Normal);
+    debug_println("http://github.com/jcorks/", SESDebug_Color__Normal);
+    debug_println("sprite-entertainment-system", SESDebug_Color__Normal);    
+    debug_println("", SESDebug_Color__Normal);
+    
+    ses_matte_backtrace();
+    ses_matte_debug_dump();
+    debug_show_text();
+
+    for(;;) {
+        if (debug.requestedExit) break;
+        debug.requestedExit |= !ses_native_update(debug.matte);    
+
+    }
+    ses_native_debug_context_leave();
+
+}
+
 static void ses_debug_unhandled_error(
     matteVM_t * vm, 
     uint32_t file, 
@@ -256,6 +345,7 @@ static void ses_debug_unhandled_error(
     matteValue_t val, 
     void * userdata
 ) {
+
     
     if (val.binID == MATTE_VALUE_TYPE_OBJECT) {
         matteValue_t s = matte_value_object_access_string(matte_vm_get_heap(vm), val, MATTE_VM_STR_CAST(vm, "summary"));
@@ -268,67 +358,22 @@ static void ses_debug_unhandled_error(
             );
             fflush(stdout);
             debug_show_text();
-            return;
         }
+    } else {
+        
+        debug_println(
+            "Unhandled error (%s, line %d)\n",
+            SESDebug_Color__Error,  
+            matte_string_get_c_str(matte_vm_get_script_name_by_id(vm, file)), 
+            lineNumber
+        );
+
+        debug_show_text();
     }
-    
-    debug_println(
-        "Unhandled error (%s, line %d)\n",
-        SESDebug_Color__Error,  
-        matte_string_get_c_str(matte_vm_get_script_name_by_id(vm, file)), 
-        lineNumber
-    );
 
-    debug_show_text();
 
 }
 
-
-
-
-
-
-static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData){
-    debug.active = 1;
-    ses_native_swap_context();
-    debug.requestedExit = 0;
-    
-    debug.onPrint  = args[0];
-    debug.onClear  = args[1];
-    debug.onCommit = args[3];
-    debug.callstackLevel = 0;
-    debug.callstackLimit = matte_vm_get_stackframe_size(debug.vm)-1;
-    
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    matte_value_object_push_lock(heap, debug.onPrint);    
-    matte_value_object_push_lock(heap, debug.onClear);
-    matte_value_object_push_lock(heap, debug.onCommit);
-
-
-    matte_vm_call(debug.vm, args[2], matte_array_empty(), matte_array_empty(), NULL);
-    
-    debug_println("SES. (debug console)", SESDebug_Color__Normal);
-    debug_println("http://github.com/jcorks/", SESDebug_Color__Normal);
-    debug_println("sprite-entertainment-system", SESDebug_Color__Normal);    
-    debug_println("", SESDebug_Color__Normal);
-    
-    ses_matte_backtrace();
-    ses_matte_debug_dump();
-    debug_show_text();
-}
-static matteValue_t ses_native__debug_context_update(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    debug.requestedExit |= !ses_native_update(debug.matte);    
-}
-static matteValue_t ses_native__debug_context_leave(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    debug.active = 0;
-    matte_value_object_pop_lock(debug.heap, debug.onPrint);    
-    matte_value_object_pop_lock(debug.heap, debug.onClear);
-    
-    debug.onPrint.binID = 0;
-    debug.onClear.binID = 0;
-    ses_native_swap_context();
-
-}
 static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     const char * src = matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, args[0]));
     debug_println(">%s", 3, src);
@@ -413,13 +458,7 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
     
     
 }
-static matteValue_t ses_native__debug_context_is_done(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    matteValue_t out = matte_heap_new_value(heap);
-    
-    matte_value_into_boolean(heap, &out, debug.requestedExit);
-    return out;
-}
+
 
 
 
@@ -464,11 +503,9 @@ void ses_debug_init(matte_t * m, int enabled, const char * romPath) {
         matte_vm_set_debug_callback(vm, ses_matte_debug_event, NULL);
     }
     
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_bind"),       5, ses_native__debug_context_bind, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_is_allowed"), 0, ses_native__debug_context_is_allowed, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_is_done"),    0, ses_native__debug_context_is_done, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_enter"),      4, ses_native__debug_context_enter, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_update"),     0, ses_native__debug_context_update, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_leave"),      0, ses_native__debug_context_leave, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_enter"),      0, ses_native__debug_context_enter, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_query"),      1, ses_native__debug_context_query, NULL);
         
 }

@@ -4,11 +4,9 @@
 
 
 @:ses_native__debug_context_enter = getExternalFunction(name:"ses_native__debug_context_enter");
-@:ses_native__debug_context_update = getExternalFunction(name:"ses_native__debug_context_update");
-@:ses_native__debug_context_leave = getExternalFunction(name:"ses_native__debug_context_leave");
 @:ses_native__debug_context_query = getExternalFunction(name:"ses_native__debug_context_query");
-@:ses_native__debug_context_is_done = getExternalFunction(name:"ses_native__debug_context_is_done");
 @:ses_native__debug_context_is_allowed = getExternalFunction(name:"ses_native__debug_context_is_allowed");
+@:ses_native__debug_context_bind = getExternalFunction(name:"ses_native__debug_context_bind");
 
 @inDebugContext = false;
 
@@ -733,20 +731,13 @@
 );
 
 
-
-// activates the console, suspending computation.
-//
-@:debug ::{    
-    when(!ses_native__debug_context_is_allowed()) empty;
-   
-    when (inDebugContext) empty;
+@:debug = ::<= {
+    
     inDebugContext = true;  
     @display;
     @cursor;
     @entry;
-    @callbackID;
-    
-    
+    @callbackID;    
 
 
 
@@ -765,7 +756,7 @@
         display.text = '';
     };
     
-    @:onDebugInit :: {
+    @:onDebugEnter :: {
 
 
     
@@ -811,75 +802,80 @@
                 };
             }
         );                
+
+
+
+        // normal                
+        SES.Palette.set(
+            index: 0,
+            colors: [
+                [0, 0, 0],
+                [0, 0, 0],
+                [0, 0, 0],
+                [0.6, 0.6, 0.6]
+            ]
+        );
+
+        // code
+        SES.Palette.set(
+            index: 1,
+            colors: [
+                [0, 0, 0],
+                [0, 0, 0],
+                [0, 0, 0],
+                [0.87, 0.8, 0.5]
+            ]
+        );
+
+        // error
+        SES.Palette.set(
+            index: 2,
+            colors: [
+                [0, 0, 0],
+                [0, 0, 0],
+                [0, 0, 0],
+                [1, 0.3, 0.3]
+            ]
+        );
+
+        // enter
+        SES.Palette.set(
+            index: 3,
+            colors: [
+                [0, 0, 0],
+                [0, 0, 0],
+                [0, 0, 0],
+                [1, 1, 1]
+            ]
+        );     
+    };
+
+
+    @:onDebugLeave ::{
+        SES.Input.removeCallback(id:callbackID, device:SES.Input.DEVICES.KEYBOARD);
+        entry.editable = false;
+        display.text = '';
+        entry.text = '';
+        cursor.text = '';
+        inDebugContext = false;         
     };
         
-    ses_native__debug_context_enter(a:onDebugPrint, b:onDebugClear, c:onDebugInit, d:onDebugCommit);
-    
 
-    // normal                
-    SES.Palette.set(
-        index: 0,
-        colors: [
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0],
-            [0.6, 0.6, 0.6]
-        ]
+
+    ses_native__debug_context_bind(
+        a:onDebugPrint, b:onDebugClear, c:onDebugEnter, d:onDebugCommit, e:onDebugLeave
     );
 
-    // code
-    SES.Palette.set(
-        index: 1,
-        colors: [
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0],
-            [0.87, 0.8, 0.5]
-        ]
-    );
-
-    // error
-    SES.Palette.set(
-        index: 2,
-        colors: [
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0],
-            [1, 0.3, 0.3]
-        ]
-    );
-
-    // enter
-    SES.Palette.set(
-        index: 3,
-        colors: [
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0],
-            [1, 1, 1]
-        ]
-    );     
-
-    // for debug context
 
 
-    [::] {
-        forever(do:::{
-            when(ses_native__debug_context_is_done()) send();
-            ses_native__debug_context_update();                                   
-        });
+    return ::{    
+        when(!ses_native__debug_context_is_allowed()) empty;
+        when (inDebugContext) empty;
+
+        ses_native__debug_context_enter();
+
     };
-    SES.Input.removeCallback(id:callbackID, device:SES.Input.DEVICES.KEYBOARD);
-    entry.editable = false;
-    display.text = '';
-    entry.text = '';
-    cursor.text = '';
-    ses_native__debug_context_leave();
-    inDebugContext = false;         
-
-
 };
-
 
 return class(
     name : 'SES.Debug',

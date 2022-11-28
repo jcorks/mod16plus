@@ -28,6 +28,8 @@ return class(
         @onNavHor_;
         @onNavVer_;
         @onEnter_;
+        @onNewLine_;
+        @onDelLine_;
         @defaultPalette_ = 0;
 
 
@@ -62,7 +64,6 @@ return class(
         @lastSpriteCount = 0;
 
 
-
         @:TILE_HIGHLIGHT = Fetcher.Tile.newID();
         SES.Tile.set(
             index: TILE_HIGHLIGHT,
@@ -91,7 +92,7 @@ return class(
             [0, count]->for(do:::(i) {
                 SES.Sprite.set(
                     index: spr,
-                    tile: '%'->charCodeAt(index:0),
+                    tile: TILE_HIGHLIGHT,
                     show:true,
                     scaleX:1,
                     scaleY:1,
@@ -177,7 +178,8 @@ return class(
                         when(line->length == 0) ::<= {
                             i+=1;
                         };
-                        
+                        if (colorPath == empty)
+                            Debug.breakpoint();
                         @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
                         @scrolledColor = colorPath->subset(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
                         when(scrolledLine == empty || scrolledLine->length == 0) ::<= {
@@ -274,17 +276,38 @@ return class(
         };
 
 
-        @:insertText ::(src, at, text) {
-            when(at >= src->length-1) src + text;
-            when(at == 0) text + src;
-               
-            return src->substr(from:0, to:at-1) + text + src->substr(from:at, to:src->length-1);
+        @:insertText ::(text) {
+            @:line = cursorY;
+            @:at = cursorX;
+            @:src = lines[line];
+            lines[line] = ::<= {
+                when(at >= src->length-1) ::<= {
+                    [0, text->length]->for(do:::(i) {
+                        colors[line]->push(value:defaultPalette_);
+                    });
+                    return src + text;
+                };
+                when(at == 0) ::<= {
+                    [0, text->length]->for(do:::(i) {
+                        colors[line]->insert(at:i, value:defaultPalette_);
+                    });
+                    return text + src;
+                };                   
+
+                colors[line] = [
+                    ...colors[line]->subset(from:0, to:at-1),
+                    colors[line],
+                    ...colors[line]->subset(from:at, to:src->length-1)
+                ];
+                return src->substr(from:0, to:at-1) + text + src->substr(from:at, to:src->length-1);
+            };
+            cursorX += text->length;
+            movedRight();
+
+            if (onChange_ != empty) onChange_(prevText:src, prevLine:cursorY);
+
         };
         
-        @:insertColors ::(src, at, color) {
-            when(at >= src->keycount-1) src->push(value:color);
-            src->insert(at, value:color);
-        };
 
 
 
@@ -390,20 +413,6 @@ return class(
             movedLeft();
         };
 
-        @:addTextLine ::(text) {
-            // else, just normal text
-
-            @:line = lines[cursorY];
-            lines[cursorY] = insertText(src:line, at:cursorX, text);
-            [0, text->length]->for(do:::(i) {
-                @:color = colors[cursorY];
-                insertColors(src:color, at:cursorX, color:defaultPalette_);
-                cursorX += 1;
-            });
-            movedRight();
-
-
-        };
 
 
 
@@ -426,7 +435,7 @@ return class(
 
 
                       default: ::<= {
-
+                        when(ctrlMod) empty;
                         // remove selected text 
                         @:bounds = getSelectedBounds();
                             
@@ -460,7 +469,6 @@ return class(
                         });
 
                         this.moveCursor(x:bounds.fromX, y:bounds.fromY);
-                        if (onChange_ != empty) onChange_();
                         redrawLines();
                       }
                     };
@@ -469,13 +477,8 @@ return class(
 
                 match(key) {
                   (SES.Input.KEYS.TAB):::<= {
-                    lines[cursorY] = insertText(src:lines[cursorY], at:cursorX, text:'  ');
-                    insertColors(src:colors[cursorY], at:cursorX, color:defaultPalette_);
-                    cursorX += 2;
-                    movedRight();
-                    
-                    if (onChange_ != empty) onChange_();
-                        
+                    @:line = lines[cursorY];
+                    insertText(text:'  ');                                            
                     redrawLines();
                   },
 
@@ -483,37 +486,26 @@ return class(
                     // already deleted.
                     when(selectActive) empty;
 
-                    // remove "newline"
-                    when (lines[cursorY] == '') ::<={
-                        when(lines->keycount == 1) empty;
-                        when(cursorY == 0) empty;
-
-                        lines->remove(key:cursorY);
-                        colors->remove(key:cursorY);
-                        cursorY-=1;
-                        movedUp();
-                        movedLeft();
-                        cursorX = lines[cursorY]->length;
-                    };
-                    
-                    
                     // remove newline + merge previous line
-                    when(cursorX == 0) ::<= {
+                    when(cursorX == 0 || lines[cursorY] == '') ::<= {
                         mergeCursorLine();
                     
                     };
-                  
-                    lines[cursorY] = lines[cursorY]->removeChar(index:cursorX-1);
-                    cursorX -=1;
 
-
+                    this.deleteLineText(numChars:1);
                     movedLeft();
-                    if (onChange_ != empty) onChange_();
+
                   },
                   
                   (SES.Input.KEYS.UP):::<= {
                     if (onNavVer_ != empty) onNavVer_(dir:1);
                     when (completionMode) empty;
+                    if (shiftMod && !selectActive) ::<= {
+                        preserveSelect = true;
+                        selectActive = true;
+                        selectCursorX = cursorX;
+                        selectCursorY = cursorY;
+                    };
                     cursorY -= 1;
                     movedUp();
                     
@@ -522,18 +514,36 @@ return class(
                   (SES.Input.KEYS.DOWN):::<= {
                     if (onNavVer_ != empty) onNavVer_(dir:-1);
                     when (completionMode) empty;
+                    if (shiftMod && !selectActive) ::<= {
+                        preserveSelect = true;
+                        selectActive = true;
+                        selectCursorX = cursorX;
+                        selectCursorY = cursorY;
+                    };
                     cursorY += 1;
                     movedDown();
                   },
 
                   (SES.Input.KEYS.LEFT):::<= {
                     if (onNavHor_ != empty) onNavHor_();
+                    if (shiftMod && !selectActive) ::<= {
+                        preserveSelect = true;
+                        selectActive = true;
+                        selectCursorX = cursorX;
+                        selectCursorY = cursorY;
+                    };
                     cursorX -= 1;
                     movedLeft();             
                    },
                   
                   (SES.Input.KEYS.RIGHT):::<= {
                     if (onNavHor_ != empty) onNavHor_();
+                    if (shiftMod && !selectActive) ::<= {
+                        preserveSelect = true;
+                        selectActive = true;
+                        selectCursorX = cursorX;
+                        selectCursorY = cursorY;
+                    };
                     cursorX += 1;
                     movedRight();
 
@@ -543,6 +553,14 @@ return class(
                     
                     if (ctrlMod) ::<= {
                         this.addText(text:SES.clipboard);
+                    };
+                  },    
+
+                  (SES.Input.KEYS.C):::<= {                    
+                    if (ctrlMod) ::<= {
+                        SES.clipboard = this.getSelectedText();
+                        // deselect to telegraph successful copy
+                        preserveSelect = false;
                     };
                   },    
 
@@ -581,23 +599,16 @@ return class(
                         
                     };
                     
+
+
+
                     @portion = lines[cursorY]->substr(from:cursorX, to:lines[cursorY]->length-1);
-                    @colorPortion = colors[cursorY]->subset(from:cursorX, to:lines[cursorY]->length-1);
-
-                    lines[cursorY] = lines[cursorY]->substr(from:0, to:cursorX-1);
-                    colors[cursorY] = colors[cursorY]->subset(from:0, to:cursorX-1);
-
-                    if (colors[cursorY] == empty)
-                        colors[cursorY] = [];
-
+                    this.deleteLineText(numChars:lines[cursorY]->length - cursorX);
                     cursorY += 1;
                     cursorX = 0;
-                    lines->insert(value:portion, at:cursorY);                            
-                    colors->insert(value:colorPortion, at:cursorY);
-
                     movedDown();
                     movedLeft();
-                    if (onChange_ != empty) onChange_();
+                    insertText(text:portion);
 
                   }
                   
@@ -765,8 +776,29 @@ return class(
 
             getSelectedText :: {
                 when(selectActive == false) '';
+                @:bounds = getSelectedBounds();
 
-                // TODO
+                when(bounds.toY == bounds.fromY) ::<= {
+                    return lines[bounds.fromY]->substr(from:bounds.fromX, to:bounds.toX);
+                };
+                @out = '';
+
+
+
+                [bounds.fromY, bounds.toY+1]->for(do:::(i) {
+                    when(i == bounds.fromY) ::<= {
+                        out = out + lines[i]->substr(from:bounds.fromX, to:lines[i]->length-1);
+                    };
+
+                    when(i == bounds.toY) ::<= {
+                        out = out + '\n' + lines[i]->substr(from:0, to:bounds.toX);
+
+                    };
+
+                    out = out + '\n' + lines[i];
+
+                });
+                return out;                
             },
             
             editable : {
@@ -926,6 +958,10 @@ return class(
                             
                             colors[i] = color;
                         });
+
+                        lines->foreach(do:::(i, text) {
+                            if (onChange_ != empty) onChange_(prevLine:i, prevText:'');
+                        });
                     };
 
                     if (LINE_LIMIT > 0) ::<= {
@@ -937,37 +973,15 @@ return class(
                         };
                     };
 
-                    if (onChange_ != empty) onChange_();
 
                     redrawLines();  
                 },
             },
-            
-            addLine ::(text) {
-                lines->push(value:text);
-                @:colorLine = [];
-                [0, text->length]->for(do:::(i) {
-                    colorLine->push(value:defaultPalette_);
-                });
-                colors->push(value:colorLine);
-                
-                if (LINE_LIMIT > 0)
-                    lines = lines->subset(from:0, to:LINE_LIMIT);
-                                                    
-                redrawLines();  
-            },
+
             addCh ::(ch) {
                 // else, just normal text
-                @:line = lines[cursorY];
-                @:color = colors[cursorY];
-                lines[cursorY] = insertText(src:line, at:cursorX, text:ch);
-                insertColors(src:color, at:cursorX, color:defaultPalette_);
-                cursorX += 1;
-                movedRight();
-
-                if (onChange_ != empty) onChange_();
+                insertText(text:ch);
                 redrawLines();
-
             },
 
             addText ::(text) {
@@ -980,8 +994,7 @@ return class(
                         movedDown();
                         movedLeft();
                     };
-                    addTextLine(text:line);
-                    if (onChange_ != empty) onChange_();
+                    insertText(text:line);
                 });
 
                 redrawLines();
@@ -993,28 +1006,37 @@ return class(
                 // cursor can be [0, line->length]
                 when(cursorX == 0) empty;
                 when(lines[cursorY]->length == 0) empty;
+                
+                @:oldLine = lines[cursorY];
 
                 when(numChars >= lines[cursorY]->length-1 && cursorX >= lines[cursorY]->length) ::<= {
                     lines[cursorY] = '';
+                    colors[cursorY] = [];
                     cursorX = 0;
                 };
 
                 when(numChars >= cursorX) ::<= {
+                    colors[cursorY] = colors[cursorY]->subset(from:cursorX, to: lines[cursorY]->length-1);
                     lines[cursorY] = lines[cursorY]->substr(from:cursorX, to: lines[cursorY]->length-1);
                     cursorX = 0;
                 };
 
                 when(cursorX > lines[cursorY]->length-1) ::<={
+                    colors[cursorY] = lines[cursorY]->subset(from:0, to:lines[cursorY]->length-numChars-1);
                     lines[cursorY] = lines[cursorY]->substr(from:0, to:lines[cursorY]->length-numChars-1);
                     cursorX -= numChars;
                 };
                 
-
+                colors[cursorY] = [
+                    ...(colors[cursorY]->subset(from:0, to:cursorX-numChars-1)),
+                    ...(colors[cursorY]->substr(from:cursorX, to: lines[cursorY]->length-1))
+                ];
                 lines[cursorY] = 
                     lines[cursorY]->substr(from:0, to:cursorX-numChars-1) +
                     lines[cursorY]->substr(from:cursorX, to: lines[cursorY]->length-1)
                 ;
                 cursorX -= numChars;
+                if (onChange_ != empty) onChange_(prevText:oldLine, prevLine:cursorY);
                 redrawLines();
 
             },

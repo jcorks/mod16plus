@@ -514,11 +514,13 @@ static GLint ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, floa
     if (t == NULL)
         return 1;
     
-    float TILES_PER_ROW = (REAL_TEX_SIZE / TILE_SIZE);
+    int TILES_PER_ROW = (REAL_TEX_SIZE / TILE_SIZE);
         
-    *u = (index % TILES_PER_TEXTURE) / TILES_PER_ROW;
-    *v = (index / TILES_PER_TEXTURE) / TILES_PER_ROW;
-    *unit = 1 / TILES_PER_ROW;
+    *u = (index % TILES_PER_ROW) / (float)TILES_PER_ROW;
+    *v = (index / TILES_PER_ROW) / (float)TILES_PER_ROW;
+    *unit = 1 / (float)TILES_PER_ROW;
+
+
     return t->texture;
 }
 

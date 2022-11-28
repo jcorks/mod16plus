@@ -1,0 +1,23 @@
+@:class = import(module:'Matte.Core.Class');
+
+
+return class(
+    define(this) {
+        @area;
+        @history = [];
+        this.constructor = ::(textarea) {
+            area = textarea;
+            return this;
+        },
+
+        @:newHistoryEntry::(line, index) {
+            history->push(value:
+                [area.getLine]
+            );
+        }
+
+        this.interface = {
+            
+        };
+    }  
+);

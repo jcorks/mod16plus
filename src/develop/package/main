@@ -1,4 +1,7 @@
 @:Window = import(module:'window');
+@:Debug = import(module:'SES.Debug');
+
+Debug.breakpoint();
 
 
 Window.start();

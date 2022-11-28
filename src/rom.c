@@ -43,7 +43,7 @@ static matteArray_t * rom_bytecodeSegments = NULL;
 }
   
   
-static clear_rom() {
+static void clear_rom() {
     if (!rom_waveforms) {
         rom_waveforms = matte_array_create(sizeof(SESWaveform));
         rom_tiles = matte_array_create(sizeof(SESTile));
