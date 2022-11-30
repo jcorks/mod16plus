@@ -733,7 +733,7 @@
 
 @:debug = ::<= {
     
-    inDebugContext = true;  
+    inDebugContext = false;  
     @display;
     @cursor;
     @entry;

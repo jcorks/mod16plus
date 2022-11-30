@@ -23,6 +23,7 @@ typedef struct {
     int currentLine;
     uint32_t currentFileid;
     char * directory;
+    matteString_t * promptConsole;
     
     matteValue_t onPrint;
     matteValue_t onClear;
@@ -121,6 +122,8 @@ static void ses_matte_debug_event(
 
     if (event == MATTE_VM_DEBUG_EVENT__ERROR_RAISED) {
         if (!debug.active) {
+        
+            matte_string_set(debug.promptConsole, matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), matte_value_as_string(matte_vm_get_heap(vm), value)));       
             ses_native__debug_context_enter(debug.vm, matte_heap_new_value(debug.heap), NULL, NULL);
         }
 
@@ -294,11 +297,7 @@ static matteValue_t ses_native__debug_context_bind(matteVM_t * vm, matteValue_t 
 
 static void ses_native_debug_context_leave() {
     debug.active = 0;
-    matte_value_object_pop_lock(debug.heap, debug.onPrint);    
-    matte_value_object_pop_lock(debug.heap, debug.onClear);
     
-    debug.onPrint.binID = 0;
-    debug.onClear.binID = 0;
 
     
     matte_vm_call(debug.vm, debug.onLeave, matte_array_empty(), matte_array_empty(), NULL);
@@ -324,6 +323,12 @@ static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t
     debug_println("http://github.com/jcorks/", SESDebug_Color__Normal);
     debug_println("sprite-entertainment-system", SESDebug_Color__Normal);    
     debug_println("", SESDebug_Color__Normal);
+    
+    
+    if (matte_string_get_length(debug.promptConsole)) {
+        debug_println(matte_string_get_c_str(debug.promptConsole), SESDebug_Color__Error);
+        matte_string_clear(debug.promptConsole);
+    }
     
     ses_matte_backtrace();
     ses_matte_debug_dump();
@@ -482,6 +487,7 @@ void ses_debug_init(matte_t * m, int enabled, const char * romPath) {
     debug.vm = vm;
     debug.matte = m;
     debug.files = matte_table_create_hash_matte_string();
+    debug.promptConsole = matte_string_create();
     
     debug.directory = NULL;
     if (romPath) {
