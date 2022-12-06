@@ -57,13 +57,9 @@
                 count += 1;
                 SES.Sprite.set(
                     index: count,                    
-                    scaleX:1,
-                    scaleY:1,
                     x:-8,
                     y:-8,
-                    show:false,
-                    centerX: 0,
-                    centerY: 0
+                    show:false
                 );
                 return count;
             },
@@ -75,13 +71,9 @@
                 [count, count+amount]->for(do:::(i) {
                     SES.Sprite.set(
                         index: i,                    
-                        scaleX:1,
-                        scaleY:1,
                         x:-8,
                         y:-8,
-                        show:false,
-                        centerX: 0,
-                        centerY: 0
+                        show:false
                     );
                 
                 });
@@ -101,6 +93,8 @@ return {
     // Fetcher for IDs.
     Palette : Fetcher.new(),
     
+    Oscillator : Fetcher.new(),
+    
     // Fetcher for (sprite) IDs. Only "makes sense" 
     // up to 0x40000.
     Tile : Fetcher.new(offset:128),
@@ -111,5 +105,11 @@ return {
     // Backgrounds are always 16 x 8 tiles.
     backgroundIDtoTileID::(id) {
         return 0x40000 + (id * 32*16);
+    },
+
+    backgroundXYtoTileID::(id, x => Number, y => Number) {
+        return 0x40000 + (id * 32*16) + x*32 + y*32;
     }
+
+
 };

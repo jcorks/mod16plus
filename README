@@ -1,4 +1,4 @@
-Sprite Entertaininment System
+Sprite Entertainment System
 -----------------------------
 
 THIS IS JUST A PREVIEW. Nothing is working yet!
@@ -119,5 +119,14 @@ before sprites for each layer. Layers -15 through and including 16 exist for use
 The default of 0 will place items midway.
 
 
+Oscillators
+-----------
 
+In addition to sprite based rendering, oscillators also exist 
+as tools in the game making process. Oscillators serve 2 functions:
+The first is a timer mechanism: oscillators can fire a function once 
+a cycle is complete. The second is a time-sensitive version 
+of a sin() function, which is ideal for creating oscillation-based
+effects. Oscillations may be chained together for advanced effects.
+A total of 1024 oscillators are available for use.
 

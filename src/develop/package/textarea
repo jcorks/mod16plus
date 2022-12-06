@@ -7,7 +7,6 @@
 
 
 
-
 @:TILE_HIGHLIGHT_PALETTE = Fetcher.Palette.newID();
 SES.Palette.set(
     index : TILE_HIGHLIGHT_PALETTE,
@@ -41,7 +40,8 @@ return class(
         @GLYPH_WIDTH  = 6;
         @GLYPH_HEIGHT = 8;
         @completionMode = false;
-        
+        @:REDRAW_OSCILLATOR = Fetcher.Oscillator.newID();
+
         
 
 
@@ -94,11 +94,7 @@ return class(
                     index: spr,
                     tile: TILE_HIGHLIGHT,
                     show:true,
-                    scaleX:1,
-                    scaleY:1,
-                    centerX: 0,
                     layer,
-                    centerY: 0,
                     x: i * GLYPH_WIDTH +x,
                     y: y,
                     effect: SES.Sprite.EFFECTS.Color,
@@ -163,12 +159,15 @@ return class(
 
         @:MIN ::(a, b) <- if (a < b) a else b;
 
-        @redrawLinesUpdateID = -1;
+        @redrawActive = false;
         @:redrawLines :: {
-            when(redrawLinesUpdateID >= 0) empty;
-            redrawLinesUpdateID = SES.addAlarm(
-                expireMS:25,
-                callback::{
+            when(redrawActive) empty;
+            SES.Oscillator.set(
+                enable:true,
+                index:REDRAW_OSCILLATOR,
+                index:0,
+                periodMS:25,
+                onCycle::{
             
                     @spr = spriteOffset_;
                     @i = 0;
@@ -178,8 +177,7 @@ return class(
                         when(line->length == 0) ::<= {
                             i+=1;
                         };
-                        if (colorPath == empty)
-                            Debug.breakpoint();
+
                         @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
                         @scrolledColor = colorPath->subset(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
                         when(scrolledLine == empty || scrolledLine->length == 0) ::<= {
@@ -254,11 +252,7 @@ return class(
                             index: spr,
                             tile: 0,
                             show:true,
-                            scaleX:1,
-                            scaleY:1,
-                            centerX: 0,
                             layer,
-                            centerY: 0,
                             x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
                             y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
                             effect: SES.Sprite.EFFECTS.Color,
@@ -268,7 +262,8 @@ return class(
                     } else 
                         lastSpriteCount = spr;
 
-                    redrawLinesUpdateID = -1;
+                    redrawActive = false;
+                    SES.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
 
                 }
             );
@@ -279,9 +274,9 @@ return class(
         @:insertText ::(text) {
             @:line = cursorY;
             @:at = cursorX;
-            @:src = lines[line];
+            @src = lines[line];
             lines[line] = ::<= {
-                when(at >= src->length-1) ::<= {
+                when(at > src->length-1) ::<= {
                     [0, text->length]->for(do:::(i) {
                         colors[line]->push(value:defaultPalette_);
                     });
@@ -376,6 +371,14 @@ return class(
 
         };
 
+        @:insertNewline :: {
+            cursorY += 1;
+            cursorX = 0;
+            lines->insert(value:'', at:cursorY);  
+            colors->insert(value:[], at:cursorY);              
+            movedDown();
+            movedLeft();        
+        };
 
         @:movedRight :: {
             if (cursorX > lines[cursorY]->length) ::<= {
@@ -573,43 +576,28 @@ return class(
                   
                     // return at end
                     when(cursorX >= lines[cursorY]->length) ::<= {
-                        cursorY += 1;
-                        cursorX = 0;
-                        lines->insert(value:'', at:cursorY);  
-                        colors->insert(value:[], at:cursorY);              
-                        movedDown();
-                        movedLeft();
-
+                        insertNewline();   
                     };            
                     
                     // return at start
                     when(cursorX == 0) ::<= {
                         @line = lines[cursorY];
                         lines[cursorY] = '';
-                        @color = colors[cursorY];
                         colors[cursorY] = [];
-                        cursorY += 1;
+                        insertNewline();   
+                        insertText(text:line);                     
                         cursorX = 0;
-                        lines->insert(value:line, at:cursorY);
-                        colors->insert(value:color, at:cursorY);
-                        
-                        movedDown();
-                        movedLeft();
-                        
-                        
                     };
                     
 
 
 
                     @portion = lines[cursorY]->substr(from:cursorX, to:lines[cursorY]->length-1);
-                    this.deleteLineText(numChars:lines[cursorY]->length - cursorX);
-                    cursorY += 1;
-                    cursorX = 0;
-                    movedDown();
-                    movedLeft();
+                    cursorX = lines[cursorY]->length;
+                    this.deleteLineText(numChars:portion->length);
+                    insertNewline();
                     insertText(text:portion);
-
+                    cursorX = 0;
                   }
                   
                 };
@@ -702,6 +690,7 @@ return class(
         this.interface = {
             x : {
                 set ::(value => Number) {
+                    when(value == offsetX) empty;
                     offsetX = value;
                     redrawLines();
                 },
@@ -710,6 +699,7 @@ return class(
 
             y : {
                 set ::(value => Number) {
+                    when(value == offsetY) empty;
                     offsetY = value;
                     redrawLines();
                 },
@@ -1009,7 +999,7 @@ return class(
                 
                 @:oldLine = lines[cursorY];
 
-                when(numChars >= lines[cursorY]->length-1 && cursorX >= lines[cursorY]->length) ::<= {
+                when(numChars >= lines[cursorY]->length && cursorX >= lines[cursorY]->length) ::<= {
                     lines[cursorY] = '';
                     colors[cursorY] = [];
                     cursorX = 0;
@@ -1022,14 +1012,14 @@ return class(
                 };
 
                 when(cursorX > lines[cursorY]->length-1) ::<={
-                    colors[cursorY] = lines[cursorY]->subset(from:0, to:lines[cursorY]->length-numChars-1);
+                    colors[cursorY] = colors[cursorY]->subset(from:0, to:lines[cursorY]->length-numChars-1);
                     lines[cursorY] = lines[cursorY]->substr(from:0, to:lines[cursorY]->length-numChars-1);
                     cursorX -= numChars;
                 };
                 
                 colors[cursorY] = [
                     ...(colors[cursorY]->subset(from:0, to:cursorX-numChars-1)),
-                    ...(colors[cursorY]->substr(from:cursorX, to: lines[cursorY]->length-1))
+                    ...(colors[cursorY]->subset(from:cursorX, to: lines[cursorY]->length-1))
                 ];
                 lines[cursorY] = 
                     lines[cursorY]->substr(from:0, to:cursorX-numChars-1) +
@@ -1113,6 +1103,13 @@ return class(
             completionMode : {
                 set ::(value) <- completionMode = value,
                 get ::(value) <- completionMode
+            },
+            
+            defaultPallete : {
+                set::(value) {
+                    defaultPalette_ = value;
+                    redrawLines();                    
+                }
             },
             
             

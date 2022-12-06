@@ -40,6 +40,8 @@ typedef struct {
     
     uint32_t callstackLevel;
     uint32_t callstackLimit;
+    // flag for when the debug context is not started by a Debug.breakpoint();
+    int noFakeRoot;
     
 } SESDebug;
 
@@ -124,6 +126,7 @@ static void ses_matte_debug_event(
         if (!debug.active) {
         
             matte_string_set(debug.promptConsole, matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), matte_value_as_string(matte_vm_get_heap(vm), value)));       
+            debug.noFakeRoot = 1;
             ses_native__debug_context_enter(debug.vm, matte_heap_new_value(debug.heap), NULL, NULL);
         }
 
@@ -312,7 +315,8 @@ static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t
     debug.requestedExit = 0;
     
     debug.callstackLevel = 0;
-    debug.callstackLimit = matte_vm_get_stackframe_size(debug.vm)-1;
+    debug.callstackLimit = matte_vm_get_stackframe_size(debug.vm) + (debug.noFakeRoot ? 0 : -1);
+    debug.noFakeRoot = 0;
     
     matteHeap_t * heap = matte_vm_get_heap(vm);
 

@@ -107,7 +107,7 @@ return class(
                 when (word->length == 0) [];
                 @:localTokens = tokenList[word->charAt(index:0)];
                 when(localTokens == empty) [];
-                @:ranks = localTokens->keys;
+                @ranks = localTokens->keys;
                 
                 ranks->sort(
                     comparator:::(a, b) {
@@ -120,6 +120,7 @@ return class(
                     }
                 );
 
+                ranks = ranks->filter(by:::(value) <- value->length >= word->length);
                 ranks->remove(key:ranks->findIndex(value:word));
                 return if (ranks->keycount > 5) ranks->subset(from:0, to:4) else ranks;
             },

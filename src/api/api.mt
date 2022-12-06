@@ -8,6 +8,7 @@
 @:ses_native__input_attrib = getExternalFunction(name:"ses_native__input_attrib");
 @:ses_native__audio_attrib = getExternalFunction(name:"ses_native__audio_attrib");
 @:ses_native__bg_attrib = getExternalFunction(name:"ses_native__bg_attrib");
+@:ses_native__oscillator_attrib = getExternalFunction(name:"ses_native__oscillator_attrib");
 
 // query functions are necessary because they are (can be) pre-populated by the ROM.
 @:ses_native__palette_query = getExternalFunction(name:"ses_native__palette_query");
@@ -655,7 +656,6 @@
 @:Sprite = ::<= {
     @spriteIDPool = [];
     @spriteID = 0;
-    @:spriteLimit = 4096;
     
     @:ATTRIBS = {
         ENABLE:    0,
@@ -694,28 +694,17 @@
                     index => Number,
                     show,
                     tile,
-                    scaleX,
-                    scaleY,
-                    centerX,
-                    centerY,
                     x,
                     y,
-                    rotation,
                     layer,
                     effect,
                     palette
                 ) {
                     @commands = [];
-                    @iter = 0;
                     if (show != empty) commands     = [...commands, ATTRIBS.ENABLE, if((show => Boolean) == true) 1 else 0];
                     if (tile != empty) commands     = [...commands, ATTRIBS.TILEINDEX, tile=>Number];
-                    if (scaleX != empty) commands   = [...commands, ATTRIBS.SCALEX, scaleX=>Number];
-                    if (scaleY != empty) commands   = [...commands, ATTRIBS.SCALEY, scaleY=>Number];
                     if (x != empty) commands        = [...commands, ATTRIBS.POSITIONX, x=>Number];
                     if (y != empty) commands        = [...commands, ATTRIBS.POSITIONY, y=>Number];
-                    if (rotation != empty) commands = [...commands, ATTRIBS.ROTATION, rotation=>Number];
-                    if (centerX != empty) commands  = [...commands, ATTRIBS.CENTERX, centerX=>Number];
-                    if (centerY != empty) commands  = [...commands, ATTRIBS.CENTERY, centerY=>Number];
                     if (layer != empty) commands    = [...commands, ATTRIBS.LAYER, layer=>Number];            
                     if (effect != empty) commands   = [...commands, ATTRIBS.EFFECT, effect=>Number];                        
                     if (palette != empty) commands  = [...commands, ATTRIBS.PALETTE, palette=>Number];
@@ -723,6 +712,28 @@
                     ses_native__sprite_attrib(a:index, b:commands);
 
                 },
+                
+                transform::(
+                    index => Number,
+                    scaleX,
+                    scaleY,
+                    centerX,
+                    centerY,
+                    rotation
+                               
+                ) {
+                    @commands = [];
+
+                    if (scaleX != empty) commands   = [...commands, ATTRIBS.SCALEX, scaleX=>Number];
+                    if (scaleY != empty) commands   = [...commands, ATTRIBS.SCALEY, scaleY=>Number];
+                    if (rotation != empty) commands = [...commands, ATTRIBS.ROTATION, rotation=>Number];
+                    if (centerX != empty) commands  = [...commands, ATTRIBS.CENTERX, centerX=>Number];
+                    if (centerY != empty) commands  = [...commands, ATTRIBS.CENTERY, centerY=>Number];
+
+                    ses_native__sprite_attrib(a:index, b:commands);
+                
+                },
+             
                 
                 EFFECTS: {
                     get::<-EFFECTS
@@ -734,8 +745,43 @@
 
 
 
+@:Oscillator = ::<= {
+    @:ATTRIBS = {
+        ENABLE:    0,
+        PERIODMS:  1,
+        ONCYCLE:   2,
+        GET:       3
+    };
+    
+    return class(
+        name: 'SES.Oscillator',
+        define:::(this) {
+            this.interface = {
+                set ::(
+                    index => Number,
+                    enable,
+                    periodMS,
+                    onCycle
+                ) {
+                    @commands = [];
 
+                    if (enable != empty) commands   = [...commands, ATTRIBS.ENABLE, enable=>Boolean];
+                    if (periodMS != empty) commands   = [...commands, ATTRIBS.PERIODMS, periodMS=>Number];
+                    if (onCycle != empty) commands = [...commands, ATTRIBS.ONCYCLE, onCycle=>Function];
 
+                    ses_native__oscillator_attrib(a:index, b:commands);
+                                    
+                },
+                
+                
+                get ::(index => Number) {
+                    return ses_native__oscillator_attrib(a:index, b:[ATTRIBS.GET, 0]);
+                }
+            
+            };
+        }
+    ).new();
+};
 
 @:SES = class(
     name: 'SES',
@@ -745,10 +791,8 @@
             UPDATERATE:  0,
             UPDATEFUNC:  1,
             RESOLUTION:  2,
-            ADDALARM:    3,
-            REMOVEALARM: 4,
-            CLIPBOARDGET:5,
-            CLIPBOARDSET:6
+            CLIPBOARDGET:3,
+            CLIPBOARDSET:4
         };
         
         @:RESOLUTION = {
@@ -787,6 +831,7 @@
             Input     : {get ::<- Input},
             Background: {get ::<- Background},
             Audio     : {get ::<- Audio},
+            Oscillator: {get ::<- Oscillator},
 
             RESOLUTION : RESOLUTION,
 
@@ -816,19 +861,6 @@
                 }
             },
             
-    
-            // add a function to call expireMS milliseconds later.
-            // Only as resolute as the updateRate.
-            // The alarm is removed after it expires.            
-            addAlarm ::(expireMS => Number, callback => Function) {
-                return ses_native__engine_attrib(a:ATTRIBS.ADDALARM, b:expireMS, c:callback);
-            },
-            
-            
-            // removes an alarm that is currently active, else does nothing.
-            removeAlarm ::(id => Number) {
-                ses_native__engine_attrib(a:ATTRIBS.REMOVEALARM, b:id);
-            },
             
             clipboard : {
                 get ::<- ses_native__engine_attrib(a:ATTRIBS.CLIPBOARDGET),

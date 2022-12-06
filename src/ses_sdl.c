@@ -7,6 +7,13 @@
 
 #include <SDL2/SDL.h>
 
+#define LAYER_MIN -15
+#define LAYER_MID 0
+#define LAYER_MAX 16
+#define SPRITE_MAX 4096
+#define OSCILLATOR_MAX 1024
+
+
 typedef enum {
     SES_DEVICE__KEYBOARD,
     
@@ -45,29 +52,34 @@ typedef struct {
     // locked function from user
     matteValue_t function;
 
-    // ms at the time it was added
-    uint32_t startMS;
-
     // the length of the alarm wait time in MS
     uint32_t lengthMS;
+    
+    // when the oscillator was made active
+    uint32_t startMS;
+    
+    uint32_t endMS;
 
-    // user-facing ID of the alarm
-    uint32_t id;
+    // whether the oscillator is active
+    int active;
+    
+    // sin for the current 
+    float sinValue;
 
-} SES_Alarm;
+} SES_Oscillator;
 
 
 typedef struct {
-    // array of active alarms (SES_Alarm)
-    matteArray_t * alarms;
+    // all oscillators
+    SES_Oscillator all[OSCILLATOR_MAX];
+    
+    // array of active oscillators
+    SES_Oscillator * active[OSCILLATOR_MAX];
+    
+    // number of active oscillators;
+    uint32_t activeCount;
 
-    // spare IDs available for new alarms
-    matteArray_t * deadIDs;
-
-    // starts at 1
-    uint32_t idPool;
-
-} SES_AlarmContext;
+} SES_OscillatorContext;
 
 typedef struct {
 
@@ -82,7 +94,7 @@ typedef struct {
     // backgrounds.
     matteArray_t * bgs;
     
-    SES_AlarmContext alarm;
+    SES_OscillatorContext osc;
 
     // all layers, drawn in order from 0 to 31.
     SES_GraphicsLayer layers[32];
@@ -94,6 +106,8 @@ typedef struct {
     
     // user function called every frame    
     matteValue_t updateFunc;
+
+    
 
 
 } SES_Context;
@@ -139,9 +153,7 @@ static matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const mat
 static matteValue_t ses_sdl_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 static matteValue_t ses_sdl_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
-#define LAYER_MIN -15
-#define LAYER_MID 0
-#define LAYER_MAX 16
+
 
 
 typedef struct {
@@ -392,8 +404,15 @@ matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteV
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
     uint32_t id = matte_value_as_number(heap, args[0]);
+
+    if (id >= SPRITE_MAX) {
+        matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Sprite accessed beyond limit"));
+        return matte_heap_new_value(heap);
+    }
     while(id >= matte_array_get_size(sdl.main.sprites)) {
         SES_Sprite spr = {};
+        spr.scaleX = 1;
+        spr.scaleY = 1;
         matte_array_push(sdl.main.sprites, spr);
     }
 
@@ -463,12 +482,102 @@ matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteV
 
 
 
+
+
+typedef enum {
+    SESNOA_ENABLE,
+    SESNOA_PERIODMS,
+    SESNOA_ONCYCLE,
+    SESNOA_GET
+} SESNative_OscillatorAttribs;
+
+
+static int osc_get_index(SES_Oscillator * p) {
+    return (p - &sdl.main.osc.all[0]);
+}
+
+matteValue_t ses_sdl_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t id = matte_value_as_number(heap, args[0]);
+
+    if (id >= OSCILLATOR_MAX) {
+        matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Oscillator accessed beyond limit"));
+        return matte_heap_new_value(heap);
+    }
+
+    SES_Oscillator * osc = &sdl.main.osc.all[id];
+
+    uint32_t len = matte_value_object_get_number_key_count(heap, args[1]);
+    uint32_t i;
+    int n;
+    for(i = 0; i < len; i+=2) {
+        matteValue_t * flag  = matte_value_object_array_at_unsafe(heap, args[1], i);
+        matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[1], i+1);
+
+        switch((int)matte_value_as_number(heap, *flag)) {
+          case SESNOA_ENABLE:
+            if (matte_value_as_boolean(heap, *value) != osc->active) {
+                osc->active = matte_value_as_boolean(heap, *value);            
+                if (osc->active) {
+                    sdl.main.osc.active[sdl.main.osc.activeCount++] = osc;
+                    osc->startMS = SDL_GetTicks();
+                    osc->endMS = osc->lengthMS + osc->startMS;
+                } else {
+                    int found = 0;
+                    for(n = 0; n < sdl.main.osc.activeCount-1; ++n) {
+                        if (osc_get_index(sdl.main.osc.active[n]) == id) {
+                            found = 1;
+                        } 
+                        
+                        if (found) {
+                            sdl.main.osc.active[n] = sdl.main.osc.active[n+1];
+                        }
+                    }
+                    sdl.main.osc.activeCount--;
+                }
+            }
+            break;
+            
+          case SESNOA_PERIODMS:
+            osc->lengthMS = matte_value_as_number(heap, *value);
+            osc->endMS = osc->startMS + osc->lengthMS;
+            break;
+            
+          case SESNOA_ONCYCLE:
+            if (osc->function.value.id == value->value.id) break;
+            if (osc->function.binID) {
+                matte_value_object_pop_lock(heap, osc->function);
+            }
+            osc->function = *value;
+            matte_value_object_push_lock(heap, osc->function);
+            break;            
+            
+            
+          case SESNOA_GET: {
+            uint32_t prog = (osc->endMS - SDL_GetTicks()) / (double)osc->lengthMS;
+            if (prog < 0) prog = 0;
+            if (prog > 1) prog = 1;
+            double frac = 0.5*(1+sin((prog) * (2*M_PI)));
+            matteValue_t fracVal = matte_heap_new_value(heap);
+            matte_value_into_number(heap, &fracVal, frac);
+            return fracVal;
+          }
+    
+        }
+
+    }
+    return matte_heap_new_value(heap);
+}
+
+
+
+
+
 typedef enum {
     SESNEA_UPDATERATE,
     SESNEA_UPDATEFUNC,
     SESNEA_RESOLUTION,
-    SESNEA_ADDALARM,
-    SESNEA_REMOVEALARM,
     SESNEA_CLIPBOARDGET,
     SESNEA_CLIPBOARDSET 
 } SESNative_EngineAttribs_t;
@@ -494,43 +603,6 @@ matteValue_t ses_sdl_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteV
         sdl.frameUpdateDelayMS = matte_value_as_number(heap, args[1]) * 1000;
         break;
 
-      case SESNEA_ADDALARM: {
-        SES_Alarm alarm = {};
-        uint32_t len = matte_array_get_size(sdl.main.alarm.deadIDs);
-        if (len) {
-            alarm.id = matte_array_at(sdl.main.alarm.deadIDs, uint32_t, len-1);
-            matte_array_set_size(sdl.main.alarm.deadIDs, len-1);
-        } else {
-            alarm.id = sdl.main.alarm.idPool++;
-        }
-        alarm.function = args[2];
-        alarm.lengthMS = matte_value_as_number(heap, args[1]); 
-        alarm.startMS  = SDL_GetTicks();
-        matte_value_object_push_lock(heap, alarm.function);
-
-        matte_array_push(sdl.main.alarm.alarms, alarm);
-
-
-        matteValue_t out = matte_heap_new_value(heap);
-        matte_value_into_number(heap, &out, alarm.id);
-        return out;
-        break;
-      }
-
-      case SESNEA_REMOVEALARM: {
-        uint32_t id = matte_value_as_number(heap, args[1]);
-        uint32_t i;
-        uint32_t len = matte_array_get_size(sdl.main.alarm.alarms);
-
-        for(i = 0; i < len; ++i) {
-            SES_Alarm * alarm = &matte_array_at(sdl.main.alarm.alarms, SES_Alarm, i);
-            if (alarm->id == id) {
-                matte_value_object_pop_lock(heap, alarm->function);
-                matte_array_remove(sdl.main.alarm.alarms, i);
-                break;
-            }
-        }
-      };
 
       case SESNEA_CLIPBOARDGET: {
         char * clipboardRaw = SDL_GetClipboardText();
@@ -803,10 +875,6 @@ static SES_Context context_create() {
     ctx.bgs = matte_array_create(sizeof(SES_Background));
     ctx.palettes = matte_array_create(sizeof(SES_Palette));
 
-    ctx.alarm.alarms = matte_array_create(sizeof(SES_Alarm));
-    ctx.alarm.deadIDs = matte_array_create(sizeof(uint32_t));
-    ctx.alarm.idPool = 1;
-
     int i;
     for(i = 0; i <= SES_DEVICE__GAMEPAD3; ++i) {
         ctx.inputs[i].callbacks = matte_array_create(sizeof(matteValue_t));    
@@ -842,6 +910,7 @@ void ses_native_commit_rom(matte_t * m) {
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__input_attrib"), 3, ses_sdl_input_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__audio_attrib"), 4, ses_sdl_audio_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__bg_attrib"), 4, ses_sdl_bg_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__oscillator_attrib"), 2, ses_sdl_oscillator_attrib, NULL);
 
 
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_query"), 3, ses_sdl_palette_query, NULL);
@@ -1173,24 +1242,24 @@ int ses_native_update(matte_t * m) {
         }
 
         // finally, check alarms
-        int64_t i;
-        int64_t len = matte_array_get_size(sdl.main.alarm.alarms);
+        int i;
+        int len = sdl.main.osc.activeCount;
         uint32_t ticks = SDL_GetTicks();
         for(i = 0; i < len; ++i) {
-            SES_Alarm * alarm = &matte_array_at(sdl.main.alarm.alarms, SES_Alarm, i);
-            if (ticks >= alarm->startMS + alarm->lengthMS) {
+            SES_Oscillator * alarm = sdl.main.osc.active[i];
+            if (ticks >= alarm->endMS) {
+                if (alarm->function.binID) {
+                    matte_vm_call(
+                        sdl.vm,
+                        alarm->function,
+                        matte_array_empty(),
+                        matte_array_empty(),
+                        NULL
+                    );
+                }
 
-                matte_vm_call(
-                    sdl.vm,
-                    alarm->function,
-                    matte_array_empty(),
-                    matte_array_empty(),
-                    NULL
-                );
-                matte_value_object_pop_lock(heap, alarm->function);
-                matte_array_remove(sdl.main.alarm.alarms, i);
-                i--;
-                len--;
+                alarm->startMS = ticks;
+                alarm->endMS = ticks + alarm->lengthMS;
             }
         }
         

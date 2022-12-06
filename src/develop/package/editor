@@ -116,7 +116,7 @@ Fetcher.Sprite.claimIDs(amount:30);
             @lastWord = {};
             @textarea = Window.createTextBox(
               defaultPalette : PALETTE__NORMAL_TEXT,  
-              onChange:: {
+              onChange::(prevLine, prevText) {
                 highlightLine(
                     textarea,
                     yIndex:textarea.cursorY
@@ -126,15 +126,20 @@ Fetcher.Sprite.claimIDs(amount:30);
                 
                 @:word = getCurrentWord();
                 if (word != empty && word.text != empty && word.text->length > 1) ::<= {
-                    textarea.completionMode = true;
                     lastWord = word;
                     @:suggestions = completer.getSuggestions(word:word.text);
-                    @:screenLoc = textarea.cursorToPixelCoords();
-                    completerBox.update(
-                        x: screenLoc.x ,
-                        y: screenLoc.y+8,
-                        items: suggestions
-                    );
+                    if (suggestions->keycount > 0) ::<= {
+                        textarea.completionMode = true;
+                        @:screenLoc = textarea.cursorToPixelCoords();
+                        completerBox.update(
+                            x: screenLoc.x ,
+                            y: screenLoc.y+8,
+                            items: suggestions
+                        );
+                    } else ::<= {
+                        textarea.completionMode = false;
+                        completerBox.update(items:[], x:0, y:0);                    
+                    };
                 } else ::<= {
                     textarea.completionMode = false;
                     completerBox.update(items:[], x:0, y:0);

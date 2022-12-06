@@ -11,24 +11,12 @@
 @inDebugContext = false;
 
 
-[0, 4100]->for(do:::(i) {
-    SES.Sprite.set(
-        index: i,
-        scaleX:1,
-        scaleY:1,
-        centerX: 0,
-        centerY: 0
-    );
-});
-
-
-
-
+@oscillatorIDPool = 0;
 
 @:Text = class(
     name: 'TextArea',
     define:::(this) {
-        @redrawAlarmID = -1;
+        @queuedRedraw = false;
         @needsRedraw;
         @spriteOffset_ = 0;
         @onChange_;
@@ -61,7 +49,8 @@
         @scrollY = 0;
         
         @lastSpriteCount = 0;
-
+        @oscID = oscillatorIDPool;
+        oscillatorIDPool+=1;
 
 
 
@@ -106,9 +95,9 @@
 
         @:MIN ::(a, b) <- if (a < b) a else b;
         @:redrawLines :: {
-            when (redrawAlarmID > 0) empty;
-
-            redrawAlarmID = SES.addAlarm(expireMS:17, callback::{
+            when (queuedRedraw) empty;
+            queuedRedraw = true;
+            SES.Oscillator.set(index:oscID, enable:true, periodMS:17, onCycle::{
                 @spr = spriteOffset_;
                 @i = 0;
                 [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
@@ -152,7 +141,8 @@
                 } else 
                     lastSpriteCount = spr;
 
-                redrawAlarmID = -1;
+                queuedRedraw = false;
+                SES.Oscillator.set(index:oscID, enable:false);
             });
 
                 
