@@ -6,15 +6,8 @@
 @:UISpacer = class(
     inherits:[UI],
     define:::(this) {   
-        this.interface = {
-            onShow :: {
-                this.hide();
-            },
-            
-            onHide ::{
-            
-            }
-        };
+
+        this.enableBackground = false;
     }
 );
 

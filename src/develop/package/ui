@@ -2,6 +2,7 @@
 @:Fetcher = import(module:'fetcher');
 @:SES = import(module:'SES.Core');
 @:Debug = import(module:'SES.Debug');
+@:EventSystem = import(module:'Matte.Core.EventSystem');
 
 
 @:UI_BG_TILE_ON = Fetcher.Tile.newID();
@@ -39,6 +40,7 @@ SES.Tile.set(
         @width_ = 8;
         @shown = true;
         @enableBackground = true;
+        @events = EventSystem.new();
 
         @:backgroundSpriteID = Fetcher.Sprite.newID();
         @:backgroundPalette = Fetcher.Palette.newID();
@@ -68,6 +70,57 @@ SES.Tile.set(
 
 
         };
+        
+        
+        events.events = {
+            onMove ::(detail) {
+            
+            },
+            onShow ::(detail) {
+                shown = true;
+                readjustBackground();                      
+                children->foreach(do:::(i, child) <- child.show());
+            },
+            
+            onHide ::(detail) {
+                shown = false;
+                readjustBackground();
+                children->foreach(do:::(i, child) <- child.hide());
+            
+            },
+            
+            onEnable ::(detail) {
+                children->foreach(do:::(i, child) <- child.enable());
+            },           
+            
+            onDisable ::(detail) {
+                children->foreach(do:::(i, child) <- child.disable());            
+            },
+            
+            onResize ::(detail) {
+                readjustBackground();            
+            },
+            
+            onAddChild ::(detail) {            
+
+            },
+            
+            onMove ::(detail) {
+                readjustBackground();            
+            },
+            
+            onEnter ::(detail) {
+            
+            },
+            
+            
+            onLeave ::(detail) {
+            
+            }
+            
+            
+            
+        };
     
     
     
@@ -75,18 +128,16 @@ SES.Tile.set(
 
             show :: {
                 when(shown) empty;
-                shown = true;
-                this.onShow();      
-                readjustBackground();                      
-                children->foreach(do:::(i, child) <- child.show());
+                events.emit(event:'onShow');      
+            },
+            
+            events : {
+                get::<- events
             },
             
             hide :: {
                 when(!shown) empty;
-                shown = false;
-                readjustBackground();
-                this.onHide();
-                children->foreach(do:::(i, child) <- child.hide());
+                events.emit(event:'onHide');
             },
             
             shown : {
@@ -94,13 +145,11 @@ SES.Tile.set(
             },
 
             enable :: {
-                this.onEnable();            
-                children->foreach(do:::(i, child) <- child.enable());
+                events.emit(event:'onEnable'); 
             },
 
             disable :: {
-                this.onDisable();            
-                children->foreach(do:::(i, child) <- child.disable());
+                events.emit(event:'onDisable'); 
             },
             
             x : {
@@ -124,8 +173,7 @@ SES.Tile.set(
             resize ::(width, height) {
                 width_ = width;
                 height_ = height;  
-                this.onResize();
-                readjustBackground();
+                events.emit(event:'onResize');
             },
             
             children : {
@@ -143,7 +191,7 @@ SES.Tile.set(
             addChild ::(child, sizeRequest) {
                 children->push(value:child);
                 childRequests->push(value:sizeRequest);
-                this.onAddChild(child, sizeRequest);
+                events.emit(event:'onAddChild');
             },
 
             // empty -> no background
@@ -166,8 +214,7 @@ SES.Tile.set(
             move ::(x, y) {  
                 x_ = x;
                 y_ = y;              
-                this.onMove();
-                readjustBackground();
+                events.emit(event:'onMove');
             },
             
             enableBackground : {

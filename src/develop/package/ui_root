@@ -30,28 +30,30 @@ return class(
             return this;
         };
         
+        this.events.installHooks(
+            events: {        
+                onAddChild ::(detail){
+                    resetChild();            
+                },
+                
+                
+                onResize ::(detail) {
+                    resetChild();            
+                },
+                
+                onMove ::(detail) {
+                    resetChild();            
+                }
+            }
+        );
+        
+        
         this.interface = {
             padding: {
                 set ::(value => Number) {
                     padding = value;
                     resetChild();
                 }
-            },
-        
-            onAddChild ::(child, sizeRequest){
-                resetChild();            
-            },
-            
-            onHide ::{},
-            onShow ::{},
-            
-            
-            onResize :: {
-                resetChild();            
-            },
-            
-            onMove :: {
-                resetChild();            
             }
             
         };

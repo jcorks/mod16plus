@@ -5,29 +5,43 @@
 @:UIMousable = import(module:'ui_mousable');
 @:UIRoot     = import(module:'ui_root');
 @:UILabel    = import(module:'ui_label');
+@:UIFlat     = import(module:'ui_flat');
+@:UISpacer   = import(module:'ui_spacer');
+@:UIEntry    = import(module:'ui_entry');
 
 @:a = UIRoot.new(
-    width: 100,
-    height: 50,
-    view:UILayout.new(
+    width: 200,
+    height: 140,
+    view:
+    
+    UIFlat.new(
+        enableBackground: false,
         children: [
-            [UIMousable.new(
-                child:UILabel.new(text:'First')
-            ), 1/3],
+            [UISpacer.new(), 0.25],
+            [UILayout.new(
+                children: [
+                    [UIMousable.new(
+                        child:UIEntry.new(text:'')
+                    ), 1/3],
 
-            [UIMousable.new(
-                child:UILabel.new(text:'Second')
-            ), 1/3],
+                    [UIMousable.new(
+                        child:UILabel.new(text:'Second'),
+                        onClick ::{
+                            Debug.breakpoint();
+                        }
+                    ), 1/3],
 
-            [UIMousable.new(
-                child:UILabel.new(text:'Third')
-            ), 1/3],
+                    [UIMousable.new(
+                        child:UILabel.new(text:'Third')
+                    ), 1/3],
+                ]
+
+            ), 0.5],
         ]
-
-    )
+    )    
 );
 
-
+a.children[0].children[1].children[1].hide();
 
 //Debug.breakpoint();
 

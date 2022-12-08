@@ -27,39 +27,42 @@ return class(
                 if (entered == false) ::<= {
                     this.background = hoverColor;
                     entered = true;
-                    this.onEnter();
+                    this.events.emit(event:'onEnter');
                 };
             } else ::<= {
                 if (entered == true) ::<= {
                     entered = false;  
                     clicked = false;
                     this.background = passiveColor;
-                    this.onLeave();
+                    this.events.emit(event:'onLeave');
                 };                  
             };
         };
-                
-        @:inputid = SES.Input.addCallback(
-            device: SES.Input.DEVICES.POINTER0,
-            callback ::(event, x, y, button) {
-                lastX = x;
-                lastY = y;
-                updateEntered();               
-                match(event) {                    
-                  (SES.Input.EVENTS.POINTER_BUTTON_DOWN):
-                    if (entered) ::<= {         
-                        clicked = true;               
-                        this.background = clickColor;
-                    },
-                  (SES.Input.EVENTS.POINTER_BUTTON_UP):
-                    if (clicked) ::<= {
-                        userClick();     
-                        clicked = false;                   
-                        this.background = hoverColor;
-                    }   
-                };
-            }
-        );
+        @inputid;
+        @:connectInput = ::{   
+            inputid = SES.Input.addCallback(
+                device: SES.Input.DEVICES.POINTER0,
+                callback ::(event, x, y, button) {
+                    lastX = x;
+                    lastY = y;
+                    updateEntered();               
+                    match(event) {                    
+                      (SES.Input.EVENTS.POINTER_BUTTON_DOWN):
+                        if (entered) ::<= {         
+                            clicked = true;               
+                            this.background = clickColor;
+                        },
+                      (SES.Input.EVENTS.POINTER_BUTTON_UP):
+                        if (clicked) ::<= {
+                            userClick();     
+                            clicked = false;                   
+                            this.background = hoverColor;
+                        }   
+                    };
+                }
+            );
+        };
+        connectInput();
         
         @:recenterChild ::{
             when(this.children->keycount == 0) empty;
@@ -74,10 +77,29 @@ return class(
         
         
         this.constructor = ::(onClick, child) {
-            if (onClick) this.onClick = onClick;
+            if (onClick) userClick = onClick;
             if (child) this.addChild(child, sizeRequest:1);
+            this.background = passiveColor;
             return this;
         };
+        
+        
+        this.events.installHooks(
+            events: {
+                onMove ::(detail)<- recenterChild(),
+                onResize ::(detail)<- recenterChild(),
+                onHide ::(detail) {
+                    SES.Input.removeCallback(device:SES.Input.DEVICES.POINTER0, id:inputid);
+                    inputid = -1;
+                },
+                
+                onShow ::(detail) {
+                    connectInput();
+                }
+            }
+        );        
+        
+        
         
         this.interface = {
             onAddChild::(child, sizeRequest) {
@@ -86,14 +108,7 @@ return class(
                 recenterChild();                    
             },
             
-            onClick : {
-                set ::(value) <- userClick = value
-            },
             
-            onEnter ::{},
-            onLeave::{},
-            onMove ::<- recenterChild(),
-            onResize ::<- recenterChild()
         };
     }
 );

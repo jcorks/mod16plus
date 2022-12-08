@@ -2,6 +2,7 @@
 @:UI = import(module:'ui');
 @:TextArea = import(module:'textarea');
 @:Fetcher = import(module:'fetcher');
+@:Debug = import(module:'SES.Debug');
 
 return class(
     inherits:[UI],
@@ -9,8 +10,8 @@ return class(
         @padding = 4;
         @:resetChildren ::{
             @:requests =  this.childrenSizeRequests;
+            @last = 0;
             this.children->foreach(do:::(i, child) {
-                @last = 0;
                 child.move(y: padding + this.y, x: padding + this.x + last);
                 child.resize(
                     height:this.height - padding*2,
@@ -21,13 +22,33 @@ return class(
         };        
         
         this.constructor = ::(
-            children => Object
+            children => Object,
+            enableBackground
         ) {
+            if (enableBackground != empty) this.enableBackground = enableBackground;
             children->foreach(do:::(i, value){
                 this.addChild(child:value[0] => Object, sizeRequest:value[1] => Number);
             });
             return this;
         };
+
+
+        this.events.installHooks(
+            events:{
+                onAddChild ::(detail){
+                    resetChildren();            
+                },
+                
+                onResize ::(detail) {
+                    resetChildren();            
+                },
+                
+                onMove ::(detail) {
+                    resetChildren();            
+                }
+            
+            }
+        );
         
         
         this.interface = {
@@ -38,20 +59,7 @@ return class(
                 }
             },
             
-            onHide::() {},
-            onShow::() {},
         
-            onAddChild ::(child, sizeRequest){
-                resetChildren();            
-            },
-            
-            onResize :: {
-                resetChildren();            
-            },
-            
-            onMove :: {
-                resetChildren();            
-            }
             
         };
     }

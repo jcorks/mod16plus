@@ -14,7 +14,7 @@ return class(
     
         @:textarea = TextArea.new(spriteOffset:offset);
         textarea. = {
-            editable : false,
+            editable : true,
             heightChars: 1
         };
 
@@ -28,6 +28,7 @@ return class(
         
         this.constructor = ::(text) {
             this.foreground = '#ffffff';
+            this.background = '#555555';
             textarea.defaultPalette = foregroundPalette;
             textarea.text = text;
             this.enableBackground = false;
@@ -40,10 +41,12 @@ return class(
             events:{
                 onShow ::(detail){
                     textarea.text =  text;
+                    textarea.editable = true;
                 },
                 
                 onHide ::(detail){
                     textarea.text = '';
+                    textarea.editable = false;
                 },
                 
                 onResize ::(detail) {

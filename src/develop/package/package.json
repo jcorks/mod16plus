@@ -17,6 +17,7 @@
     "ui_layout",
     "ui_mousable",
     "ui_spacer",
-    "ui_root"
+    "ui_root",
+    "ui_entry"
   ]
 }
