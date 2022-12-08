@@ -1,9 +1,37 @@
-@:Window = import(module:'window');
+//@:Window = import(module:'window');
 @:Debug = import(module:'SES.Debug');
 
-Debug.breakpoint();
+@:UILayout   = import(module:'ui_layout');
+@:UIMousable = import(module:'ui_mousable');
+@:UIRoot     = import(module:'ui_root');
+@:UILabel    = import(module:'ui_label');
+
+@:a = UIRoot.new(
+    width: 100,
+    height: 50,
+    view:UILayout.new(
+        children: [
+            [UIMousable.new(
+                child:UILabel.new(text:'First')
+            ), 1/3],
+
+            [UIMousable.new(
+                child:UILabel.new(text:'Second')
+            ), 1/3],
+
+            [UIMousable.new(
+                child:UILabel.new(text:'Third')
+            ), 1/3],
+        ]
+
+    )
+);
 
 
-Window.start();
+
+//Debug.breakpoint();
+
+
+//Window.start();
 
 

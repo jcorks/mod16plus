@@ -13,10 +13,11 @@ static float identity_matrix[] = {
 };
 
 
-static sesMatrix_t rotateXMatrix;
-static sesMatrix_t rotateYMatrix;
-static sesMatrix_t rotateZMatrix;
-static sesMatrix_t scaleScratch;
+static sesMatrix_t rotateXMatrix = {};
+static sesMatrix_t rotateYMatrix = {};
+static sesMatrix_t rotateZMatrix = {};
+static sesMatrix_t scaleScratch = {};
+
 
 
 

@@ -1,0 +1,60 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+@:Debug = import(module:'SES.Debug');
+return class(
+    inherits:[UI],
+    define:::(this) {
+        @padding = 3;
+        @:resetChildren ::{
+            @:requests =  this.childrenSizeRequests;
+            @last = 0;
+            this.children->foreach(do:::(i, child) {
+                child.move(x: padding + this.x, y: padding + this.y + last);
+                child.resize(
+                    width:this.width - padding*2,
+                    height:requests[i]*this.height - padding*2
+                );
+                last += requests[i]*this.height;
+            });
+        };        
+        
+        
+        
+        this.constructor = ::(
+            children => Object
+        ) {
+            children->foreach(do:::(i, value){
+                this.addChild(child:value[0] => Object, sizeRequest:value[1] => Number);
+            });
+            return this;
+        };
+        
+        this.interface = {
+            padding: {
+                set ::(value => Number) {
+                    padding = value;
+                    resetChildren();
+                }
+            },
+        
+            onAddChild ::(child, sizeRequest){
+                resetChildren();            
+            },
+            
+            onHide ::{},
+            onShow ::{},
+            
+            
+            onResize :: {
+                resetChildren();            
+            },
+            
+            onMove :: {
+                resetChildren();            
+            }
+            
+        };
+    }
+);

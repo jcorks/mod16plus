@@ -1,0 +1,84 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+@:SES = import(module:'SES.Core');
+return class(
+    inherits:[UI],
+    define:::(this) {
+    
+        @:offset = Fetcher.Sprite.newID();
+        @:foregroundPalette = Fetcher.Palette.newID();
+        
+        Fetcher.Sprite.claimIDs(amount:30);
+    
+        @:textarea = TextArea.new(spriteOffset:offset);
+        textarea. = {
+            editable : false,
+            heightChars: 1
+        };
+
+        @text = '';
+        
+        @:readjust ::{
+            textarea.x = this.x + this.width / 2  - textarea.width  / 2;
+            textarea.y = this.y + this.height / 2 - textarea.height / 2;                        
+        };
+        
+        
+        this.constructor = ::(text) {
+            this.foreground = '#ffffff';
+            textarea.defaultPalette = foregroundPalette;
+            textarea.text = text;
+            this.enableBackground = false;
+            readjust();
+            return this;
+        };
+        
+        this.interface = {
+            foreground : {
+                set ::(value => String) {
+                    SES.Palette.set(
+                        index:foregroundPalette,
+                        colors: [
+                            value,
+                            value,
+                            value,
+                            value
+                        ]
+                    );                
+                }
+            },
+            
+            onShow ::{
+                textarea.text =  text;
+            },
+            
+            onHide ::{
+                textarea.text = '';
+            },
+            
+            onResize :: {
+                readjust();
+            },
+            
+            onMove :: {
+                readjust();
+            },
+            
+            text : {
+                set ::(value => String) {
+                    text = value;
+                    if (this.shown) ::<= {
+                        textarea.text = value;
+                        readjust();
+                    };
+                },
+                
+                get ::(value) {
+                    return textarea.text;
+                }
+            }
+        };
+    }
+);

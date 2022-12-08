@@ -1,0 +1,21 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+
+@:UISpacer = class(
+    inherits:[UI],
+    define:::(this) {   
+        this.interface = {
+            onShow :: {
+                this.hide();
+            },
+            
+            onHide ::{
+            
+            }
+        };
+    }
+);
+
+return UISpacer;

@@ -1,0 +1,59 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+
+return class(
+    inherits:[UI],
+    define:::(this) {
+        @padding = 3;
+        @width_ = 0;
+        @height_ = 0;
+        @view_;
+        @:resetChild ::{
+            view_.move(x: this.x, y: this.y);
+            view_.resize(width:width_, height:height_);
+    
+        };        
+        
+        
+        
+        this.constructor = ::(
+            view => Object,
+            width => Number,
+            height => Number
+        ) {
+            width_ = width;
+            height_ = height;
+            view_ = view;
+            this.addChild(child: view, sizeRequest: 1);            
+            return this;
+        };
+        
+        this.interface = {
+            padding: {
+                set ::(value => Number) {
+                    padding = value;
+                    resetChild();
+                }
+            },
+        
+            onAddChild ::(child, sizeRequest){
+                resetChild();            
+            },
+            
+            onHide ::{},
+            onShow ::{},
+            
+            
+            onResize :: {
+                resetChild();            
+            },
+            
+            onMove :: {
+                resetChild();            
+            }
+            
+        };
+    }
+);

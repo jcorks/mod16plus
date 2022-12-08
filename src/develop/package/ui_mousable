@@ -1,0 +1,99 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+@:SES = import(module:'SES.Core');
+
+
+return class(
+    inherits:[UI],
+    define:::(this) {
+        @entered =  false;
+        @clicked = false;        
+        @passiveColor = '#333333';
+        @hoverColor = '#777777';
+        @clickColor = '#aaaaaa';
+
+        @lastX = -100;
+        @lastY = -100;
+
+
+        @userClick = ::{};
+        @:updateEntered::() {
+            @:x = lastX;
+            @:y = lastY;
+            if (x > this.x && x < this.x + this.width &&
+                y > this.y && y < this.y + this.height) ::<= {
+                if (entered == false) ::<= {
+                    this.background = hoverColor;
+                    entered = true;
+                    this.onEnter();
+                };
+            } else ::<= {
+                if (entered == true) ::<= {
+                    entered = false;  
+                    clicked = false;
+                    this.background = passiveColor;
+                    this.onLeave();
+                };                  
+            };
+        };
+                
+        @:inputid = SES.Input.addCallback(
+            device: SES.Input.DEVICES.POINTER0,
+            callback ::(event, x, y, button) {
+                lastX = x;
+                lastY = y;
+                updateEntered();               
+                match(event) {                    
+                  (SES.Input.EVENTS.POINTER_BUTTON_DOWN):
+                    if (entered) ::<= {         
+                        clicked = true;               
+                        this.background = clickColor;
+                    },
+                  (SES.Input.EVENTS.POINTER_BUTTON_UP):
+                    if (clicked) ::<= {
+                        userClick();     
+                        clicked = false;                   
+                        this.background = hoverColor;
+                    }   
+                };
+            }
+        );
+        
+        @:recenterChild ::{
+            when(this.children->keycount == 0) empty;
+            @:child = this.children[0];
+            child.move(
+                x: this.x + this.width/2 - child.width/2,
+                y: this.y + this.height/2 - child.height/2
+            );
+            updateEntered();
+
+        };
+        
+        
+        this.constructor = ::(onClick, child) {
+            if (onClick) this.onClick = onClick;
+            if (child) this.addChild(child, sizeRequest:1);
+            return this;
+        };
+        
+        this.interface = {
+            onAddChild::(child, sizeRequest) {
+                if (this.children->keycount == 2)
+                    error(detail:'Mousable only holds one child');
+                recenterChild();                    
+            },
+            
+            onClick : {
+                set ::(value) <- userClick = value
+            },
+            
+            onEnter ::{},
+            onLeave::{},
+            onMove ::<- recenterChild(),
+            onResize ::<- recenterChild()
+        };
+    }
+);

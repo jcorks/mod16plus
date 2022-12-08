@@ -1105,7 +1105,7 @@ return class(
                 get ::(value) <- completionMode
             },
             
-            defaultPallete : {
+            defaultPalette : {
                 set::(value) {
                     defaultPalette_ = value;
                     redrawLines();                    

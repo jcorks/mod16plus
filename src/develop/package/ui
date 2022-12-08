@@ -1,0 +1,188 @@
+@:class = import(module:'Matte.Core.Class');
+@:Fetcher = import(module:'fetcher');
+@:SES = import(module:'SES.Core');
+@:Debug = import(module:'SES.Debug');
+
+
+@:UI_BG_TILE_ON = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:UI_BG_TILE_ON,
+    data: [
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1    
+    ]
+);
+
+
+
+
+
+
+
+
+@:UI = class(
+    define:::(this) {
+        @:children = [];
+        @:childRequests = [];
+        @parent;
+
+        @x_ = 0;
+        @y_ = 0;
+        @height_ = 8;
+        @width_ = 8;
+        @shown = true;
+        @enableBackground = true;
+
+        @:backgroundSpriteID = Fetcher.Sprite.newID();
+        @:backgroundPalette = Fetcher.Palette.newID();
+
+        @:readjustBackground ::{
+            SES.Sprite.set(index:backgroundSpriteID,   show:false);
+            when(!shown) empty;
+            when(!enableBackground) empty;
+ 
+            SES.Sprite.set(
+                index:backgroundSpriteID, 
+                tile: UI_BG_TILE_ON,
+                show:true, 
+                palette:backgroundPalette,
+                x:x_,
+                y:y_,
+                effect: 
+                SES.Sprite.EFFECTS.Color
+            );
+            print(message: 'bg' + width_ + ', '+ height_);
+            print(message: 'ps' + x_ + ', '+ y_);
+            SES.Sprite.transform(
+                index:backgroundSpriteID, 
+                scaleX: width_ / 8,
+                scaleY: height_ / 8
+            );
+
+
+        };
+    
+    
+    
+        this.interface = {
+
+            show :: {
+                when(shown) empty;
+                shown = true;
+                this.onShow();      
+                readjustBackground();                      
+                children->foreach(do:::(i, child) <- child.show());
+            },
+            
+            hide :: {
+                when(!shown) empty;
+                shown = false;
+                readjustBackground();
+                this.onHide();
+                children->foreach(do:::(i, child) <- child.hide());
+            },
+            
+            shown : {
+                get ::<- shown
+            },
+
+            enable :: {
+                this.onEnable();            
+                children->foreach(do:::(i, child) <- child.enable());
+            },
+
+            disable :: {
+                this.onDisable();            
+                children->foreach(do:::(i, child) <- child.disable());
+            },
+            
+            x : {
+                get ::<- x_
+            },
+            
+            y : {
+                get ::<- y_
+            },
+            
+
+            width : {
+                get :: <- width_
+            },
+
+
+            height : {
+                get :: <- height_
+            },
+            
+            resize ::(width, height) {
+                width_ = width;
+                height_ = height;  
+                this.onResize();
+                readjustBackground();
+            },
+            
+            children : {
+                get ::<- [...children]
+            },
+            
+            childrenSizeRequests : {
+                get ::<- [...childRequests]
+            },
+            
+            parent : {
+                get ::<- parent
+            },
+
+            addChild ::(child, sizeRequest) {
+                children->push(value:child);
+                childRequests->push(value:sizeRequest);
+                this.onAddChild(child, sizeRequest);
+            },
+
+            // empty -> no background
+            background : {
+                set ::(value) {
+                    SES.Palette.set(
+                        index:backgroundPalette,
+                        colors: [
+                            value,
+                            value,
+                            value,
+                            value
+                        ]
+                    );
+                    readjustBackground();
+                }
+            },
+
+            
+            move ::(x, y) {  
+                x_ = x;
+                y_ = y;              
+                this.onMove();
+                readjustBackground();
+            },
+            
+            enableBackground : {
+                set::(value) {
+                    enableBackground = value;
+                    readjustBackground();
+                }
+            }   
+            
+            
+        
+        
+        };
+        this.background = '#111111';
+    }
+);
+
+return UI;

@@ -10,6 +10,13 @@
     "fetcher",
     "button",
     "project",
-    "textarea"
+    "textarea",
+    "ui",
+    "ui_label",
+    "ui_flat",
+    "ui_layout",
+    "ui_mousable",
+    "ui_spacer",
+    "ui_root"
   ]
 }
