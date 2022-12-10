@@ -18,6 +18,8 @@
     "ui_mousable",
     "ui_spacer",
     "ui_root",
-    "ui_entry"
+    "ui_entry",
+    "ui_list",
+    "ui_tile"
   ]
 }

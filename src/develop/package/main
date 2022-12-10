@@ -1,6 +1,6 @@
-//@:Window = import(module:'window');
+@:Window = import(module:'window');
 @:Debug = import(module:'SES.Debug');
-
+/*
 @:UILayout   = import(module:'ui_layout');
 @:UIMousable = import(module:'ui_mousable');
 @:UIRoot     = import(module:'ui_root');
@@ -8,44 +8,71 @@
 @:UIFlat     = import(module:'ui_flat');
 @:UISpacer   = import(module:'ui_spacer');
 @:UIEntry    = import(module:'ui_entry');
+@:UIList     = import(module:'ui_list');
 
 @:a = UIRoot.new(
     width: 200,
     height: 140,
+    layer: 0,
     view:
     
     UIFlat.new(
         enableBackground: false,
         children: [
             [UISpacer.new(), 0.25],
-            [UILayout.new(
-                children: [
-                    [UIMousable.new(
+            [UIList.new(
+                showCount: 4,
+                items: [
+                    UIMousable.new(
                         child:UIEntry.new(text:'')
-                    ), 1/3],
+                    ),
 
-                    [UIMousable.new(
+                    UIMousable.new(
                         child:UILabel.new(text:'Second'),
                         onClick ::{
                             Debug.breakpoint();
                         }
-                    ), 1/3],
+                    ),
 
-                    [UIMousable.new(
-                        child:UILabel.new(text:'Third')
-                    ), 1/3],
+                    UIMousable.new(
+                        child:UILabel.new(text:'Ok'),
+                        onClick ::{
+                            a.hide();
+                        }
+                    ),
+
+                    UIMousable.new(
+                        child:UILabel.new(text:'Fourth'),
+                        onClick ::{
+                            Debug.breakpoint();
+                        }
+                    ),
+
+                    UIMousable.new(
+                        child:UILabel.new(text:'Fifth'),
+                        onClick ::{
+                            Debug.breakpoint();
+                        }
+                    ),
+
+                    UIMousable.new(
+                        child:UILabel.new(text:'Sixth'),
+                        onClick ::{
+                            Debug.breakpoint();
+                        }
+                    )
+
+
                 ]
 
             ), 0.5],
         ]
     )    
 );
-
-a.children[0].children[1].children[1].hide();
-
+*/
 //Debug.breakpoint();
 
 
-//Window.start();
+Window.start();
 
 

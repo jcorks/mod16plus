@@ -30,7 +30,7 @@ return class(
         @onNewLine_;
         @onDelLine_;
         @defaultPalette_ = 0;
-
+        @shown = true;
 
         @TEXT_AREA_HEIGHT = 10;
         @TEXT_AREA_WIDTH = 10;
@@ -168,7 +168,11 @@ return class(
                 index:0,
                 periodMS:25,
                 onCycle::{
-            
+                    when(!shown) ::<= {
+                        clearCanvas();
+                        redrawActive = false;
+                        SES.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
+                    };
                     @spr = spriteOffset_;
                     @i = 0;
                     [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
@@ -747,6 +751,14 @@ return class(
                 }
             },
             
+            shown : {
+                get ::<- shown,
+                set ::(value => Boolean) {
+                    shown = value;
+                    redrawLines();
+                    this.editable = shown;
+                }
+            },
             
             
             width : {
@@ -1097,6 +1109,9 @@ return class(
             cursorX : {
                 get :: <- cursorX
             },
+            
+            // clears all characters from the drawn view
+
 
             // in completion mode, the up / down / enter keys 
             // are ignored            

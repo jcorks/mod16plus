@@ -421,7 +421,7 @@ void ses_sdl_gl_set_tile_pixel(uint8_t location, uint8_t value) {
 };
 
 uint8_t ses_sdl_gl_get_tile_pixel(uint8_t location) {
-    return (int)(bound_tile->data[location] / 255.0 + 0.5);
+    return (int)(bound_tile->data[location] / 255.0 * 4 + 0.5);
 }
 
 void ses_sdl_gl_copy_from(uint32_t id) {

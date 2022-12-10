@@ -51,8 +51,8 @@
           (String):
             [
                 parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)) / 255, //r
-                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)) / 255, //g
-                parseHex(hi:input->charAt(index:1), lo:input->charAt(index:2)) / 255, //b
+                parseHex(hi:input->charAt(index:3), lo:input->charAt(index:4)) / 255, //g
+                parseHex(hi:input->charAt(index:5), lo:input->charAt(index:6)) / 255, //b
             ]
         };
     };

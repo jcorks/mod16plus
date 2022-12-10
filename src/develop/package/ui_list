@@ -1,0 +1,113 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+@:Debug = import(module:'SES.Debug');
+@:SES = import(module:'SES.Core');
+return class(
+    inherits:[UI],
+    define:::(this) {
+        @padding = 3;
+        @iter = 0;
+        @count = 3;
+        @:resetChildren ::{
+            @:requests =  this.childrenSizeRequests;
+            @:children = this.children;
+            children->foreach(do:::(i, child) <- child.hide());
+            @last = 0;
+            @max = if (iter+count > children->keycount) children->keycount else iter+count;
+            [iter, max]->for(do:::(i) {
+                @:child = children[i];                
+                child.show();
+                child.move(x: padding + this.x, y: padding + this.y + last);
+                child.resize(
+                    width:this.width - padding*2,
+                    height:(1/count)*this.height - padding*2
+                );
+                last += (1/count)*this.height;
+            });
+        };        
+        
+
+
+
+        @inputid;
+        @:connectInput = ::{   
+            inputid = SES.Input.addCallback(
+                device: SES.Input.DEVICES.POINTER0,
+                callback ::(event, x, y, button) {
+                    when(event != SES.Input.EVENTS.POINTER_SCROLL) empty;
+                    
+                    when (y > 0) ::<= {
+                        when(iter <= 0) empty;
+                        iter -= 1;
+                        resetChildren();
+                    };
+
+                    when (y < 0) ::<= {
+                        when(iter >= this.children->keycount - count) empty;
+                        iter += 1;
+                        if (iter < 0) iter = 0;
+                        resetChildren();
+                    };
+
+                    
+                }
+            );
+        };
+
+        
+        
+        this.constructor = ::(
+            items => Object,
+            enableBackground,
+            showCount => Number
+        ) {
+            if (enableBackground != empty) this.enableBackground = enableBackground;
+            count = showCount;
+            items->foreach(do:::(i, value){
+                this.addChild(child:value => Object, sizeRequest:1);
+            });
+            return this;
+        };
+        
+        
+        this.events.installHooks(
+            events: {
+                onAddChild ::(detail){
+                    resetChildren();            
+                },                            
+                
+                onResize ::(detail) {
+                    resetChildren();            
+                },
+                
+                onMove ::(detail) {
+                    resetChildren();            
+                },
+                
+                onShow ::(detail) {
+                    connectInput();
+                },
+                
+                onHide ::(detail) {
+                    SES.Input.removeCallback(id:inputid, device: SES.Input.DEVICES.POINTER0);
+                    inputid = empty;
+                }
+            }
+        );        
+        
+        
+        this.interface = {
+            padding: {
+                set ::(value => Number) {
+                    padding = value;
+                    resetChildren();
+                }
+            }
+        
+            
+        };
+        connectInput();
+    }
+);

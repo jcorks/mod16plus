@@ -33,7 +33,7 @@ SES.Tile.set(
         @:children = [];
         @:childRequests = [];
         @parent;
-
+        @layer = 0;
         @x_ = 0;
         @y_ = 0;
         @height_ = 8;
@@ -57,6 +57,7 @@ SES.Tile.set(
                 palette:backgroundPalette,
                 x:x_,
                 y:y_,
+                layer:this.layer,
                 effect: 
                 SES.Sprite.EFFECTS.Color
             );
@@ -116,6 +117,11 @@ SES.Tile.set(
             
             onLeave ::(detail) {
             
+            },
+            
+            onLayerChange ::(detail) {
+                children->foreach(do:::(i, child) <- child.layer = this.layer + 1);
+                readjustBackground();
             }
             
             
@@ -184,6 +190,14 @@ SES.Tile.set(
                 get ::<- [...childRequests]
             },
             
+            layer : {
+                get ::<- layer,
+                set ::(value) {
+                    layer = value;
+                    events.emit(event:'onLayerChange');
+                }
+            },
+            
             parent : {
                 get ::<- parent
             },
@@ -192,6 +206,7 @@ SES.Tile.set(
                 children->push(value:child);
                 childRequests->push(value:sizeRequest);
                 events.emit(event:'onAddChild');
+                child.layer = this.layer - 1;
             },
 
             // empty -> no background

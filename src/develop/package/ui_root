@@ -21,12 +21,14 @@ return class(
         this.constructor = ::(
             view => Object,
             width => Number,
-            height => Number
+            height => Number,
+            layer => Number
         ) {
             width_ = width;
             height_ = height;
             view_ = view;
             this.addChild(child: view, sizeRequest: 1);            
+            this.layer = layer;
             return this;
         };
         
@@ -57,5 +59,6 @@ return class(
             }
             
         };
+        this.enableBackground = false;
     }
 );

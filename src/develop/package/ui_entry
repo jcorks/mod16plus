@@ -15,7 +15,8 @@ return class(
         @:textarea = TextArea.new(spriteOffset:offset);
         textarea. = {
             editable : true,
-            heightChars: 1
+            heightChars: 1,
+            layer : this.layer + 1
         };
 
         @text = '';
@@ -45,6 +46,7 @@ return class(
                 },
                 
                 onHide ::(detail){
+                    text = textarea.text;
                     textarea.text = '';
                     textarea.editable = false;
                 },
@@ -56,6 +58,11 @@ return class(
                 onMove ::(detail) {
                     readjust();
                 },
+
+                onLayerChange::(detail) {
+                    textarea.layer = this.layer + 1;
+                }
+
 
             }
         );        
@@ -88,7 +95,8 @@ return class(
                 },
                 
                 get ::(value) {
-                    return textarea.text;
+                    when(this.shown) textarea.text;
+                    return text;
                 }
             }
         };

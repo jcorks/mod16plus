@@ -6,7 +6,7 @@
 return class(
     inherits:[UI],
     define:::(this) {
-        @padding = 3;
+        @padding = 1;
         @:resetChildren ::{
             @:requests =  this.childrenSizeRequests;
             @last = 0;

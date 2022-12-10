@@ -55,8 +55,8 @@ There are 2 kinds of tiles:
 
 
 The total number of possible tiles able to be 
-stored is 524288 (0x80000). 262144 (0 - 0x3ffff) sprites are exclusive to backgrounds, 
-and 262144 (0x40000 - 0x8ffff) are exclusive to sprites.
+stored is 524288 (0x80000). 262144 (0 - 0x3ffff) sprites are exclusive to sprites, 
+and 262144 (0x40000 - 0x8ffff) are exclusive to backgrounds.
 
 Tiles of any kind can be copied and moved around 
 freely, so sprite tile memory can be used as "overflow"
@@ -70,6 +70,8 @@ Each sprite consists of 1 tile and can have transform effects
 (position, rotation, scale) applied to it. This can be 
 useful for particle effects, characters, anything thats 
 more-or-less dynamic.
+
+A total of 65536 sprites may be referenced.
 
 Sprites can use tiles from IDs 0 to 0x40000-1
 
@@ -115,7 +117,8 @@ Layers
 Each background and sprite have a layer upon which theyre drawn.
 Layers are used to control the order in which things appear 
 on-screen. Earlier layers are drawn first, with backgrounds drawn 
-before sprites for each layer. Layers -15 through and including 16 exist for use.
+before sprites for each layer, giving the effect of larger 
+numbers appearing on top. Layers -63 through and including 64 exist for use.
 The default of 0 will place items midway.
 
 

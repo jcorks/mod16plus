@@ -187,7 +187,12 @@ static void ses_matte_backtrace() {
         uint32_t fileid = matte_bytecode_stub_get_file_id(frame.stub);
         uint32_t instCount;
         const matteBytecodeStubInstruction_t * inst = matte_bytecode_stub_get_instructions(frame.stub, &instCount);
-        uint32_t lineNumber = inst[frame.pc].lineNumber;
+        
+        uint32_t lineNumber;
+        if (frame.pc < 0 || frame.pc >= instCount) 
+            lineNumber = 0;
+        else
+            lineNumber = inst[frame.pc].lineNumber;
                 
         
         
@@ -388,21 +393,129 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
     debug_println(">%s", 3, src);
     uint32_t len = strlen(src);
     char * query = malloc(len+1);
+    char * arg = malloc(len+1);
     memcpy(query, src, len+1);
-    while(len && isspace(query[len-1])) {
-        query[len-1] = 0;
-        len--;
+    
+    uint32_t queryLen = 0;
+    while(queryLen < len && !isspace(src[queryLen])) {
+        query[queryLen++] = src[queryLen];
     }
-
+    query[queryLen] = 0;
+    
+    arg[0] = 0;
+    if (queryLen >= len) {
+    } else {
+        uint32_t argStart = queryLen;
+        while(argStart < len && isspace(src[argStart])) {
+            argStart++;
+        }
+        uint32_t argLen = 0;
+        while (argStart+argLen < len && !isspace(src[argStart+argLen])) {
+            arg[argLen] = src[argStart+argLen];
+            argLen++;
+        }
+        arg[argLen] = 0;
+    }
 
     // continue normal execution
     if (!strcmp(query, ":c") ||
         !strcmp(query, ":continue")) {
         debug.requestedExit = 1;
+        
+    } else if (!strcmp(query, ":palette")) {
+        sesVector_t data[4];    
+        int i = atoi(arg);
+        if (ses_native_get_palette_info(
+            i,
+            data        
+        )) {
+            debug_println("Palette %d", SESDebug_Color__Code, i);
+            debug_println("[1] back      -> %g %g %g", SESDebug_Color__Code, data[0].x, data[0].y, data[0].z);
+            debug_println("[2] mid-back  -> %g %g %g", SESDebug_Color__Code, data[1].x, data[1].y, data[1].z);
+            debug_println("[3] mid-front -> %g %g %g", SESDebug_Color__Code, data[2].x, data[2].y, data[2].z);
+            debug_println("[4] front     -> %g %g %g", SESDebug_Color__Code, data[3].x, data[3].y, data[3].z);
+        } else {
+            debug_println(
+                "No such palette.",
+                SESDebug_Color__Error         
+            );
+        
+        }        
+        
+    // print info on a given sprite
+    } else if (!strcmp(query, ":tile")) {
+        uint8_t data[64];    
+        int i = atoi(arg);
+        if (ses_native_get_tile_info(
+            i,
+            data        
+        )) {
+            debug_println("Tile %d", SESDebug_Color__Code, i);
+            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[0+0], data[0+1], data[0+2], data[0+3], data[0+4], data[0+5], data[0+6], data[0+7]);
+            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[8+0], data[8+1], data[8+2], data[8+3], data[8+4], data[8+5], data[8+6], data[8+7]);
+            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[16+0], data[16+1], data[16+2], data[16+3], data[16+4], data[16+5], data[16+6], data[16+7]);
+            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[24+0], data[24+1], data[24+2], data[24+3], data[24+4], data[24+5], data[24+6], data[24+7]);
 
+            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[32+0], data[32+1], data[32+2], data[32+3], data[32+4], data[32+5], data[32+6], data[32+7]);
+            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[40+0], data[40+1], data[40+2], data[40+3], data[40+4], data[40+5], data[40+6], data[40+7]);
+            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[48+0], data[48+1], data[48+2], data[48+3], data[48+4], data[48+5], data[48+6], data[48+7]);
+            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[56+0], data[56+1], data[56+2], data[56+3], data[56+4], data[56+5], data[56+6], data[56+7]);
+        } else {
+            debug_println(
+                "No such tile.",
+                SESDebug_Color__Error         
+            );
+        
+        }        
+        
+    // print info on a given sprite
+    } else if (!strcmp(query, ":sprite")) {
+        float x, y, rotation,
+              scaleX, scaleY,
+              centerX, centerY;
+        int layer, effect, enabled;
+        uint32_t palette, tile;        
+        
+        int i = atoi(arg);
+        if (ses_native_get_sprite_info(
+            i,
+            &x, &y, &rotation,
+            &scaleX, &scaleY,
+            &centerX, &centerY,
+            &layer,
+            &effect,
+            &enabled, 
+            
+            &palette,
+            &tile       
+        
+        )) {
+            debug_println("Sprite    %d", SESDebug_Color__Code, i);
+            debug_println("enabled : %s", SESDebug_Color__Code, enabled ? "true" : "false");
+            debug_println("x       : %g", SESDebug_Color__Code, x);
+            debug_println("y       : %g", SESDebug_Color__Code, y);
+            debug_println("layer   : %d", SESDebug_Color__Code, layer);
+            debug_println("effect  : %d", SESDebug_Color__Code, effect);
+            debug_println("palette : %d", SESDebug_Color__Code, palette);
+            debug_println("tile    : %d", SESDebug_Color__Code, tile);
+            debug_println("_________", SESDebug_Color__Code);
+
+            debug_println("rotation: %g", SESDebug_Color__Code, rotation);
+            debug_println("scaleX  : %g", SESDebug_Color__Code, scaleX);
+            debug_println("scaleY  : %g", SESDebug_Color__Code, scaleY);
+            debug_println("centerX : %g", SESDebug_Color__Code, centerX);
+            debug_println("centerY : %g", SESDebug_Color__Code, centerY);
+        } else {
+            debug_println(
+                "No such sprite.",
+                SESDebug_Color__Error         
+            );
+        
+        }
+    
     // print callstack
     } else if (!strcmp(query, ":bt") ||
-        !strcmp(query, ":backtracew")) {
+        !strcmp(query, ":backtrace")) {
         
         ses_matte_backtrace();
 
@@ -462,7 +575,8 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
         }
     }
     debug_show_text();
-    free(query);    
+    free(query);   
+    free(arg); 
     return matte_heap_new_value(debug.heap);
     
     

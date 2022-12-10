@@ -2,16 +2,17 @@
 #include "matte/src/matte.h"
 #include "matte/src/matte_array.h"
 #include "matte/src/matte_string.h"
-#include "linear.h"
 #include <stdio.h>
-
+#include "native.h"
 #include <SDL2/SDL.h>
 
-#define LAYER_MIN -15
+#define LAYER_MIN -63
 #define LAYER_MID 0
-#define LAYER_MAX 16
+#define LAYER_MAX 64
 #define SPRITE_MAX 4096
 #define OSCILLATOR_MAX 1024
+#define SPRITE_COUNT_TOTAL 65536
+#define TILE_ID_MAX 0x8ffff
 
 
 typedef enum {
@@ -30,6 +31,54 @@ typedef enum {
     
 } SES_DeviceType;
 
+
+typedef struct SES_Sprite SES_Sprite;
+struct SES_Sprite{
+    float x;
+    float y;
+    float rotation;
+    float scaleX;
+    float scaleY;
+    float centerX;
+    float centerY;
+    int layer;
+    int effect;
+    int enabled;
+
+    uint32_t palette;
+    uint32_t tile;
+    
+     // previous active sprite in linked list
+    SES_Sprite * prev;    
+    
+    // next active sprite in linked list
+    SES_Sprite * next;
+   
+};
+
+
+
+typedef struct {
+    float x;
+    float y;
+    int layer;
+    int effect;
+    int enabled;
+    int id;
+
+    uint32_t palette;
+} SES_Background;
+
+
+
+
+typedef struct {
+    sesVector_t back;
+    sesVector_t midBack;
+    sesVector_t midFront;
+    sesVector_t front; 
+
+} SES_Palette;
 
 typedef struct {
     // SES_Sprite *
@@ -81,6 +130,10 @@ typedef struct {
 
 } SES_OscillatorContext;
 
+
+typedef struct SES_ActiveSprite SES_ActiveSprite;
+
+
 typedef struct {
 
     // array of user callbacks for input.
@@ -88,7 +141,13 @@ typedef struct {
 
     // an array of SES_Sprite, representing all accessed 
     // sprites.
-    matteArray_t * sprites;
+    SES_Sprite * sprites;   
+
+    uint32_t activeSpriteCount;
+    
+    // linked list of active sprites
+    // This ref is the head (prev == NULL)
+    SES_Sprite * activeSprites;
 
     // an array of SES_Background, representing all accessed 
     // backgrounds.
@@ -96,8 +155,8 @@ typedef struct {
     
     SES_OscillatorContext osc;
 
-    // all layers, drawn in order from 0 to 31.
-    SES_GraphicsLayer layers[32];
+    // all layers, drawn in order from 0, 63.
+    SES_GraphicsLayer layers[128];
     
     
     // an array of SES_Palette, representing all accessed 
@@ -134,6 +193,8 @@ typedef struct {
     // callback ID for the timer event emitter
     SDL_TimerID frameUpdateID;
     
+    // whether the main and aux are swapped. Usually for debugging context
+    int swapped;
     
 
 } SES_SDL;
@@ -156,45 +217,7 @@ static matteValue_t ses_sdl_tile_query(matteVM_t * vm, matteValue_t fn, const ma
 
 
 
-typedef struct {
-    float x;
-    float y;
-    float rotation;
-    float scaleX;
-    float scaleY;
-    float centerX;
-    float centerY;
-    int layer;
-    int effect;
-    int enabled;
 
-    uint32_t palette;
-    uint32_t tile;
-} SES_Sprite;
-
-
-
-typedef struct {
-    float x;
-    float y;
-    int layer;
-    int effect;
-    int enabled;
-    int id;
-
-    uint32_t palette;
-} SES_Background;
-
-
-
-
-typedef struct {
-    sesVector_t back;
-    sesVector_t midBack;
-    sesVector_t midFront;
-    sesVector_t front; 
-
-} SES_Palette;
 /////// EXTERNAL OPENGL INTERFACE  
 
 
@@ -275,20 +298,19 @@ extern void ses_sdl_gl_render_end();
 static void ses_sdl_render() {
     // re-sort sprites and bgs into layer buckets;
     ses_sdl_gl_render_begin();
-    uint32_t i, n;
-    uint32_t len = matte_array_get_size(sdl.main.sprites);
-    SES_Sprite * iter = matte_array_get_data(sdl.main.sprites);
-    for(i = 0; i < len; ++i, iter++) {
-        if (iter->enabled == 0) continue;
 
+    SES_Sprite * iter = sdl.main.activeSprites;
+    while(iter) {
         SES_GraphicsLayer * layer = sdl.main.layers+iter->layer-(LAYER_MIN);
         matte_array_push(layer->sprites, iter);
+        iter = iter->next;
     }
 
 
 
     SES_Background * bg = matte_array_get_data(sdl.main.bgs);
-    len = matte_array_get_size(sdl.main.bgs);
+    int i, n;
+    int len = matte_array_get_size(sdl.main.bgs);
     for(i = 0; i < len; ++i, bg++) {
         if (bg->enabled == 0) continue;
 
@@ -301,7 +323,7 @@ static void ses_sdl_render() {
 
 
     // draw each layer in order
-    for(i = 0; i < 32; ++i) {
+    for(i = 0; i < 128; ++i) {
         SES_GraphicsLayer * layer = sdl.main.layers+i;
     
         // start with backgrounds
@@ -404,17 +426,12 @@ matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteV
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
     uint32_t id = matte_value_as_number(heap, args[0]);
+    if (id >= SPRITE_COUNT_TOTAL) {
+        matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Sprite ID referenced is not [0, 65534] and is out-of-bounds."));                
+        return matte_heap_new_value(heap);    
+    }
 
-    if (id >= SPRITE_MAX) {
-        matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Sprite accessed beyond limit"));
-        return matte_heap_new_value(heap);
-    }
-    while(id >= matte_array_get_size(sdl.main.sprites)) {
-        SES_Sprite spr = {};
-        spr.scaleX = 1;
-        spr.scaleY = 1;
-        matte_array_push(sdl.main.sprites, spr);
-    }
+    
 
 
     uint32_t len = matte_value_object_get_number_key_count(heap, args[1]);
@@ -423,12 +440,46 @@ matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteV
         matteValue_t * flag  = matte_value_object_array_at_unsafe(heap, args[1], i);
         matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[1], i+1);
 
-        SES_Sprite * spr = &matte_array_at(sdl.main.sprites, SES_Sprite, id);
+        SES_Sprite * spr = &sdl.main.sprites[id];
         switch((int)matte_value_as_number(heap, *flag)) {
-          case SESNSA_ENABLE:
-            spr->enabled = matte_value_as_number(heap, *value);
-            break;
+          case SESNSA_ENABLE: {
+            int enabled = matte_value_as_number(heap, *value);
+            if (spr->enabled == enabled) break;
             
+            
+            spr->enabled = enabled;
+            if (enabled) {
+                if (sdl.main.activeSpriteCount > SPRITE_MAX) {
+                    matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Maximum number of sprites active reached."));                
+                    return matte_heap_new_value(heap);
+                }
+
+                // take from inactive list and place as new head 
+                // to main active list.
+                spr->prev = NULL;
+                spr->next = sdl.main.activeSprites;
+                if (spr->next) {
+                    spr->next->prev = spr;
+                }
+                sdl.main.activeSprites = spr;
+                
+            } else {
+                if (spr == sdl.main.activeSprites) {
+                    if (sdl.main.activeSprites->next)
+                        sdl.main.activeSprites->next->prev = NULL;
+                    sdl.main.activeSprites = spr->next;
+                } else {
+                    if (spr->next) {
+                        spr->next->prev = spr->prev;
+                    }
+                    if (spr->prev) {
+                        spr->prev->next = spr->next;
+                    }
+                }
+            }
+
+            break;
+          }  
           case SESNSA_ROTATION:
             spr->rotation = matte_value_as_number(heap, *value);
             break;
@@ -699,13 +750,19 @@ matteValue_t ses_sdl_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteVal
         ses_sdl_gl_bind_tile(matte_value_as_number(heap, args[0]));
         break;
         
-      case SESNTA_SETTEXEL:
+      case SESNTA_SETTEXEL: {
+        int pixel = matte_value_as_number(heap, args[2]);
+        if (pixel < 0 || pixel > 4) {
+            matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Texture value data is not in the range 0 to 4."));
+            return matte_heap_new_value(heap);
+        }
+        
         ses_sdl_gl_set_tile_pixel(
             matte_value_as_number(heap, args[0]),
-            matte_value_as_number(heap, args[2])
+            pixel
         );
         break;
-        
+      }
       case SESNTA_UNBIND:
         ses_sdl_gl_unbind_tile();
         break;
@@ -871,17 +928,23 @@ matteValue_t ses_sdl_tile_query(matteVM_t * vm, matteValue_t fn, const matteValu
 static SES_Context context_create() {
     SES_Context ctx = {};
 
-    ctx.sprites = matte_array_create(sizeof(SES_Sprite));
     ctx.bgs = matte_array_create(sizeof(SES_Background));
     ctx.palettes = matte_array_create(sizeof(SES_Palette));
-
+    ctx.sprites = calloc(1, sizeof(SES_Sprite) * SPRITE_COUNT_TOTAL);
     int i;
+    for(i = 0; i < SPRITE_COUNT_TOTAL; ++i) {
+        ctx.sprites[i].scaleX = 1;
+        ctx.sprites[i].scaleY = 1;
+    }
+
     for(i = 0; i <= SES_DEVICE__GAMEPAD3; ++i) {
         ctx.inputs[i].callbacks = matte_array_create(sizeof(matteValue_t));    
         ctx.inputs[i].dead = matte_array_create(sizeof(uint32_t));
     }
     
-    for(i = 0; i < 32; ++i) {
+
+    
+    for(i = 0; i < 128; ++i) {
         SES_GraphicsLayer * layer = &ctx.layers[i];
         layer->sprites = matte_array_create(sizeof(SES_Sprite *));
         layer->bgs = matte_array_create(sizeof(SES_Background *));
@@ -934,6 +997,7 @@ void ses_native_swap_context() {
     SES_Context c = sdl.main;
     sdl.main = sdl.aux;
     sdl.aux = c;
+    sdl.swapped = !sdl.swapped;
 }
 
 int ses_native_update(matte_t * m) {
@@ -1276,4 +1340,74 @@ int ses_native_main_loop(matte_t * m) {
     return 0;
 }
 
+
+int ses_native_get_sprite_info(
+    uint32_t index,
+    
+    float * x,
+    float * y,
+    float * rotation,
+    float * scaleX,
+    float * scaleY,
+    float * centerX,
+    float * centerY,
+    int * layer,
+    int * effect,
+    int * enabled,
+
+    uint32_t * palette,
+    uint32_t * tile    
+    
+) {
+    SES_Context * ctx = sdl.swapped ? &sdl.aux : &sdl.main;
+    if (index >= SPRITE_COUNT_TOTAL) return 0;
+    
+    SES_Sprite * spr = &ctx->sprites[index];
+    *x = spr->x;
+    *y = spr->y;
+    *rotation = spr->rotation;
+    *scaleX = spr->scaleX;
+    *scaleY = spr->scaleY;
+    *centerX = spr->centerX;
+    *centerY = spr->centerY;
+    *layer = spr->layer;
+    *effect = spr->effect;
+    *enabled = spr->enabled;
+    *palette = spr->palette;
+    *tile = spr->tile;
+    return 1;
+}
+
+
+int ses_native_get_tile_info(
+    uint32_t tile,
+    uint8_t * data
+) {
+    if (tile > TILE_ID_MAX) return 0;
+    ses_sdl_gl_bind_tile(tile);
+    
+    int i;
+    for(i = 0; i < 64; ++i) {
+        data[i] = ses_sdl_gl_get_tile_pixel(i);
+    }
+    
+    ses_sdl_gl_unbind_tile(tile);
+    return 1;    
+}
+
+
+int ses_native_get_palette_info(
+    uint32_t index,
+    sesVector_t * data
+) {
+    SES_Context * ctx = sdl.swapped ? &sdl.aux : &sdl.main;
+    if (index >= matte_array_get_size(ctx->palettes)) return 0;
+
+    SES_Palette p = matte_array_at(ctx->palettes, SES_Palette, index);
+    data[0] = p.back;
+    data[1] = p.midBack;
+    data[2] = p.midFront;
+    data[3] = p.front;
+    return 1;
+}
 

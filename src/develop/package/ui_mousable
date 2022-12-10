@@ -107,7 +107,9 @@ return class(
                     error(detail:'Mousable only holds one child');
                 recenterChild();                    
             },
-            
+            onClick : {
+                set::(value) <- userClick = value => Function
+            }
             
         };
     }

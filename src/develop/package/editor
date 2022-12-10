@@ -18,7 +18,7 @@ SES.Palette.set(
 
     ]
 );
-
+@:UI = import(module:'ui');
 
 
 
@@ -30,7 +30,7 @@ Fetcher.Sprite.claimIDs(amount:30);
 
 
 @:Editor = class(
-    inherits : [View],
+    inherits : [UI],
     define:::(this) {
         @filename = 'main';
         @getSourceData;
@@ -114,7 +114,10 @@ Fetcher.Sprite.claimIDs(amount:30);
             title.text = filename;
             @:Window = import(module:'window');
             @lastWord = {};
-            @textarea = Window.createTextBox(
+            @:textareaid = Fetcher.Sprite.newID();
+            Fetcher.Sprite.claimIDs(amount:400);
+            @textarea = Textarea.new(
+              spriteOffset: textareaid,
               defaultPalette : PALETTE__NORMAL_TEXT,  
               onChange::(prevLine, prevText) {
                 highlightLine(
@@ -180,12 +183,31 @@ Fetcher.Sprite.claimIDs(amount:30);
               }
 
             );
-
+        
+            this.events.installHooks(events:{
+                onHide ::(detail) {
+                    textarea.shown = false;
+                },
+                
+                onShow ::(detail) {
+                    textarea.shown = true;
+                },
+                
+                onMove ::(detail) {
+                    textarea.x = this.x;
+                    textarea.y = this.y;
+                },
+                
+                onResize ::(detail) {
+                    textarea. = {
+                        widthChars  : ((this.width / 8) * (8 / 6)-1)->floor,
+                        heightChars : (this.height / 8)->floor,                        
+                    };              
+                }
+            });
 
             // full GBA screen
             textarea. = {
-                widthChars  : this.width * (8 / 6)-1,
-                heightChars : this.height,    
                 x : this.x * 8,
                 y : this.y * 8,
                 editable    : true,
@@ -213,6 +235,8 @@ Fetcher.Sprite.claimIDs(amount:30);
                     completer.retokenizeLine(index:i, text:textarea.getLine(index:i));
                 });
             };
+            this.hide();
+            
             return this;
         };
 
@@ -274,6 +298,72 @@ Fetcher.Sprite.claimIDs(amount:30);
             
         };
         
+        
+        @:NEW_TILE_ID = Fetcher.Tile.newID();
+        SES.Tile.set(
+            index:NEW_TILE_ID,
+            data: [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 2, 2, 0, 0, 1,
+            1, 0, 2, 2, 2, 2, 0, 1,
+
+            1, 0, 2, 2, 2, 2, 0, 1,
+            1, 0, 0, 2, 2, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            ]
+        );
+
+
+
+        @:SAVE_TILE_ID = Fetcher.Tile.newID();
+        SES.Tile.set(
+            index:SAVE_TILE_ID,
+            data: [
+            0, 0, 0, 1, 1, 1, 1, 1,
+            0, 0, 1, 0, 0, 0, 0, 1,
+            0, 1, 0, 0, 0, 0, 0, 1,
+            1, 0, 1, 1, 1, 1, 0, 1,
+
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 1, 1, 1, 1, 0, 1,
+            1, 0, 1, 0, 0, 1, 0, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            ]
+        );
+        
+
+        @:REMOVE_TILE_ID = Fetcher.Tile.newID();
+        SES.Tile.set(
+            index:REMOVE_TILE_ID,
+            data: [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 1, 0, 0, 1, 0, 1,
+            1, 0, 0, 1, 1, 0, 0, 1,
+
+            1, 0, 0, 1, 1, 0, 0, 1,
+            1, 0, 1, 0, 0, 1, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            ]
+        );
+
+
+        @:palette = Fetcher.Palette.newID();
+        SES.Palette.set(
+            index:palette,
+            colors: [
+                [1, 1, 1, 1],
+                [1, 1, 1, 1],
+                [1, 1, 1, 1],
+                [1, 1, 1, 1]
+            ]
+        );
+        
+
+        
         this.interface = {
             // All the menus within the 
             // view. Should be an array of 
@@ -282,23 +372,12 @@ Fetcher.Sprite.claimIDs(amount:30);
             // called when clicking the actions.
             menus : {
                 get :: <- [
-                    [' New  ' , newFile],
-                    [' Save ' , saveFile],
-                    [' Del. ', removeFile],                 
-                    [' Open ', switchFile]
+                    [palette, NEW_TILE_ID , newFile],
+                    [palette, SAVE_TILE_ID , saveFile],
+                    [palette, REMOVE_TILE_ID, removeFile],                 
+                    [palette, NEW_TILE_ID, switchFile]
                 ]
             },
-            
-            
-            // called when a view is entered
-            onViewActive ::{
-
-
-            
-            },
-            
-            // called when a view is left.
-            onViewPause ::{},
             
             
             openFile ::(name) {
@@ -310,6 +389,9 @@ Fetcher.Sprite.claimIDs(amount:30);
                 
             }
         };
+        
+
+        
     }
     
 );

@@ -1,0 +1,89 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+@:SES = import(module:'SES.Core');
+@:Debug = import(module:'SES.Debug');
+return class(
+    inherits:[UI],
+    define:::(this) {
+    
+        @:sprite = Fetcher.Sprite.newID();
+        
+        
+        this.events.installHooks(
+            events:{
+                onShow ::(detail){
+                    SES.Sprite.set(
+                        index:sprite,
+                        show: true
+                    );
+                },
+                
+                onHide ::(detail){
+                    SES.Sprite.set(
+                        index:sprite,
+                        show: false
+                    );
+                },
+                
+                onResize ::(detail) {
+                    SES.Sprite.set(
+                        index:sprite,
+                        x:this.x + this.width / 2 - 4,
+                        y:this.y + this.height / 2 - 4
+                    );
+                },
+                
+                onMove ::(detail) {
+                    SES.Sprite.set(
+                        index:sprite,
+                        x:this.x + this.width / 2 - 4,
+                        y:this.y + this.height / 2 - 4
+                    );
+                },
+                
+                onLayerChange::(detail) {
+                    SES.Sprite.set(
+                        index:sprite,
+                        layer: this.layer
+                    );
+                }
+
+            }
+        );        
+        
+        this.constructor = ::(palette => Number, tile => Number) {
+            SES.Sprite.set(
+                index:sprite,
+                show:true,
+                layer: this.layer,
+                tile,
+                palette
+            );  
+            return this;
+        };
+        
+        this.interface = {
+            palette : {
+                set ::(value => Number) {
+                    SES.Sprite.set(
+                        index:sprite,
+                        palette: value
+                    );  
+
+                }
+            },
+            
+            tile : {
+                set ::(value => Number) {
+                    SES.Sprite.set(
+                        index:sprite,
+                        tile: value
+                    );                  
+                    Debug.breakpoint();
+                }
+            }
+        };
+    }
+);
