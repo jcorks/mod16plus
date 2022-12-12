@@ -953,7 +953,7 @@ return class(
                         lines = value->split(token:'\n');
                         [0, lines->keycount]->for(do:::(i) {
                             @:color = [];;
-                            @:line = lines[i];
+                            @:line = lines[i];                            
                             [0, line->length]->for(do:::(n) {
                                 color->push(value:defaultPalette_);
                             });

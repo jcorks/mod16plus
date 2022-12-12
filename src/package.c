@@ -19,6 +19,7 @@
     #include <unistd.h>
     #include <sys/types.h>
     #include <sys/stat.h>
+    #include <dirent.h>
     static void make_project_dir(const char * name) {
         matteString_t * path = matte_string_create_from_c_str("%s%s", BASE_DIR, name);
         mkdir(matte_string_get_c_str(path), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -34,6 +35,22 @@
         matte_string_destroy(slash);
         return out;
     }
+
+    static matteArray_t * list_projects() {
+        matteArray_t * arr = matte_array_create(sizeof(matteString_t *));
+        struct dirent * dir;
+        DIR * d = opendir(BASE_DIR);
+        if (d) {
+            while((dir = readdir(d)) != NULL) {
+                if (!strcmp(dir->d_name, ".") || !strcmp(dir->d_name, "..")) continue;
+                matteString_t * str = matte_string_create_from_c_str("%s", dir->d_name);
+                matte_array_push(arr, str);
+            }
+        }
+        closedir(d);
+        return arr;
+    }
+
 #elif __WIN32__
     const char * BASE_DIR = "C:\\SES\\projects\\";
 #endif
@@ -71,6 +88,8 @@ static matteValue_t package_native__make_project(matteVM_t * vm, matteValue_t fn
 }
 static matteValue_t package_native__open_source (matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
+    if (args[1].binID != MATTE_VALUE_TYPE_STRING)
+        return matte_heap_new_value(heap);
     matteString_t * fullpath = build_path(
         matte_value_string_get_string_unsafe(heap, args[0]),
         matte_value_string_get_string_unsafe(heap, args[1])    
@@ -104,11 +123,31 @@ static matteValue_t package_native__open_source (matteVM_t * vm, matteValue_t fn
     return out;
 }
 
+static matteValue_t package_native__list_projects(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteArray_t * a = list_projects();
+    uint32_t i;
+    uint32_t len = matte_array_get_size(a);
+
+    matteArray_t * vals = matte_array_create(sizeof(matteValue_t));
+    for(i = 0; i < len; ++i) {
+        matteValue_t d = matte_heap_new_value(heap);
+        matte_value_into_string(heap, &d, matte_array_at(a, matteString_t *, i));
+        matte_string_destroy(matte_array_at(a, matteString_t *, i));
+        matte_array_push(vals, d);
+    }
+    matte_array_destroy(a);
+    matteValue_t out = matte_heap_new_value(heap);
+    matte_value_into_new_object_array_ref(heap, &out, vals);
+    matte_array_destroy(vals);        
+    return out;
+}
 
 void ses_package_bind_natives(matteVM_t * vm) {
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__save_source"), 3, package_native__save_source, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__make_project"), 2, package_native__make_project, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__open_source"), 2, package_native__open_source, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__list_projects"), 0, package_native__list_projects, NULL);
     
 }
 

@@ -4,12 +4,54 @@
 @:Fetcher = import(module:'fetcher');
 @:Debug = import(module:'SES.Debug');
 @:SES = import(module:'SES.Core');
+
+
+
+@:palette = Fetcher.Palette.newID();
+SES.Palette.set(
+    index:palette,
+    colors: [
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1]
+    ]
+);
+
+
+@:line = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:line,
+    data: [
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0
+    ]
+);
+
 return class(
     inherits:[UI],
     define:::(this) {
-        @padding = 3;
+        @padding = 1;
         @iter = 0;
         @count = 3;
+
+        @:scrollbar = Fetcher.Sprite.newID();
+        
+        SES.Sprite.set(
+            index:scrollbar,
+            show: false,
+            tile: line,
+            palette
+        );
+
+
         @:resetChildren ::{
             @:requests =  this.childrenSizeRequests;
             @:children = this.children;
@@ -26,6 +68,30 @@ return class(
                 );
                 last += (1/count)*this.height;
             });
+
+            if (children->keycount > count) ::<={
+                SES.Sprite.set(
+                    index:scrollbar,
+                    show: true,
+                    layer: this.layer,
+                    x: this.x + this.width,
+                    y: this.y + (this.height / children->keycount) * iter
+                );
+
+                SES.Sprite.transform(
+                    index:scrollbar,
+                    scaleY: (1 / 8) * this.height * (count / children->keycount)
+                );
+
+                
+            } else ::<= {
+                SES.Sprite.set(
+                    index:scrollbar,
+                    show: false
+                );
+            };
+
+    
         };        
         
 
@@ -74,7 +140,7 @@ return class(
         
         this.events.installHooks(
             events: {
-                onAddChild ::(detail){
+                onChildCountChange ::(detail){
                     resetChildren();            
                 },                            
                 
@@ -108,6 +174,7 @@ return class(
         
             
         };
+        this.enableBackground = false;
         connectInput();
     }
 );

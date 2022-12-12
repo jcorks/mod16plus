@@ -30,8 +30,8 @@ SES.Tile.set(
 
 @:UI = class(
     define:::(this) {
-        @:children = [];
-        @:childRequests = [];
+        @children = [];
+        @childRequests = [];
         @parent;
         @layer = 0;
         @x_ = 0;
@@ -102,7 +102,7 @@ SES.Tile.set(
                 readjustBackground();            
             },
             
-            onAddChild ::(detail) {            
+            onChildCountChange ::(detail) {            
 
             },
             
@@ -205,8 +205,14 @@ SES.Tile.set(
             addChild ::(child, sizeRequest) {
                 children->push(value:child);
                 childRequests->push(value:sizeRequest);
-                events.emit(event:'onAddChild');
-                child.layer = this.layer - 1;
+                events.emit(event:'onChildCountChange');
+                child.layer = this.layer + 1;
+            },
+
+            clearChildren :: {
+                children = [];
+                childRequests = [];
+                events.emit(event:'onChildCountChange');
             },
 
             // empty -> no background

@@ -13,8 +13,11 @@
 @:UIRoot = import(module:'ui_root');
 @:UIEntry = import(module:'ui_entry');
 @:UITile = import(module:'ui_tile');
+@:UIList = import(module:'ui_list');
+@:UISpacer = import(module:'ui_spacer');
 
 
+@:Project = import(module:'project');
 
 @:LAYER_DIALOG = 40;
 @:LAYER_BASE = -50;
@@ -28,6 +31,10 @@
     UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
     UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0)))
 ];
+
+// reserve choice buttons
+@:choiceButtons = [];
+
 
 menuButtons->foreach(do:::(i, button) <- button.hide());
 
@@ -43,7 +50,7 @@ menuButtons->foreach(do:::(i, button) <- button.hide());
     ]
 );
 @:buttonBot = UIFlat.new(children:[]);
-content.background = '#352a41';
+content.background = '#251a31';
 @rootView = UIRoot.new(
     width:240,
     height:160,
@@ -101,6 +108,8 @@ return class(
             
             @:promptw = UILabel.new(text:'');
             @:entry = UIEntry.new(text:'');
+            @:list = UIList.new(items:[], showCount:3);
+
 
             @:dialog = UIRoot.new(
                 width:200,
@@ -109,7 +118,7 @@ return class(
                 view: UILayout.new(
                     children: [
                         [promptw, 0.35],
-                        [entry, 0.35],
+                        [entry, 0.25],
                         [UIFlat.new(
                             enableBackground: false,
                             children: [
@@ -117,22 +126,23 @@ return class(
                                 [okButton, 1/3],                          
                                 [noButton, 1/3]                            
                             ]
-                        ), 0.3]
+                        ), 0.25]
                     ]
                 )
             );
             
             dialog.move(x:20, y:30);
 
-
-            
+            @lastChoice = 0;
             return {
                 setup::(
                     prompt => String,
                     onYes,
                     onNo,
                     onOK,
-                    onEntry
+                    onEntry,
+                    onChoice,
+                    items
                 ) {
                     if(currentView) currentView.hide();
                     dialog.show();
@@ -169,6 +179,7 @@ return class(
                         entry.show();
                     } else entry.hide();
 
+ 
 
 
 
@@ -177,6 +188,78 @@ return class(
                 getEntryText ::{
                     return entry.text;
                 }
+                
+
+            };   
+        };
+
+
+        @:listDialogControl = ::<= {
+                    
+            @:promptw = UILabel.new(text:'');
+            @:list = UIList.new(items:[], showCount:5);
+
+
+            @:dialog = UIRoot.new(
+                width:200,
+                height:130,
+                layer:40,
+                view: UILayout.new(
+                    children: [
+                        [promptw, 0.30],
+                        [UIFlat.new(
+                            enableBackground: false,
+                            children: [
+                                [UISpacer.new(), 0.25],                            
+                                [list, 0.5],
+                            ]
+                        ), 0.7]
+                    ]
+                )
+            );
+            
+            dialog.move(x:20, y:15);
+
+            @lastChoice = 0;
+            dialog.hide();
+            return {
+                setup::(
+                    prompt => String,
+                    onChoice => Function,
+                    items => Object
+                ) {
+                    if(currentView) currentView.hide();
+                    dialog.show();
+                    promptw.text = prompt;
+ 
+                    list.clearChildren();
+                    choiceButtons->foreach(do:::(i, value) {
+                        value.hide();
+                    });
+
+                    [choiceButtons->keycount, items->keycount]->for(do:::(i) {
+                        @:button = UIButton.new(child:UILabel.new(text:' '));
+                        button.hide();
+                        choiceButtons->push(value:button);
+                    });
+                    [0, items->keycount]->for(do:::(i) {
+                        @:button = choiceButtons[i];
+                        button.show();
+                        button.children[0].text = items[i] => String;
+                        (::(str) {
+                            button.onClick = ::{
+                                dialog.hide();
+                                lastChoice = str;
+                                print(message:lastChoice);
+                                onChoice(choice:lastChoice);
+                                if (currentView) currentView.show();
+                            };
+                        })(str:items[i]);
+                        list.addChild(child:button, sizeRequest:1);
+                    });
+                    list.show();
+                }
+                
                 
 
             };   
@@ -205,14 +288,13 @@ return class(
                                 }
                             );
                         } else ::<= {
-                            this.entryDialog(
+                            this.listDialog(
                                 text: 'Open project:',
-                                onEntry::(text) {
-                                    when (!Project.isNameAllowed(name:text))
-                                        this.alert(text: 'Invalid name', onOkay: ::<-this.start());
-
+                                items: Project.all,
+                                onChoose::(choice) {
+                                
                                     [::] {
-                                        Project.name = text;
+                                        Project.name = choice;
                                         Project.load();                                
                                         views[0].openFile(name:'main');
                                         selectView(view:views[0]);
@@ -223,6 +305,12 @@ return class(
                                             
                                         }
                                     };
+
+                                    /*
+                                    when (!Project.isNameAllowed(name:text))
+                                        this.alert(text: 'Invalid name', onOkay: ::<-this.start());
+
+                                    */
                                 }
                             );
                         };
@@ -263,6 +351,14 @@ return class(
                     prompt: text
                 );
             },
+
+            listDialog::(text => String, items => Object, onChoose => Function) {
+                listDialogControl.setup(
+                    prompt:text,
+                    onChoice: onChoose,
+                    items
+                );
+            }
             
         };
     }

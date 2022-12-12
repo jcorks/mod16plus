@@ -35,7 +35,7 @@ return class(
 
         this.events.installHooks(
             events:{
-                onAddChild ::(detail){
+                onChildCountChange ::(detail){
                     resetChildren();            
                 },
                 

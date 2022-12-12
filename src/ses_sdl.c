@@ -327,9 +327,9 @@ static void ses_sdl_render() {
         SES_GraphicsLayer * layer = sdl.main.layers+i;
     
         // start with backgrounds
-        len = matte_array_get_size(layer->bgs);
-        if (len) { 
-            for(n = 0; n < len; ++n) {        
+        uint32_t lenBackgrounds = matte_array_get_size(layer->bgs);
+        if (lenBackgrounds) { 
+            for(n = 0; n < lenBackgrounds; ++n) {        
                 bg = matte_array_at(layer->bgs, SES_Background *, n);
             
                 SES_Palette p = {};
@@ -355,7 +355,10 @@ static void ses_sdl_render() {
         }
         // then do sprites
         len = matte_array_get_size(layer->sprites);
-        if (!len) continue;
+        if (!len) {
+            if (lenBackgrounds) ses_sdl_gl_render_finish_layer();
+            continue;
+        }
         for(n = 0; n < len; ++n) {        
             iter = matte_array_at(layer->sprites, SES_Sprite *, n);
         
@@ -363,6 +366,7 @@ static void ses_sdl_render() {
             if (iter->palette < matte_array_get_size(sdl.main.palettes)) {
                 p = matte_array_at(sdl.main.palettes, SES_Palette, iter->palette);
             }
+
             
             ses_sdl_gl_render_sprite(
                 iter->x, iter->y,

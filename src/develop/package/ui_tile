@@ -81,9 +81,10 @@ return class(
                         index:sprite,
                         tile: value
                     );                  
-                    Debug.breakpoint();
                 }
             }
         };
+
+        this.enableBackground = false;
     }
 );
