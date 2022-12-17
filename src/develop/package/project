@@ -67,6 +67,10 @@ return class(
                 package_native__save_source(a:directory, b:name, c:data); 
             },
 
+            removeSource ::(name) {
+                sources->remove(key:sources->findIndex(value:name));
+            },
+
             all : {
                 get::<-package_native__list_projects()
             },

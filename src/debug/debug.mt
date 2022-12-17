@@ -16,7 +16,6 @@
 @:Text = class(
     name: 'TextArea',
     define:::(this) {
-        @queuedRedraw = false;
         @needsRedraw;
         @spriteOffset_ = 0;
         @onChange_;
@@ -71,7 +70,6 @@
                     show:true,
                     x: chX * GLYPH_WIDTH  + x,
                     y: chY * GLYPH_HEIGHT + y,
-                    effect: SES.Sprite.EFFECTS.Color,
                     palette: color
                 );
                 spr += 1;
@@ -95,8 +93,6 @@
 
         @:MIN ::(a, b) <- if (a < b) a else b;
         @:redrawLines :: {
-            when (queuedRedraw) empty;
-            queuedRedraw = true;
             SES.Oscillator.set(index:oscID, enable:true, periodMS:17, onCycle::{
                 @spr = spriteOffset_;
                 @i = 0;
@@ -141,7 +137,6 @@
                 } else 
                     lastSpriteCount = spr;
 
-                queuedRedraw = false;
                 SES.Oscillator.set(index:oscID, enable:false);
             });
 

@@ -8,6 +8,8 @@
 @:completerBox = import(module:'editor_completion_visual');
 @:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
 @:Textarea = import(module:'textarea');
+@:Project = import(module:'project');
+@:UILabel = import(module:'ui_label');
 SES.Palette.set(
     index: PALETTE__NORMAL_TEXT,
     colors: [
@@ -23,8 +25,6 @@ SES.Palette.set(
 
 
 
-@:SPRITE__BEGIN_TITLE = Fetcher.Sprite.newID();
-Fetcher.Sprite.claimIDs(amount:30);
 
 
 
@@ -36,7 +36,7 @@ Fetcher.Sprite.claimIDs(amount:30);
         @getSourceData;
         @setSourceData;
         this.background = '#352a41';
-        
+        @title;
         this.constructor = ::{
 
             @:isNonWordChar = ::<= {
@@ -110,8 +110,10 @@ Fetcher.Sprite.claimIDs(amount:30);
             };        
 
             
-            @title = Textarea.new(defaultPalette:PALETTE__NORMAL_TEXT, spriteOffset:SPRITE__BEGIN_TITLE);
-            title.text = filename;
+            title = UILabel.new(text:'');
+            title.move(x:170, y:0);
+            this.addChild(child:title, sizeRequest:1);
+
             @:Window = import(module:'window');
             @lastWord = {};
             @:textareaid = Fetcher.Sprite.newID();
@@ -214,14 +216,7 @@ Fetcher.Sprite.claimIDs(amount:30);
                 scrollable  : true,
             };
 
-            title. = {
-                x : (this.width - 10) * 8,
-                y : 0,
-                heightChars : 1,
-                widthChars : 8,
-                editable : false,
-                scrollable : false
-            };
+
 
             getSourceData = ::{
                 return textarea.text;
@@ -275,8 +270,16 @@ Fetcher.Sprite.claimIDs(amount:30);
         
         };
         @:removeFile ::{
+            when(filename == 'main') ::<= {
+                @:Window = import(module:'window');
+                Window.alert(text:'Cannot remove the main script.');
+            };
             @:Window = import(module:'window');
-            Window.alert(text:'Cannot remove the main script.');
+            Window.question(text: 'Remove ' + filename + '?', onResponse::(which) {
+                when(!which) empty;
+                this.removeFile(name:filename);
+                this.openFile(name:'main');
+            }); 
         };
         @:switchFile ::{
             @:Window = import(module:'window');
@@ -352,6 +355,25 @@ Fetcher.Sprite.claimIDs(amount:30);
         );
 
 
+
+        @:ICON_TILE_ID = Fetcher.Tile.newID();
+        SES.Tile.set(
+            index:ICON_TILE_ID,
+            data: [
+            0, 1, 1, 1, 1, 0, 1, 0,
+            0, 1, 0, 0, 0, 1, 1, 1,
+            0, 1, 0, 0, 1, 0, 1, 0,
+            0, 1, 0, 1, 1, 1, 0, 0,
+            0, 0, 1, 1, 1, 0, 0, 1,
+            0, 1, 1, 1, 0, 0, 0, 1,
+            1, 0, 1, 0, 0, 0, 0, 1,
+            1, 1, 0, 0, 1, 1, 1, 1,
+            ]
+        );
+
+
+
+
         @:palette = Fetcher.Palette.newID();
         SES.Palette.set(
             index:palette,
@@ -379,15 +401,27 @@ Fetcher.Sprite.claimIDs(amount:30);
                     [palette, NEW_TILE_ID, switchFile]
                 ]
             },
+
+            icon : {
+                get :: {
+                    return ICON_TILE_ID;
+                }
+            },
             
             
             openFile ::(name) {
                 filename = name;
-                @:Project = import(module:'project');
+                title.text = filename;
                 @text = Project.openSource(name);
                 if (text != empty)
                     setSourceData(text);
                 
+            },
+
+            removeFile ::(name) {
+                Project.saveSource(name:filename, data:'');
+                Project.removeSource(name:filename);
+                Project.save();
             }
         };
         

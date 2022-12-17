@@ -32,8 +32,31 @@
     UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0)))
 ];
 
+
+@:viewButtons = [
+    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
+    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
+    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
+    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
+];
+
 // reserve choice buttons
 @:choiceButtons = [];
+
+
+
+
+
+@:VIEW_ICON_PALETTE_ID = Fetcher.Palette.newID();
+SES.Palette.set(
+    index:VIEW_ICON_PALETTE_ID,
+    colors: [
+        [0.6, 1, 0.8],
+        [0.6, 1, 0.8],
+        [0.6, 1, 0.8],
+        [0.6, 1, 0.8]
+    ]
+);
 
 
 menuButtons->foreach(do:::(i, button) <- button.hide());
@@ -49,7 +72,17 @@ menuButtons->foreach(do:::(i, button) <- button.hide());
         [menuButtons[5], 1/8]    
     ]
 );
-@:buttonBot = UIFlat.new(children:[]);
+@:buttonBot = UIFlat.new(
+    children: [
+        [viewButtons[0], 1/4],
+        [viewButtons[1], 1/4],
+        [viewButtons[2], 1/4],
+        [viewButtons[3], 1/4],
+    ]
+);
+buttonBot.children->foreach(do:::(key, child) <- child.hide());
+
+
 content.background = '#251a31';
 @rootView = UIRoot.new(
     width:240,
@@ -265,10 +298,19 @@ return class(
             };   
         };
 
+        @:addView ::(view) {
+            @:button = viewButtons[views->keycount].children[0];
+            button.tile = view.icon;
+            button.palette = VIEW_ICON_PALETTE_ID;
+            viewButtons[views->keycount].show();
+            views->push(value:view);
+            
+        };
+
         this.interface = {
             start :: {
                 if (views->keycount == 0) 
-                    views->push(value:Editor.new());
+                    addView(view:Editor.new());
                 @:Project = import(module:'project');
                 this.question(
                     text: 'Open existing?',

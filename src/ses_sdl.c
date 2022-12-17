@@ -166,7 +166,6 @@ typedef struct {
     // user function called every frame    
     matteValue_t updateFunc;
 
-    
 
 
 } SES_Context;
@@ -195,7 +194,17 @@ typedef struct {
     
     // whether the main and aux are swapped. Usually for debugging context
     int swapped;
-    
+
+
+    // current pointer
+    int hasPointerMotionEvent;
+    int hasPointerScrollEvent;
+
+
+    int pointerX;
+    int pointerY;
+    int pointerScrollX;
+    int pointerScrollY;    
 
 } SES_SDL;
 
@@ -572,7 +581,11 @@ matteValue_t ses_sdl_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const ma
 
         switch((int)matte_value_as_number(heap, *flag)) {
           case SESNOA_ENABLE:
-            if (matte_value_as_boolean(heap, *value) != osc->active) {
+            if (osc->active && matte_value_as_boolean(heap, *value)) {
+                // resets the oscillator when re-enabled
+                osc->startMS = SDL_GetTicks();
+                osc->endMS = osc->lengthMS + osc->startMS;                
+            } else if (matte_value_as_boolean(heap, *value) != osc->active) {
                 osc->active = matte_value_as_boolean(heap, *value);            
                 if (osc->active) {
                     sdl.main.osc.active[sdl.main.osc.activeCount++] = osc;
@@ -1004,15 +1017,118 @@ void ses_native_swap_context() {
     sdl.swapped = !sdl.swapped;
 }
 
+
+static void push_motion_callback() {
+    matteHeap_t * heap = matte_vm_get_heap(sdl.vm);
+    uint32_t i;
+    uint32_t len = matte_array_get_size(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks);
+    if (len == 0) return;
+   
+    double xcon, ycon;
+    int w, h;
+    SDL_GetWindowSize(sdl.window, &w, &h);
+    
+    matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "x");
+    matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "y");
+    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "event");
+    
+    
+    matteValue_t x = matte_heap_new_value(heap);
+    matteValue_t y = matte_heap_new_value(heap);
+    matteValue_t event = matte_heap_new_value(heap);
+    
+    matte_value_into_string(heap, &x, xStr);
+    matte_value_into_string(heap, &y, yStr);
+    matte_value_into_string(heap, &event, eventStr);
+    
+    
+    matteValue_t xval = matte_heap_new_value(heap);
+    matteValue_t yval = matte_heap_new_value(heap);
+    matteValue_t eventVal = matte_heap_new_value(heap);                
+    
+    matte_value_into_number(heap, &xval, (sdl.pointerX / (float) w) * ses_sdl_gl_get_render_width());
+    matte_value_into_number(heap, &yval, (sdl.pointerY / (float) h) * ses_sdl_gl_get_render_height());
+    matte_value_into_number(heap, &eventVal, 0);
+
+
+
+    matteValue_t namesArr[] = {event, x, y};
+    matteValue_t valsArr[] = {eventVal, xval, yval};                
+    
+    for(i = 0; i < len; ++i) {
+        matteValue_t val = matte_array_at(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
+        if (val.binID == 0) continue;
+
+        // for safety
+        matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 3);
+        matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 3);
+
+        matte_vm_call(sdl.vm, val, &vals, &names, NULL);
+        
+    }
+}
+
+
+static void push_scroll_callback() {
+    matteHeap_t * heap = matte_vm_get_heap(sdl.vm);
+    uint32_t i;
+    uint32_t len = matte_array_get_size(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks);
+    if (len == 0) return;
+
+    matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "x");
+    matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "y");
+    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "event");
+    
+    
+    matteValue_t x = matte_heap_new_value(heap);
+    matteValue_t y = matte_heap_new_value(heap);
+    matteValue_t event = matte_heap_new_value(heap);
+    
+    matte_value_into_string(heap, &x, xStr);
+    matte_value_into_string(heap, &y, yStr);
+    matte_value_into_string(heap, &event, eventStr);
+    
+    
+    matteValue_t xval = matte_heap_new_value(heap);
+    matteValue_t yval = matte_heap_new_value(heap);
+    matteValue_t eventVal = matte_heap_new_value(heap);
+    
+    
+    
+    
+    matte_value_into_number(heap, &xval, sdl.pointerScrollX);
+    matte_value_into_number(heap, &yval, sdl.pointerScrollY);
+    matte_value_into_number(heap, &eventVal, 5); // scroll
+
+
+
+    matteValue_t namesArr[] = {event, x, y};
+    matteValue_t valsArr[] = {eventVal, xval, yval};                
+    
+    for(i = 0; i < len; ++i) {
+        matteValue_t val = matte_array_at(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
+        if (val.binID == 0) continue;
+
+        // for safety
+        matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 3);
+        matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 3);
+
+        matte_vm_call(sdl.vm, val, &vals, &names, NULL);
+        
+    }
+
+}
+
 int ses_native_update(matte_t * m) {
     sdl.vm = matte_get_vm(m);
     matteHeap_t * heap = matte_vm_get_heap(sdl.vm);
     SDL_Event evt;
 
-    
+    int hadMotion = 0;
     while(SDL_PollEvent(&evt) != 0) {
         if (evt.type == SDL_QUIT) {
-            return 0;
+            // TODO: on quit callback via engine 
+            exit(0);
             break;
         }            
         
@@ -1188,106 +1304,20 @@ int ses_native_update(matte_t * m) {
           case SDL_MOUSEWHEEL: {
           
           
-            uint32_t i;
-            uint32_t len = matte_array_get_size(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks);
-            if (len == 0) break;
-            
-            matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "x");
-            matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "y");
-            matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "event");
-            
-            
-            matteValue_t x = matte_heap_new_value(heap);
-            matteValue_t y = matte_heap_new_value(heap);
-            matteValue_t event = matte_heap_new_value(heap);
-            
-            matte_value_into_string(heap, &x, xStr);
-            matte_value_into_string(heap, &y, yStr);
-            matte_value_into_string(heap, &event, eventStr);
-            
-            
-            matteValue_t xval = matte_heap_new_value(heap);
-            matteValue_t yval = matte_heap_new_value(heap);
-            matteValue_t eventVal = matte_heap_new_value(heap);
-            
-            
-            
-            
-            matte_value_into_number(heap, &xval, evt.wheel.x);
-            matte_value_into_number(heap, &yval, evt.wheel.y);
-            matte_value_into_number(heap, &eventVal, 5); // scroll
+            sdl.hasPointerScrollEvent = 1;            
+            sdl.pointerScrollX = evt.wheel.x;
+            sdl.pointerScrollY = evt.wheel.y;
 
-
-
-            matteValue_t namesArr[] = {event, x, y};
-            matteValue_t valsArr[] = {eventVal, xval, yval};                
-            
-            for(i = 0; i < len; ++i) {
-                matteValue_t val = matte_array_at(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
-                if (val.binID == 0) continue;
-
-                // for safety
-                matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 3);
-                matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 3);
-
-                matte_vm_call(sdl.vm, val, &vals, &names, NULL);
-                
-            }
             break;
           }
 
         
           case SDL_MOUSEMOTION: {
           
-          
-            uint32_t i;
-            uint32_t len = matte_array_get_size(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks);
-            if (len == 0) break;
-            
-            matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "x");
-            matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "y");
-            matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(sdl.vm, "event");
-            
-            
-            matteValue_t x = matte_heap_new_value(heap);
-            matteValue_t y = matte_heap_new_value(heap);
-            matteValue_t event = matte_heap_new_value(heap);
-            
-            matte_value_into_string(heap, &x, xStr);
-            matte_value_into_string(heap, &y, yStr);
-            matte_value_into_string(heap, &event, eventStr);
-            
-            
-            matteValue_t xval = matte_heap_new_value(heap);
-            matteValue_t yval = matte_heap_new_value(heap);
-            matteValue_t eventVal = matte_heap_new_value(heap);
-            
-            double xcon, ycon;
-            int w, h;
-            SDL_GetWindowSize(sdl.window, &w, &h);
-            
-            
-            
-            matte_value_into_number(heap, &xval, (evt.motion.x / (float) w) * ses_sdl_gl_get_render_width());
-            matte_value_into_number(heap, &yval, (evt.motion.y / (float) h) * ses_sdl_gl_get_render_height());
-            matte_value_into_number(heap, &eventVal, 0);
-
-
-
-            matteValue_t namesArr[] = {event, x, y};
-            matteValue_t valsArr[] = {eventVal, xval, yval};                
-            
-            for(i = 0; i < len; ++i) {
-                matteValue_t val = matte_array_at(sdl.main.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
-                if (val.binID == 0) continue;
-
-                // for safety
-                matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 3);
-                matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 3);
-
-                matte_vm_call(sdl.vm, val, &vals, &names, NULL);
-                
-            }
+            sdl.hasPointerMotionEvent = 1;
+            sdl.pointerX = evt.motion.x;
+            sdl.pointerY = evt.motion.y;
+            break;
           }
             
         }
@@ -1303,6 +1333,19 @@ int ses_native_update(matte_t * m) {
                     matte_array_empty(),
                     NULL
                 );
+            }
+
+            int i, len;
+
+            // only process motion / scroll events on frame render
+            // this groups them logically rather than clogging up the even queue.
+            if (sdl.hasPointerMotionEvent) {
+                sdl.hasPointerMotionEvent = 0;
+                push_motion_callback();
+            }
+            if (sdl.hasPointerScrollEvent) {
+                sdl.hasPointerScrollEvent = 0;
+                push_scroll_callback();
             }
 
             ses_sdl_render();
@@ -1333,6 +1376,9 @@ int ses_native_update(matte_t * m) {
         
 
     }
+
+
+
     SDL_Delay(1);
     
     return 1;

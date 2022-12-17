@@ -115,30 +115,17 @@ return class(
             @chY = 0;
 
 
-            @:drawChar::(px, py, code, color) {
+            [0, string->length]->for(do:::(i) {
                 SES.Sprite.set(
                     index: spr,
-                    tile: code,
+                    tile: string->charCodeAt(index:i),
                     show:true,
                     layer,
-                    x: px,
-                    y: py,
-                    effect: SES.Sprite.EFFECTS.Color,
-                    palette: color
+                    x: chX * GLYPH_WIDTH  + x,
+                    y: chY * GLYPH_HEIGHT + y,
+                    palette: colors[i]
                 );
                 spr += 1;
-                
-            };
-            
-            [0, string->length]->for(do:::(i) {
-                drawChar(
-                    px: chX * GLYPH_WIDTH  + x,
-                    py: chY * GLYPH_HEIGHT + y,
-                    code: string->charCodeAt(index:i),
-                    color: colors[i]
-                );        
-
-
                 chX += 1;
             });
             return spr;
@@ -165,8 +152,7 @@ return class(
             SES.Oscillator.set(
                 enable:true,
                 index:REDRAW_OSCILLATOR,
-                index:0,
-                periodMS:25,
+                periodMS:17,
                 onCycle::{
                     when(!shown) ::<= {
                         clearCanvas();
@@ -213,6 +199,7 @@ return class(
 
                         [select.fromY, select.toY+1]->for(do:::(i) {
                             @:line = lines[i];
+                            when(line->length == 0) empty;
                             @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
 
                             when(select.fromY == i) ::<= {

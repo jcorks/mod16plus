@@ -25,6 +25,20 @@ typedef struct {
 } SES_GLFramebuffer;
 
 
+typedef enum {
+    RE_COLOR,
+    RE_MASK,
+    RE_MASK_AND_COLOR,
+    RE_COLOR_ON_MASK,
+    RE_COLOR_AROUND_MASK,
+    RE_BLEND,
+    RE_BLEND_ON_MASK,
+    RE_BLEND_AROUND_MASK,
+    RE_COUNT
+} RenderEffect;
+
+
+
 typedef struct {
     GLuint handle;
     GLuint vertexShader;
@@ -32,11 +46,13 @@ typedef struct {
     
     GLint locationVBOposition;
     GLint locationVBOuv;
+    GLint locationVBOback;
+    GLint locationVBOmidBack;
+    GLint locationVBOmidFront;
+    GLint locationVBOfront;
     
-    GLint locationUniformLocalMat;
     GLint locationUniformProj;
     GLint locationUniformEffect;
-    GLint locationUniformPalette;
     
     GLint vbo;
 } SES_GLProgram;
@@ -46,6 +62,24 @@ typedef struct {
     float y;
     float u;
     float v;
+
+    float colorBackR;
+    float colorBackG;
+    float colorBackB;
+
+    float colorMidBackR;
+    float colorMidBackG;
+    float colorMidBackB;
+
+    float colorMidFrontR;
+    float colorMidFrontG;
+    float colorMidFrontB;
+
+    float colorFrontR;
+    float colorFrontG;
+    float colorFrontB;
+
+
 } SES_VBOvertex;
 
 
@@ -67,6 +101,27 @@ typedef struct {
     GLint texture;
 } SES_GLBackgroundTexture;
 
+
+typedef struct {
+    GLint texture;
+    int effect;
+    matteArray_t * vertices;
+} SES_GLSpriteBatch;
+
+
+typedef struct {
+    float x; float y;
+    int effect;
+
+    sesVector_t back;
+    sesVector_t midBack;
+    sesVector_t midFront;
+    sesVector_t front;
+    
+    uint32_t id;
+
+} SES_GLBackgroundBatch;
+
 typedef struct {
 
     
@@ -82,6 +137,8 @@ typedef struct {
     int resolutionWidth;
     int resolutionHeight;
 
+    SES_GLSpriteBatch spriteBatches[RE_COUNT][TEXTURE_COUNT];
+    matteArray_t * bgBatches;
     SDL_Window * window;
 
 } SES_GLRenderer;
@@ -235,10 +292,12 @@ static SES_GLProgram create_program(const char * srcVertex, const char * srcFrag
     
     program.locationVBOposition = glGetAttribLocation(program.handle, "position");
     program.locationVBOuv = glGetAttribLocation(program.handle, "uv");
+    program.locationVBOback = glGetAttribLocation(program.handle, "colorBack");
+    program.locationVBOmidBack = glGetAttribLocation(program.handle, "colorMidBack");
+    program.locationVBOmidFront = glGetAttribLocation(program.handle, "colorMidFront");
+    program.locationVBOfront = glGetAttribLocation(program.handle, "colorFront");
 
     program.locationUniformEffect = glGetUniformLocation(program.handle, "effect");
-    program.locationUniformLocalMat = glGetUniformLocation(program.handle, "localMat");
-    program.locationUniformPalette = glGetUniformLocation(program.handle, "palette");
     program.locationUniformProj = glGetUniformLocation(program.handle, "proj");
     
     glGenBuffers(1, &program.vbo);
@@ -307,7 +366,15 @@ void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
     );
     
     SDL_GL_SetSwapInterval(0);
-    
+    int i, n;
+    for(i = 0; i < RE_COUNT; ++i) {
+        for(n = 0; n < TEXTURE_COUNT; ++n) {
+            SES_GLSpriteBatch * batch = &gl.spriteBatches[i][n];
+            batch->effect = i;
+            batch->vertices = matte_array_create(sizeof(SES_VBOvertex));
+        }
+    }
+    gl.bgBatches = matte_array_create(sizeof(SES_GLBackgroundBatch));
 }
 
 
@@ -380,6 +447,11 @@ void ses_sdl_gl_bind_tile(uint32_t id) {
     if (t == NULL) {
         t = calloc(1, sizeof(SES_GLTileTexture));
         glGenTextures(1, &t->texture);
+        // populate batch info 
+        int i, n;
+        for(i = 0; i < RE_COUNT; ++i) {
+            gl.spriteBatches[i][slot].texture = t->texture;
+        }
         glBindTexture(GL_TEXTURE_2D, t->texture);
         glTexImage2D(
             GL_TEXTURE_2D,
@@ -521,7 +593,7 @@ static GLint ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, floa
     *unit = 1 / (float)TILES_PER_ROW;
 
 
-    return t->texture;
+    return slot;
 }
 
 
@@ -541,18 +613,6 @@ static void projection_orthographic(sesMatrix_t * out,
     projection[11] = -(zFar + zNear) / (zFar - zNear);
 
 }
-
-
-typedef enum {
-    RE_COLOR,
-    RE_MASK,
-    RE_MASK_AND_COLOR,
-    RE_COLOR_ON_MASK,
-    RE_COLOR_AROUND_MASK,
-    RE_BLEND,
-    RE_BLEND_ON_MASK,
-    RE_BLEND_AROUND_MASK,
-} RenderEffect;
 
 
 void ses_sdl_gl_render_begin() {
@@ -584,6 +644,10 @@ void ses_sdl_gl_render_begin() {
     
     glEnableVertexAttribArray(gl.spriteProgram.locationVBOposition);
     glEnableVertexAttribArray(gl.spriteProgram.locationVBOuv);
+    glEnableVertexAttribArray(gl.spriteProgram.locationVBOback);
+    glEnableVertexAttribArray(gl.spriteProgram.locationVBOmidBack);
+    glEnableVertexAttribArray(gl.spriteProgram.locationVBOmidFront);
+    glEnableVertexAttribArray(gl.spriteProgram.locationVBOfront);
     
     
     
@@ -595,6 +659,10 @@ void ses_sdl_gl_render_end() {
     glDisable(GL_BLEND);
     glDisableVertexAttribArray(gl.spriteProgram.locationVBOposition);
     glDisableVertexAttribArray(gl.spriteProgram.locationVBOuv);
+    glDisableVertexAttribArray(gl.spriteProgram.locationVBOback);
+    glDisableVertexAttribArray(gl.spriteProgram.locationVBOmidBack);
+    glDisableVertexAttribArray(gl.spriteProgram.locationVBOmidFront);
+    glDisableVertexAttribArray(gl.spriteProgram.locationVBOfront);
 
     glUseProgram(gl.screenProgram.handle);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -653,41 +721,7 @@ void ses_sdl_gl_render_sprite(
     uint32_t id
 ) {
     if (id > TILE_SPRITE_MAX_ID) return;
-    glEnable(GL_DEPTH_TEST);
 
-    // depth
-    switch(effect) {
-      case RE_COLOR:
-      case RE_MASK:
-      case RE_BLEND:
-      case RE_MASK_AND_COLOR:
-        glDepthFunc(GL_ALWAYS);
-        break;
-        
-      case RE_COLOR_ON_MASK:
-      case RE_BLEND_ON_MASK:
-        glDepthFunc(GL_LESS);
-        break;
-      case RE_COLOR_AROUND_MASK:
-      case RE_BLEND_AROUND_MASK:
-        glDepthFunc(GL_EQUAL);
-        break;
-    }
-    
-    
-    // blending
-    switch(effect) {
-      case RE_BLEND:
-      case RE_BLEND_ON_MASK:
-      case RE_BLEND_AROUND_MASK:
-        glEnable(GL_BLEND);
-        glBlendEquation(GL_FUNC_ADD);
-        glBlendFunc(GL_ONE, GL_ONE);
-        break;
-      default:
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-    }
     
 
     // order:
@@ -697,72 +731,36 @@ void ses_sdl_gl_render_sprite(
         - rotation 
         - position
     */
-    
-    sesMatrix_t m;
-    ses_matrix_set_identity(&m);
 
-    //ses_matrix_translate(&m, x, y, 0);
-    m.data[3]  = x;
-    m.data[7]  = y;
-     
-    
-    if (scaleX != 1. || scaleY != 1.)
-        ses_matrix_scale(&m, scaleX, scaleY, 1);
-
-    if (rotation != 0)
-        ses_matrix_rotate_by_angles(&m, 0, 0, rotation);
-
-    if (centerX != 0 || centerY != 0)
-        ses_matrix_translate(&m, centerX, centerY, 0);
-    
-    
-
-    
-    glUniformMatrix4fv(
-        gl.spriteProgram.locationUniformLocalMat,
-        1, // count,
-        1, // transpose (yes)
-        (GLfloat*)&m
-    );
-    
-    glUniform1i(gl.spriteProgram.locationUniformEffect, effect);
-    
-    float paletteReal[] = {
-        0, 0, 0, 0,
-        back.x, back.y, back.z, 1,
-        midBack.x, midBack.y, midBack.z, 1,
-        midFront.x, midFront.y, midFront.z, 1,
-        front.x, front.y, front.z, 1
+    float x0real = centerX * scaleX;
+    float y0real = centerY * scaleY;
+    float x1real = (centerX + TILE_SIZE) * scaleX;
+    float y1real = (centerY + TILE_SIZE) * scaleY;
+    if (rotation) {
+        x0real *= cos(rotation / 180.0 * M_PI);
+        y0real *= sin(rotation / 180.0 * M_PI);
+        x1real *= cos(rotation / 180.0 * M_PI);
+        y1real *= sin(rotation / 180.0 * M_PI);
     };
-    glUniform4fv(gl.spriteProgram.locationUniformPalette, 5, paletteReal);
-    
-    
-    glActiveTexture(GL_TEXTURE0);
+    x0real += x;
+    y0real += y;
+    x1real += x;
+    y1real += y;
+
 
     float u, v, unit;        
-    GLint tex = ses_sdl_gl_get_tile_attribs(id, &u, &v, &unit);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
-
-    glBindBuffer(GL_ARRAY_BUFFER, gl.spriteProgram.vbo);
+    int slot = ses_sdl_gl_get_tile_attribs(id, &u, &v, &unit);
     SES_VBOvertex vboData[] = {
-        {0, 0, u,      v},
-        {TILE_SIZE, 0, u+unit, v},
-        {TILE_SIZE, TILE_SIZE, u+unit, v+unit},
+        {x0real, y0real, u,      v,         back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
+        {x1real, y0real, u+unit, v,         back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
+        {x1real, y1real, u+unit, v+unit,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
 
-        {TILE_SIZE, TILE_SIZE, u+unit, v+unit},
-        {0, TILE_SIZE, u,      v+unit},
-        {0, 0, u,      v}
+        {x1real, y1real, u+unit, v+unit,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
+        {x0real, y1real, u,      v+unit,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
+        {x0real, y0real, u,      v,         back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z }
     };
-    
-    glBufferData(GL_ARRAY_BUFFER, sizeof(SES_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);
-
-    glVertexAttribPointer(gl.spriteProgram.locationVBOposition, 2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)0);
-    glVertexAttribPointer(gl.spriteProgram.locationVBOuv,       2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*2));
-
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
+    SES_GLSpriteBatch * batch = &gl.spriteBatches[effect][slot];
+    matte_array_push_n(batch->vertices, vboData, 6);
 }
 
 
@@ -778,15 +776,27 @@ void ses_sdl_gl_render_background(
     
     uint32_t id
 ) {
-
     SES_GLBackgroundTexture * bg = gl.backgrounds[id];
     if (bg == NULL) return;    
-    
-    
-    glEnable(GL_DEPTH_TEST);
+
+    SES_GLBackgroundBatch b = {};
+    b.x = x;
+    b.y = y;
+    b.back = back;
+    b.midBack = midBack;
+    b.midFront = midFront;
+    b.front = front;
+    b.id = id;
+
+    matte_array_push(gl.bgBatches, b);
+}
+
+
+static void ses_sdl_gl_render_background_batch(SES_GLBackgroundBatch * batch) {
+    SES_GLBackgroundTexture * bg = gl.backgrounds[batch->id];
 
     // depth
-    switch(effect) {
+    switch(batch->effect) {
       case RE_COLOR:
       case RE_MASK:
       case RE_BLEND:
@@ -806,7 +816,7 @@ void ses_sdl_gl_render_background(
     
     
     // blending
-    switch(effect) {
+    switch(batch->effect) {
       case RE_BLEND:
       case RE_BLEND_ON_MASK:
       case RE_BLEND_AROUND_MASK:
@@ -820,41 +830,9 @@ void ses_sdl_gl_render_background(
     }
     
 
-    // order:
-    /*
-        - center translation
-        - scale
-        - rotation 
-        - position
-    */
-    
-    sesMatrix_t m;
-    ses_matrix_set_identity(&m);
-
-    ses_matrix_translate(&m, x, y, 0);
     
     
-
-    
-    glUniformMatrix4fv(
-        gl.spriteProgram.locationUniformLocalMat,
-        1, // count,
-        1, // transpose (yes)
-        (GLfloat*)&m
-    );
-    
-    glUniform1f(gl.spriteProgram.locationUniformEffect, (float)effect);
-    
-    float paletteReal[] = {
-        0, 0, 0, 0,
-        back.x, back.y, back.z, 1,
-        midBack.x, midBack.y, midBack.z, 1,
-        midFront.x, midFront.y, midFront.z, 1,
-        front.x, front.y, front.z, 1
-    };
-    glUniform4fv(gl.spriteProgram.locationUniformPalette, 5, paletteReal);
-    
-    
+    glUniform1f(gl.spriteProgram.locationUniformEffect, (float)batch->effect);
     glActiveTexture(GL_TEXTURE0);
 
 
@@ -865,26 +843,111 @@ void ses_sdl_gl_render_background(
 
     glBindBuffer(GL_ARRAY_BUFFER, gl.spriteProgram.vbo);
     SES_VBOvertex vboData[] = {
-        {0, 0, 0, 0},
-        {BACKGROUND_TILE_WIDTH*TILE_SIZE, 0, 1,      0},
-        {BACKGROUND_TILE_WIDTH*TILE_SIZE, BACKGROUND_TILE_HEIGHT*TILE_SIZE, 1, 1},
+        {batch->x, batch->y, 0, 0                                                                 , batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
+        {batch->x+BACKGROUND_TILE_WIDTH*TILE_SIZE, batch->y, 1,      0                            , batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
+        {batch->x+BACKGROUND_TILE_WIDTH*TILE_SIZE, batch->y+BACKGROUND_TILE_HEIGHT*TILE_SIZE, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
 
-        {BACKGROUND_TILE_WIDTH*TILE_SIZE, BACKGROUND_TILE_HEIGHT*TILE_SIZE, 1, 1},
-        {0, BACKGROUND_TILE_HEIGHT*TILE_SIZE, 0, 1},
-        {0, 0, 0, 0}
+        {batch->x+BACKGROUND_TILE_WIDTH*TILE_SIZE, batch->y+BACKGROUND_TILE_HEIGHT*TILE_SIZE, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
+        {batch->x,batch->y+BACKGROUND_TILE_HEIGHT*TILE_SIZE, 0, 1,                                  batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
+        {batch->x, batch->y, 0, 0,                                                                  batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z}
     };
     
     glBufferData(GL_ARRAY_BUFFER, sizeof(SES_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(gl.spriteProgram.locationVBOposition, 2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)0);
     glVertexAttribPointer(gl.spriteProgram.locationVBOuv,       2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*2));
+    glVertexAttribPointer(gl.spriteProgram.locationVBOback,     3, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*4));
+    glVertexAttribPointer(gl.spriteProgram.locationVBOmidBack,  3, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*7));
+    glVertexAttribPointer(gl.spriteProgram.locationVBOmidFront, 3, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*10));
+    glVertexAttribPointer(gl.spriteProgram.locationVBOfront,    3, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*13));
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+static void ses_sdl_gl_render_sprite_batch(SES_GLSpriteBatch * batch) {
+
+    // depth
+    switch(batch->effect) {
+      case RE_COLOR:
+      case RE_MASK:
+      case RE_BLEND:
+      case RE_MASK_AND_COLOR:
+        glDepthFunc(GL_ALWAYS);
+        break;
+        
+      case RE_COLOR_ON_MASK:
+      case RE_BLEND_ON_MASK:
+        glDepthFunc(GL_LESS);
+        break;
+      case RE_COLOR_AROUND_MASK:
+      case RE_BLEND_AROUND_MASK:
+        glDepthFunc(GL_EQUAL);
+        break;
+    }
+    
+    
+    // blending
+    switch(batch->effect) {
+      case RE_BLEND:
+      case RE_BLEND_ON_MASK:
+      case RE_BLEND_AROUND_MASK:
+        glEnable(GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_ONE, GL_ONE);
+        break;
+      default:
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    glUniform1i(gl.spriteProgram.locationUniformEffect, batch->effect);
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindTexture(GL_TEXTURE_2D, batch->texture);
+    glBindBuffer(GL_ARRAY_BUFFER, gl.spriteProgram.vbo);
+
+    
+    glBufferData(
+        GL_ARRAY_BUFFER, 
+        sizeof(SES_VBOvertex)*matte_array_get_size(batch->vertices), 
+        matte_array_get_data(batch->vertices), 
+        GL_DYNAMIC_DRAW
+    );
+
+    glVertexAttribPointer(gl.spriteProgram.locationVBOposition, 2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)0);
+    glVertexAttribPointer(gl.spriteProgram.locationVBOuv,       2, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*2));
+    glVertexAttribPointer(gl.spriteProgram.locationVBOback,     3, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*4));
+    glVertexAttribPointer(gl.spriteProgram.locationVBOmidBack,  3, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*7));
+    glVertexAttribPointer(gl.spriteProgram.locationVBOmidFront, 3, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*10));
+    glVertexAttribPointer(gl.spriteProgram.locationVBOfront,    3, GL_FLOAT, GL_FALSE, sizeof(SES_VBOvertex), (void*)(sizeof(float)*13));
+
+    glDrawArrays(GL_TRIANGLES, 0, matte_array_get_size(batch->vertices));
     glBindTexture(GL_TEXTURE_2D, 0);
 
 }
 
 void ses_sdl_gl_render_finish_layer() {
+    glEnable(GL_DEPTH_TEST);
+    // actually render everything
+    // start with the backgrounds 
+    int i, n;
+    for(i = 0; i < matte_array_get_size(gl.bgBatches); ++i) {
+        SES_GLBackgroundBatch * batch = &matte_array_at(gl.bgBatches, SES_GLBackgroundBatch, i);
+        ses_sdl_gl_render_background_batch(batch);
+    }
+    matte_array_set_size(gl.bgBatches, 0);
+
+
+    // then sprites
+    for(i = 0; i < RE_COUNT; ++i) {
+        for(n = 0; n < TEXTURE_COUNT; ++n) {
+            SES_GLSpriteBatch * batch = &gl.spriteBatches[i][n];
+            if (!matte_array_get_size(batch->vertices)) continue;
+            ses_sdl_gl_render_sprite_batch(batch);
+            matte_array_set_size(batch->vertices, 0);
+        }
+    }
     glFinish();
 }
 
