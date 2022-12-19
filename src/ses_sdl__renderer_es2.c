@@ -453,6 +453,7 @@ void ses_sdl_gl_bind_tile(uint32_t id) {
             gl.spriteBatches[i][slot].texture = t->texture;
         }
         glBindTexture(GL_TEXTURE_2D, t->texture);
+        uint8_t * emptyTexture = calloc(1, REAL_TEX_SIZE * REAL_TEX_SIZE);
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
@@ -462,8 +463,9 @@ void ses_sdl_gl_bind_tile(uint32_t id) {
             0,
             GL_ALPHA,
             GL_UNSIGNED_BYTE,
-            NULL
+            emptyTexture
         );
+        free(emptyTexture);
 
         glTexParameteri(
             GL_TEXTURE_2D,
@@ -575,7 +577,7 @@ void ses_sdl_gl_unbind_tile() {
 
 
 
-static GLint ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, float * unit) {
+static GLint ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, float * u1, float * v1) {
     *u = 0;
     *v = 0;
     if (id > TILE_SPRITE_MAX_ID)
@@ -588,9 +590,13 @@ static GLint ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, floa
     
     int TILES_PER_ROW = (REAL_TEX_SIZE / TILE_SIZE);
         
-    *u = (index % TILES_PER_ROW) / (float)TILES_PER_ROW;
-    *v = (index / TILES_PER_ROW) / (float)TILES_PER_ROW;
-    *unit = 1 / (float)TILES_PER_ROW;
+        
+    // sub-pixel correction to prevent bleed
+    *u = (index % TILES_PER_ROW) / (float)TILES_PER_ROW + (1 / (float)REAL_TEX_SIZE)*0.001;
+    *v = (index / TILES_PER_ROW) / (float)TILES_PER_ROW + (1 / (float)REAL_TEX_SIZE)*0.001;
+
+    *u1 = *u + 1 / (float)TILES_PER_ROW;
+    *v1 = *v + 1 / (float)TILES_PER_ROW;
 
 
     return slot;
@@ -748,16 +754,16 @@ void ses_sdl_gl_render_sprite(
     y1real += y;
 
 
-    float u, v, unit;        
-    int slot = ses_sdl_gl_get_tile_attribs(id, &u, &v, &unit);
+    float u0, v0, u1, v1;        
+    int slot = ses_sdl_gl_get_tile_attribs(id, &u0, &v0, &u1, &v1);
     SES_VBOvertex vboData[] = {
-        {x0real, y0real, u,      v,         back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
-        {x1real, y0real, u+unit, v,         back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
-        {x1real, y1real, u+unit, v+unit,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
+        {x0real, y0real, u0, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
+        {x1real, y0real, u1, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
+        {x1real, y1real, u1, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
 
-        {x1real, y1real, u+unit, v+unit,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
-        {x0real, y1real, u,      v+unit,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
-        {x0real, y0real, u,      v,         back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z }
+        {x1real, y1real, u1, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
+        {x0real, y1real, u0, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z },
+        {x0real, y0real, u0, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z }
     };
     SES_GLSpriteBatch * batch = &gl.spriteBatches[effect][slot];
     matte_array_push_n(batch->vertices, vboData, 6);

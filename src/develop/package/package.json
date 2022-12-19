@@ -6,7 +6,6 @@
     "editor_highlight",
     "editor_completion",
     "editor_completion_visual",
-    "painter",
     "window",
     "fetcher",
     "button",
