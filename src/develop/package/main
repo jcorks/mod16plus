@@ -1,5 +1,7 @@
 @:Window = import(module:'window');
 @:Debug = import(module:'SES.Debug');
+Window.start();
+
 /*
 @:UILayout   = import(module:'ui_layout');
 @:UIMousable = import(module:'ui_mousable');
@@ -73,6 +75,38 @@
 //Debug.breakpoint();
 
 
-Window.start();
+
+
+
+/*
+@:UILayout   = import(module:'ui_layout');
+@:UIMousable = import(module:'ui_mousable');
+@:UIRoot     = import(module:'ui_root');
+@:UILabel    = import(module:'ui_label');
+@:UIFlat     = import(module:'ui_flat');
+@:UISpacer   = import(module:'ui_spacer');
+@:UIEntry    = import(module:'ui_entry');
+@:UIList     = import(module:'ui_list');
+@:UIRadioLayout = import(module:'ui_radio_layout');
+
+
+@:a = UIRoot.new(
+    width: 200,
+    height: 140,
+    layer: 0,
+    view:
+    
+    UIRadioLayout.new(
+        choices : [
+            UILabel.new(text:'Apple'),
+            UILabel.new(text:'Orange'),
+            UILabel.new(text:'Lemon'),
+            UILabel.new(text:'Lime')
+        ]
+    )
+);
+
+a.move(x:30, y:0);
+*/
 
 

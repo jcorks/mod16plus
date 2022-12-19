@@ -2,6 +2,7 @@
 @:Debug = import(module:'SES.Debug');
 @:Fetcher = import(module:'fetcher');
 @:Editor = import(module:'editor');
+@:Painter = import(module:'painter');
 @:Button = import(module:'button');
 @:Textarea = import(module:'textarea');
 @:class = import(module:'Matte.Core.Class');
@@ -103,8 +104,10 @@ content.background = '#251a31';
 
 @currentView;
 @:selectView::(view){
-    if (currentView)
+    if (currentView) ::<= {
         currentView.hide();
+        content.clearChildren();
+    };
     currentView = view;
     content.addChild(child:view, sizeRequest:1);
     view.show();
@@ -302,6 +305,9 @@ return class(
             @:button = viewButtons[views->keycount].children[0];
             button.tile = view.icon;
             button.palette = VIEW_ICON_PALETTE_ID;
+            viewButtons[views->keycount].onClick = ::{
+                selectView(view);
+            };
             viewButtons[views->keycount].show();
             views->push(value:view);
             
@@ -309,8 +315,10 @@ return class(
 
         this.interface = {
             start :: {
-                if (views->keycount == 0) 
+                if (views->keycount == 0) ::<= {
                     addView(view:Editor.new());
+                    addView(view:Painter.new());
+                };
                 @:Project = import(module:'project');
                 this.question(
                     text: 'Open existing?',

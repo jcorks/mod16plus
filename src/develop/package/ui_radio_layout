@@ -1,0 +1,93 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+@:Debug = import(module:'SES.Debug');
+@:SES = import(module:'SES.Core');
+@:UILabel    = import(module:'ui_label');
+@:UILayout   = import(module:'ui_layout');
+@:UIFlat   = import(module:'ui_flat');
+@:UIMousable   = import(module:'ui_mousable');
+
+
+
+// it is basically a lyout of buttons with special background settings.
+return class(
+    inherits:[UI],
+    define:::(this) {
+
+        @layout = UILayout.new(children:[], enableBackground:false);
+        @ticks = [];
+        @choice = -1;
+
+        this.constructor = ::(choices) {
+            this.addChild(child:layout, sizeRequest:1);
+            if (choices != empty) this.choices = choices;
+            return this;
+        };
+
+        @:resetChild ::{
+            layout.move(x: this.x, y: this.y);
+            layout.resize(width:this.width, height:this.height);
+        };
+
+        this.events.installHooks(
+            events: {
+                onChildCountChange ::(detail){
+                    resetChild();            
+                },                            
+                
+                onResize ::(detail) {
+                    resetChild();            
+                },
+                
+                onMove ::(detail) {
+                    resetChild();            
+                }
+            }
+        );
+
+        this.interface = {
+            choices : {
+                set ::(value => Object) {
+                    layout.clearChildren();
+                    
+                    value->foreach(do:::(i, v) {
+                        @:tick = UILabel.new(text:''); 
+                        @:child = UIFlat.new(
+                            children: [
+                                [tick, 1/6],
+                                [v, 5/6]
+                            ]
+                        );
+                        @:button = UIMousable.new(child);
+                        ::(value){
+                            @index = value;
+                            button.onClick = ::{
+                                this.choice = i;
+                            };
+                        }(value: i);
+                        ticks->push(value:tick);
+                        layout.addChild(child:button, sizeRequest:1/value->keycount);
+                    });
+                }
+            },
+
+            choice : {
+                get ::<- choice,
+                set ::(value => Number) {
+                    when (value == choice) empty;
+                    choice = value;
+                    ticks->foreach(do:::(i, v) {
+                        v.text = '';
+                    });
+
+                    when(choice == -1) empty;
+                    ticks[choice].text = 'o';
+                }
+            }
+
+        };
+    }
+);
+

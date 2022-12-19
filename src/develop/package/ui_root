@@ -2,7 +2,7 @@
 @:UI = import(module:'ui');
 @:TextArea = import(module:'textarea');
 @:Fetcher = import(module:'fetcher');
-
+@:Debug = import(module:'SES.Debug');
 return class(
     inherits:[UI],
     define:::(this) {

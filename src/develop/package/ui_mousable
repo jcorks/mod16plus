@@ -67,10 +67,18 @@ return class(
         @:recenterChild ::{
             when(this.children->keycount == 0) empty;
             @:child = this.children[0];
+
+            child.resize(
+                width: this.width - 4,
+                height: this.height - 4
+            );
+
             child.move(
                 x: this.x + this.width/2 - child.width/2,
                 y: this.y + this.height/2 - child.height/2
             );
+
+
             updateEntered();
 
         };
