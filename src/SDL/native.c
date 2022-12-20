@@ -1,9 +1,9 @@
-#include "matte/src/matte_vm.h"
-#include "matte/src/matte.h"
-#include "matte/src/matte_array.h"
-#include "matte/src/matte_string.h"
+#include "../matte/src/matte_vm.h"
+#include "../matte/src/matte.h"
+#include "../matte/src/matte_array.h"
+#include "../matte/src/matte_string.h"
 #include <stdio.h>
-#include "native.h"
+#include "../native.h"
 #include <SDL2/SDL.h>
 
 #define LAYER_MIN -63

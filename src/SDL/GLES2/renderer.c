@@ -1,5 +1,5 @@
-#include "matte/src/matte_array.h"
-#include "linear.h"
+#include "../../matte/src/matte_array.h"
+#include "../../linear.h"
 #include <GLES2/gl2.h>
 #include <SDL2/SDL.h>
 
