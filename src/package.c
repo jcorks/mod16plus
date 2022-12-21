@@ -53,6 +53,43 @@
 
 #elif __WIN32__
     const char * BASE_DIR = "C:\\SES\\projects\\";
+    #include <windows.h>
+    static void make_project_dir(const char * name) {
+        matteString_t * path = matte_string_create_from_c_str("%s%s", BASE_DIR, name);
+        CreateDirectoryA(matte_string_get_c_str(path), NULL);
+        matte_string_destroy(path);
+    };
+    
+    static matteString_t * build_path(const matteString_t * project, const matteString_t * file) {
+        matteString_t * out = matte_string_create_from_c_str("%s", BASE_DIR);
+        matte_string_concat(out, project);
+        matteString_t * slash = matte_string_create_from_c_str("\\");
+        matte_string_concat(out, slash);
+        matte_string_concat(out, file);
+        matte_string_destroy(slash);
+        return out;
+    }
+
+    static matteArray_t * list_projects() {
+        matteArray_t * arr = matte_array_create(sizeof(matteString_t *));
+
+        WIN32_FIND_DATA data;
+        matteString_t * query = matte_string_create_from_c_str("%s\\*", BASE_DIR);
+
+        HANDLE file = FindFirstFile(matte_string_get_c_str(query), &data);
+        if (file != INVALID_HANDLE_VALUE) {
+            do {
+                if (!strcmp(data.cFileName, ".") || !strcmp(data.cFileName, "..")) continue;
+                matteString_t * str = matte_string_create_from_c_str("%s", data.cFileName);
+                matte_array_push(arr, str);
+            } while(FindNextFile(file, &data));
+            FindClose(file);
+        }
+        return arr;
+    }
+
+
+
 #endif
 
 

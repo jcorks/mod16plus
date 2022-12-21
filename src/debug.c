@@ -60,7 +60,7 @@ static void debug_println(const char * format, int colorHint, ...) {
     const int MAX_STR_LEN = 2048;
     char * text = malloc(MAX_STR_LEN+1);
     text[0] = 0;
-    va_list args = {};
+    va_list args;
     va_start(args, colorHint);
     vsnprintf(text, MAX_STR_LEN, format, args);
     va_end(args);
