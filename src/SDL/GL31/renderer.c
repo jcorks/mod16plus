@@ -1,6 +1,6 @@
 #include "../../matte/src/matte_array.h"
 #include "../../linear.h"
-#include <GLES2/gl2.h>
+#include "glad/include/glad/glad.h"
 #include <SDL2/SDL.h>
 
 
@@ -208,10 +208,10 @@ static SES_GLFramebuffer create_framebuffer(int w, int h) {
 }
 
 
-#include "shaders/ses_sdl__renderer_es2__sprite_frag_data"
-#include "shaders/ses_sdl__renderer_es2__sprite_vtx_data"
-#include "shaders/ses_sdl__renderer_es2__screen_frag_data"
-#include "shaders/ses_sdl__renderer_es2__screen_vtx_data"
+#include "shaders/ses_sdl__renderer_gl31__sprite_frag_data"
+#include "shaders/ses_sdl__renderer_gl31__sprite_vtx_data"
+#include "shaders/ses_sdl__renderer_gl31__screen_frag_data"
+#include "shaders/ses_sdl__renderer_gl31__screen_vtx_data"
 
 static SES_GLProgram create_program(const char * srcVertex, const char * srcFragment) {
     SES_GLProgram program = {};
@@ -237,7 +237,7 @@ static SES_GLProgram create_program(const char * srcVertex, const char * srcFrag
             NULL,
             log
         );
-        printf("ES2: Vertex shader failed to compile. Log:\n%s\n", log);
+        printf("GL31: Vertex shader failed to compile. Log:\n%s\n", log);
         free(log);
         exit(10);    
     }
@@ -262,7 +262,7 @@ static SES_GLProgram create_program(const char * srcVertex, const char * srcFrag
             NULL,
             log
         );
-        printf("ES2: Fragment shader failed to compile. Log:\n%s\n", log);
+        printf("GL31: Fragment shader failed to compile. Log:\n%s\n", log);
         free(log);
         exit(10);    
     }
@@ -280,7 +280,7 @@ static SES_GLProgram create_program(const char * srcVertex, const char * srcFrag
             NULL,
             log
         );
-        printf("ES2: Program failed to link. Log:\n%s\n", log);
+        printf("GL31: Program failed to link. Log:\n%s\n", log);
         free(log);
         exit(112);
 
@@ -341,12 +341,20 @@ int ses_sdl_gl_get_error() {
     return glGetError();
 }
 void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);    
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);    
     
     *window  = SDL_CreateWindow("Sprite Entertainment System", 0, 0, 240*4, 160*4, SDL_WINDOW_OPENGL);
     *context = SDL_GL_CreateContext(*window);
+
+
+    gladLoadGLLoader(SDL_GL_GetProcAddress);
+
+    // use a single VAO for now to match the GLES2 implementation
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
     gl.window = *window;
     
@@ -356,13 +364,13 @@ void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context) {
     gl.resolutionHeight = 160;
 
     gl.spriteProgram = create_program(
-        ses_sdl__renderer_es2__sprite_vtx_data,
-        ses_sdl__renderer_es2__sprite_frag_data
+        ses_sdl__renderer_gl31__sprite_vtx_data,
+        ses_sdl__renderer_gl31__sprite_frag_data
     );
     
     gl.screenProgram = create_program(
-        ses_sdl__renderer_es2__screen_vtx_data,
-        ses_sdl__renderer_es2__screen_frag_data
+        ses_sdl__renderer_gl31__screen_vtx_data,
+        ses_sdl__renderer_gl31__screen_frag_data
     );
     
     SDL_GL_SetSwapInterval(0);
@@ -405,11 +413,11 @@ void ses_sdl_gl_bind_tile(uint32_t id) {
             glTexImage2D(
                 GL_TEXTURE_2D,
                 0,
-                GL_ALPHA,
+                GL_R8,
                 BACKGROUND_TILE_WIDTH * TILE_SIZE,
                 BACKGROUND_TILE_HEIGHT * TILE_SIZE,
                 0,
-                GL_ALPHA,
+                GL_RED,
                 GL_UNSIGNED_BYTE,
                 background_empty
             );
@@ -457,11 +465,11 @@ void ses_sdl_gl_bind_tile(uint32_t id) {
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
-            GL_ALPHA,
+            GL_R8,
             REAL_TEX_SIZE,
             REAL_TEX_SIZE,
             0,
-            GL_ALPHA,
+            GL_RED,
             GL_UNSIGNED_BYTE,
             emptyTexture
         );
@@ -542,7 +550,7 @@ void ses_sdl_gl_unbind_tile() {
                 (index / BACKGROUND_TILE_WIDTH)*TILE_SIZE,
                 TILE_SIZE,
                 TILE_SIZE,
-                GL_ALPHA,
+                GL_RED,
                 GL_UNSIGNED_BYTE,
                 bound_tile_background->tiles[index].data // always 64 bytes
             );
@@ -562,7 +570,7 @@ void ses_sdl_gl_unbind_tile() {
                 (index / TILES_PER_ROW)*TILE_SIZE,
                 TILE_SIZE,
                 TILE_SIZE,
-                GL_ALPHA,
+                GL_RED,
                 GL_UNSIGNED_BYTE,
                 bound_tile_texture->tiles[index].data // always 64 bytes
             );
