@@ -35,7 +35,7 @@ void main() {
     int y = int(gl_FragCoord.y);
 
     // dither by ever other
-    mediump float offset = mod(float(x/4), 2.0) * mod(float(y/4), 2.0) * 1.0;
+    mediump float offset = mod(float(x/4 + y/4), 2.0);
 
     shade16.r += (is32shadel(shade16.r, shadeReal.r)) ? offset / 32.0 : 0.0;
     shade16.g += (is64shadel(shade16.g, shadeReal.g)) ? offset / 64.0 : 0.0;

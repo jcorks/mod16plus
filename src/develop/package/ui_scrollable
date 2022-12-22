@@ -1,0 +1,167 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+@:SES = import(module:'SES.Core');
+
+
+
+@:palette = Fetcher.Palette.newID();
+SES.Palette.set(
+    index:palette,
+    colors: [
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1]
+    ]
+);
+
+
+@:line = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:line,
+    data: [
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0, 0, 0, 0
+    ]
+);
+
+
+return class(
+    inherits:[UI],
+    define:::(this) {
+        @entered =  false;
+        @clicked = false;        
+        @passiveColor = '#070707';
+
+
+        @:scrollbar = Fetcher.Sprite.newID();
+        SES.Sprite.set(
+            index:scrollbar,
+            show: false,
+            tile: line,
+            palette
+        );
+
+
+        @itemTop = 0;
+        @itemCount_ = 1;
+        @itemsPerPage_ = 1;
+
+        @userScroll = ::(itemTop, itemCount, itemsPerPage){};
+
+        @inputid;
+        @:connectInput = ::{   
+            inputid = SES.Input.addCallback(
+                device: SES.Input.DEVICES.POINTER0,
+                callback ::(event, x, y, button) {
+                    match(event) {                    
+                      (SES.Input.EVENTS.POINTER_SCROLL): ::<= {
+                        itemTop += y;
+                        if (itemTop < 0) itemTop = 0;
+                        if (itemTop > itemCount_ - itemsPerPage_) itemTop = itemCount_ - itemsPerPage_;
+                        userScroll(itemTop, itemCount:itemCount_, itemsPerPage:itemsPerPage_);
+                        redrawScrollbar();
+                      }
+                    };
+                }
+            );
+        };
+        connectInput();
+        
+        @:redrawScrollbar ::{
+            when(itemsPerPage_ >= itemCount_) ::<= {
+                SES.Sprite.set(
+                    index:scrollbar,
+                    show: false
+                );
+            };
+            SES.Sprite.set(
+                index:scrollbar,
+                show: true,
+                layer: this.layer,
+                x: this.x + this.width - 1,
+                y: this.y + (this.height / itemCount_) * itemTop
+            );
+
+            @scale = (1 / 8) * this.height * (itemsPerPage_ / itemCount_);
+            if (scale <  1/ 8) scale = 1/8;
+            SES.Sprite.transform(
+                index:scrollbar,
+                scaleY: scale
+            );
+        };
+
+
+        @:recenterChild ::{
+            when(this.children->keycount == 0) empty;
+            @:child = this.children[0];
+
+            child.resize(
+                width: this.width - 4,
+                height: this.height - 4
+            );
+
+            child.move(
+                x: this.x + this.width/2 - child.width/2,
+                y: this.y + this.height/2 - child.height/2
+            );
+        };
+        
+        
+        this.constructor = ::(onScroll, child, itemCount => Number, itemsPerPage => Number) {
+            if (onScroll) userScroll = onScroll;
+            if (child) this.addChild(child, sizeRequest:1);
+            
+            itemCount_ = itemCount;
+            itemsPerPage_ = itemsPerPage;
+
+
+            this.background = passiveColor;
+            redrawScrollbar();
+            return this;
+        };
+        
+        
+        this.events.installHooks(
+            events: {
+                onMove ::(detail)<- recenterChild(),
+                onResize ::(detail)<- recenterChild(),
+                onHide ::(detail) {
+                    SES.Input.removeCallback(device:SES.Input.DEVICES.POINTER0, id:inputid);
+                    inputid = -1;
+                },
+                
+                onShow ::(detail) {
+                    connectInput();
+                }
+            }
+        );        
+        
+        
+        
+        this.interface = {
+            onScroll : {
+                set::(value) <- userScroll = value => Function
+            },
+
+            currentScrollPosition : {
+                get ::<- itemTop
+            },
+            setupPage ::(itemCount, itemsPerPage) {
+                itemCount_ = itemCount;
+                itemsPerPage_ = itemsPerPage;
+                redrawScrollbar();
+            }
+            
+        };
+    }
+);

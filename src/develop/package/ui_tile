@@ -10,7 +10,6 @@ return class(
     
         @:sprite = Fetcher.Sprite.newID();
         
-        
         this.events.installHooks(
             events:{
                 onShow ::(detail){
@@ -72,6 +71,17 @@ return class(
                         palette: value
                     );  
 
+                }
+            },
+
+            scale : {
+                set ::(value => Number) {
+                    SES.Sprite.transform(
+                        index:sprite,
+                        scaleX: value,
+                        scaleY: value
+                    );
+                    this.resize(width:value * 1/8, height:value * 1 / 8);
                 }
             },
             

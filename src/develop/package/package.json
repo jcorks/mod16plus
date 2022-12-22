@@ -6,6 +6,8 @@
     "editor_highlight",
     "editor_completion",
     "editor_completion_visual",
+    "painter",
+    "colorer",
     "window",
     "fetcher",
     "button",
@@ -21,6 +23,7 @@
     "ui_entry",
     "ui_list",
     "ui_tile",
-    "ui_radio_layout"
+    "ui_radio_layout",
+    "ui_scrollable"
   ]
 }

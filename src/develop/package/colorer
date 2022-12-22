@@ -1,0 +1,254 @@
+@:View = import(module:'view');
+@:SES = import(module:'SES.Core');
+@:Debug = import(module:'SES.Debug');
+@:class = import(module:'Matte.Core.Class');
+@:Fetcher = import(module:'fetcher');
+@:highlightLine = import(module:'editor_highlight');
+@:completer = import(module:'editor_completion').new();
+@:completerBox = import(module:'editor_completion_visual');
+@:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
+@:Textarea = import(module:'textarea');
+@:Project = import(module:'project');
+@:UILabel = import(module:'ui_label');
+@:UI = import(module:'ui');
+
+@:UIFlat = import(module:'ui_flat');
+@:UITile = import(module:'ui_tile');
+@:UIScrollable = import(module:'ui_scrollable');
+@:UIButton = import(module:'ui_mousable');
+@:UIRadioLayout = import(module:'ui_radio_layout');
+@:UILayout = import(module:'ui_layout');
+
+
+
+@:ICON_TILE_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:ICON_TILE_ID,
+    data: [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 0, 0, 0, 1,
+        1, 1, 1, 0, 1, 0, 0, 1,
+        1, 1, 1, 1, 0, 0, 0, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ]
+);
+
+
+
+@:PREVIEW_PALETTE_TILE_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:PREVIEW_PALETTE_TILE_ID,
+    data: [
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+    ]
+);
+
+@:BUTTON_TILE1_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:BUTTON_TILE1_ID,
+    data: [
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1
+    ]
+);
+
+@:BUTTON_TILE2_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:BUTTON_TILE2_ID,
+    data: [
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+    ]
+);
+
+@:BUTTON_TILE3_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:BUTTON_TILE3_ID,
+    data: [
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+    ]
+);
+
+
+@:BUTTON_TILE4_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:BUTTON_TILE4_ID,
+    data: [
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+    ]
+);
+
+
+
+@:Colorer = class(
+    inherits : [UI],
+    define:::(this) {
+        
+
+
+        @:palette = Fetcher.Palette.newID();
+        SES.Palette.set(
+            index:palette,
+            colors: [
+                [0.1, 0.1, 0.1, 0.1],
+                [0.3, 0.3, 0.3, 0.3],
+                [0.7, 0.7, 0.7, 0.7],
+                [0.9, 0.9, 0.9, 0.9],
+            ]
+        );
+
+        @:makeChoiceItem :: {
+            @:label = UILabel.new(text:'0xff');
+            @:icon = UITile.new(palette, tile:PREVIEW_PALETTE_TILE_ID);
+            @:box = UIFlat.new(children:[
+                [label, 0.8],
+                [icon, 0.2]
+            ]);
+            return box;
+        };
+
+
+        @:paletteChoices = [
+            makeChoiceItem(),
+            makeChoiceItem(),
+            makeChoiceItem(),
+            makeChoiceItem(),
+            makeChoiceItem(),
+            makeChoiceItem()
+        ];
+
+        @:choiceRadio = UIRadioLayout.new(
+            choices : [
+                paletteChoices[0],
+                paletteChoices[1],
+                paletteChoices[2],
+                paletteChoices[3],
+                paletteChoices[4],
+                paletteChoices[5]
+            ]
+        );   
+
+        @:scrollable = UIScrollable.new(
+            child: choiceRadio,
+            onScroll::(itemTop, itemCount, itemsPerPage) {
+
+            },
+            itemCount: 1,  
+            itemsPerPage: 6
+        );
+
+
+
+
+
+
+
+
+        @:makePaletteChoiceItem ::(tile){
+            @:tile = UITile.new(palette, tile);
+            @:button = UIButton.new(child:tile);
+
+            tile.scale = 3;
+            return button;
+        };
+
+        @:paletteBox = UILayout.new(
+            children: [
+                [UILabel.new(text:'No Palette'), 0.1],
+                [makePaletteChoiceItem(tile:BUTTON_TILE1_ID), 0.2],
+                [makePaletteChoiceItem(tile:BUTTON_TILE2_ID), 0.2],
+                [makePaletteChoiceItem(tile:BUTTON_TILE3_ID), 0.2],
+                [makePaletteChoiceItem(tile:BUTTON_TILE4_ID), 0.2]
+            ]
+        );
+
+        @:mainbox = UIFlat.new(
+            children: [
+                [scrollable, 0.5],
+                [paletteBox, 0.5]
+            ]
+        );
+        
+
+        this.addChild(child:mainbox, sizeRequest:1);
+        mainbox.hide();
+
+        
+        this.events.installHooks(events: {
+            onMove ::(detail) {
+                mainbox.move(x:this.x, y:this.y);
+            },
+            
+            onResize ::(detail) {
+                mainbox.resize(width:this.width, height:this.height);
+            }
+        });
+
+
+        
+
+        
+        this.interface = {
+            // All the menus within the 
+            // view. Should be an array of 
+            // arrays, where each inner array 
+            // is a string for the menu and a function
+            // called when clicking the actions.
+            menus : {
+                get :: <- [
+                ]
+            },
+
+            icon : {
+                get :: {
+                    return ICON_TILE_ID;
+                }
+            }
+          
+        };
+        
+
+        
+    }
+    
+);
+
+
+
+return Colorer;

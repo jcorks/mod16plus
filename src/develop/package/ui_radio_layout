@@ -19,10 +19,12 @@ return class(
         @layout = UILayout.new(children:[], enableBackground:false);
         @ticks = [];
         @choice = -1;
+        @userChoose = ::(choice){};
 
-        this.constructor = ::(choices) {
+        this.constructor = ::(choices, onChoose) {
             this.addChild(child:layout, sizeRequest:1);
             if (choices != empty) this.choices = choices;
+            if (onChoose != empty) userChoose = onChoose;
             return this;
         };
 
@@ -73,6 +75,10 @@ return class(
                 }
             },
 
+            onChoose : {
+                set ::(value) <- userChoose = value => Function
+            },
+
             choice : {
                 get ::<- choice,
                 set ::(value => Number) {
@@ -82,8 +88,10 @@ return class(
                         v.text = '';
                     });
 
-                    when(choice == -1) empty;
+                    when(choice < 0 || choice >= ticks->keycount) empty;
                     ticks[choice].text = 'o';
+
+                    userChoose(choice:value);
                 }
             }
 

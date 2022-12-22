@@ -1,7 +1,6 @@
 @:SES = import(module:'SES.Core');
 @:Debug = import(module:'SES.Debug');
 @:Fetcher = import(module:'fetcher');
-@:Editor = import(module:'editor');
 @:Button = import(module:'button');
 @:Textarea = import(module:'textarea');
 @:class = import(module:'Matte.Core.Class');
@@ -18,6 +17,12 @@
 
 
 @:Project = import(module:'project');
+
+
+@:Editor = import(module:'editor');
+@:Colorer = import(module:'colorer');
+@:Painter = import(module:'painter');
+
 
 @:LAYER_DIALOG = 40;
 @:LAYER_BASE = -50;
@@ -318,6 +323,8 @@ return class(
             start :: {
                 if (views->keycount == 0) ::<= {
                     addView(view:Editor.new());
+                    addView(view:Colorer.new());
+                    addView(view:Painter.new());
                 };
                 @:Project = import(module:'project');
                 this.question(
