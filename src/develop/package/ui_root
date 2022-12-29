@@ -15,7 +15,7 @@ return class(
             view_.resize(width:width_, height:height_);
     
         };        
-        
+        this.isRoot = true;
         
         
         this.constructor = ::(

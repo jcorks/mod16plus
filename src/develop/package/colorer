@@ -18,6 +18,7 @@
 @:UIButton = import(module:'ui_mousable');
 @:UIRadioLayout = import(module:'ui_radio_layout');
 @:UILayout = import(module:'ui_layout');
+@:hexDisplay = import(module:'hexdisplay');
 
 
 
@@ -133,9 +134,31 @@ SES.Tile.set(
             ]
         );
 
-        @:makeChoiceItem :: {
-            @:label = UILabel.new(text:'0xff');
-            @:icon = UITile.new(palette, tile:PREVIEW_PALETTE_TILE_ID);
+
+        @:inactivePalette = Fetcher.Palette.newID();
+        SES.Palette.set(
+            index:inactivePalette,
+            colors: [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ]
+        );
+
+
+        @:paletteIDslots = [
+            Fetcher.Palette.newID(),
+            Fetcher.Palette.newID(),
+            Fetcher.Palette.newID(),
+            Fetcher.Palette.newID(),
+            Fetcher.Palette.newID(),
+            Fetcher.Palette.newID()
+        ];
+        
+        @:makeChoiceItem ::(index) {
+            @:label = UILabel.new(text:'');
+            @:icon = UITile.new(palette:paletteIDslots[index], tile:PREVIEW_PALETTE_TILE_ID);
             @:box = UIFlat.new(children:[
                 [label, 0.8],
                 [icon, 0.2]
@@ -145,14 +168,17 @@ SES.Tile.set(
 
 
         @:paletteChoices = [
-            makeChoiceItem(),
-            makeChoiceItem(),
-            makeChoiceItem(),
-            makeChoiceItem(),
-            makeChoiceItem(),
-            makeChoiceItem()
+            makeChoiceItem(index:0),
+            makeChoiceItem(index:1),
+            makeChoiceItem(index:2),
+            makeChoiceItem(index:3),
+            makeChoiceItem(index:4),
+            makeChoiceItem(index:5)
         ];
 
+        
+        
+        
         @:choiceRadio = UIRadioLayout.new(
             choices : [
                 paletteChoices[0],
@@ -163,11 +189,125 @@ SES.Tile.set(
                 paletteChoices[5]
             ]
         );   
+        
+        // reads a project palette and dumps it into an active palette id
+        @:readIntoPalette::(paletteID, storedPaletteIndex => Number) {
+            @:Project = import(module:'project');
+            @:data = Project.openPalette(id:storedPaletteIndex);
+            @:dataFormatted = [
+                [data[0], data[1], data[2]],
+                [data[3], data[4], data[5]],
+                [data[6], data[7], data[8]],
+                [data[9], data[10], data[11]]
+            ];
+            SES.Palette.set(index:paletteID, colors:dataFormatted);
+        };
+        
+        @:disablePalette::(paletteID) {
+            @:dataFormatted = [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ];
+            SES.Palette.set(index:paletteID, colors:dataFormatted);
+        };        
+        
+        @:resetRadioChoices = :: {
+            @:Project = import(module:'project');
+            @paletteData = Project.palettes;
+            paletteData->push(value:['Add Palette']);
+            @:top = scrollable.currentScrollPosition;
+            
+            scrollable.setupPage(itemCount:Project.palettes->keycount+1, itemsPerPage:6);
+
+            
+            @i = 0;
+            [::] {
+                [top, paletteData->keycount]->for(do:::(index) {
+                    paletteChoices[i].show();
+                    paletteChoices[i].children[0].text = hexDisplay(number:paletteData[index][0]);
+
+                    if (index != paletteData->keycount-1)
+                        readIntoPalette(paletteID:paletteIDslots[i], storedPaletteIndex:paletteData[index][0])
+                    else 
+                        disablePalette(paletteID:paletteIDslots[i]);
+                        
+                        
+                    i+=1;
+                    
+                    when(i == 6) send();
+                });
+                
+                [i, 6]->for(do:::(index) {
+                    paletteChoices[i].hide();
+                });
+            };
+        };
+        
+        
+        @chosenPalettesSlot;
+        
+        choiceRadio.onChoose = ::(choice){
+            @:Project = import(module:'project');
+            @paletteData = Project.palettes;
+            @:radioChoice = choice;
+            choice += scrollable.currentScrollPosition;
+            chosenPalettesSlot = choice;
+            // add new palette!
+            when (choice == paletteData->keycount) ::<= {
+                @:Window = import(module:'window');
+                Window.entryDialog(text:'Palette ID:', onEntry::(text) {
+                    [::] {
+                        Project.newPalette(id:Number.parse(string:text));
+                    } : {
+                        onError ::(message) {
+                            Window.alert(text:'Error: ' + message.data);
+                        }
+                    };
+                    resetRadioChoices();
+                    Project.save();
+                    choiceRadio.choice = paletteData->keycount-1;
+                });
+            };
+            
+            
+            // deselect
+            when(choice < 0) ::<= {
+                paletteBox.children[0].text = 'No palette';
+                paletteBox.children[1].children[0].palette = inactivePalette;
+                paletteBox.children[2].children[0].palette = inactivePalette;
+                paletteBox.children[3].children[0].palette = inactivePalette;
+                paletteBox.children[4].children[0].palette = inactivePalette;
+            };
+            
+            
+            // invalid
+            when (choice > paletteData->keycount) ::<= {
+                choiceRadio.choice = -1;
+                paletteBox.children[0].text = 'No palette';
+                paletteBox.children[1].children[0].palette = inactivePalette;
+                paletteBox.children[2].children[0].palette = inactivePalette;
+                paletteBox.children[3].children[0].palette = inactivePalette;
+                paletteBox.children[4].children[0].palette = inactivePalette;
+            };
+
+            // select palette 
+            paletteBox.children[0].text = 'Palette: '+hexDisplay(number:paletteData[choice][0]);
+            readIntoPalette(paletteID:palette, storedPaletteIndex:paletteData[choice][0]); 
+            paletteBox.children[1].children[0].palette = palette;
+            paletteBox.children[2].children[0].palette = palette;
+            paletteBox.children[3].children[0].palette = palette;
+            paletteBox.children[4].children[0].palette = palette;
+        };
 
         @:scrollable = UIScrollable.new(
             child: choiceRadio,
             onScroll::(itemTop, itemCount, itemsPerPage) {
-
+                resetRadioChoices();
+                
+                when(chosenPalettesSlot == empty) empty;
+                choiceRadio.choice = chosenPalettesSlot - itemTop;
             },
             itemCount: 1,  
             itemsPerPage: 6
@@ -175,26 +315,83 @@ SES.Tile.set(
 
 
 
+        
+        paletteChoices[0].children[0].text = 'Add Palette';
 
 
+        @:hexToByte = ::<= {
+            @:table = {
+                '0' : 0,
+                '1' : 1,
+                '2' : 2,
+                '3' : 3,
+                '4' : 4,
+                '5' : 5,
+                '6' : 6,
+                '7' : 7,
+                '8' : 8,
+                '9' : 9,
+                'a' : 10,
+                'b' : 11,
+                'c' : 12,
+                'd' : 13,            
+                'e' : 14,            
+                'f' : 15,            
+                'A' : 10,
+                'B' : 11,
+                'C' : 12,
+                'D' : 13,            
+                'E' : 14,            
+                'F' : 15
+            };
+            return ::(hex => String) {
+                return table[hex->charAt(index:0)]*16 + table[hex->charAt(index:1)]; 
+            };
+        };
 
-
-
-        @:makePaletteChoiceItem ::(tile){
-            @:tile = UITile.new(palette, tile);
+        @:makePaletteChoiceItem ::(index, tile){
+            @:tile = UITile.new(palette:inactivePalette, tile);
             @:button = UIButton.new(child:tile);
+            ::<= {
+                button.onClick = ::{
+                    @:Window = import(module:'window');
+                    Window.entryDialog(
+                        text: 'Hex RGB:',
+                        onEntry ::(text){
+                            when(text->length != 6) ::<= {
+                                Window.alert(text:'Error! Needs RRGGBB');
+                            };
+                        
+                            @:r = hexToByte(hex:text->substr(from:0, to:1));
+                            @:g = hexToByte(hex:text->substr(from:2, to:3));
+                            @:b = hexToByte(hex:text->substr(from:4, to:5));
+                                
+                            @:entry = Project.palettes[chosenPalettesSlot];
+                            @:fullPalette = Project.openPalette(id:entry[0]);
+                            fullPalette[index*3]     = r / 255.0;
+                            fullPalette[index*3 + 1] = g / 255.0;
+                            fullPalette[index*3 + 2] = b / 255.0;
+                            Project.savePalette(id:entry[0], paletteColors:fullPalette);
+                            readIntoPalette(paletteID:palette, storedPaletteIndex:entry[0]); 
 
-            tile.scale = 3;
+                            resetRadioChoices();                            
+                            Project.save();
+                        }
+                    );
+                };
+            };
+            
+            tile.resizeable = true;
             return button;
         };
 
         @:paletteBox = UILayout.new(
             children: [
                 [UILabel.new(text:'No Palette'), 0.1],
-                [makePaletteChoiceItem(tile:BUTTON_TILE1_ID), 0.2],
-                [makePaletteChoiceItem(tile:BUTTON_TILE2_ID), 0.2],
-                [makePaletteChoiceItem(tile:BUTTON_TILE3_ID), 0.2],
-                [makePaletteChoiceItem(tile:BUTTON_TILE4_ID), 0.2]
+                [makePaletteChoiceItem(index:0, tile:BUTTON_TILE1_ID), 0.2],
+                [makePaletteChoiceItem(index:1, tile:BUTTON_TILE2_ID), 0.2],
+                [makePaletteChoiceItem(index:2, tile:BUTTON_TILE3_ID), 0.2],
+                [makePaletteChoiceItem(index:3, tile:BUTTON_TILE4_ID), 0.2]
             ]
         );
 
@@ -207,9 +404,8 @@ SES.Tile.set(
         
 
         this.addChild(child:mainbox, sizeRequest:1);
-        mainbox.hide();
 
-        
+                
         this.events.installHooks(events: {
             onMove ::(detail) {
                 mainbox.move(x:this.x, y:this.y);
@@ -217,11 +413,35 @@ SES.Tile.set(
             
             onResize ::(detail) {
                 mainbox.resize(width:this.width, height:this.height);
+            },
+            
+            onShow ::(detail) {
+                resetRadioChoices();            
             }
         });
 
 
-        
+
+
+
+
+
+
+        @:REMOVE_TILE_ID = Fetcher.Tile.newID();
+        SES.Tile.set(
+            index:REMOVE_TILE_ID,
+            data: [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 1, 0, 0, 1, 0, 1,
+            1, 0, 0, 1, 1, 0, 0, 1,
+
+            1, 0, 0, 1, 1, 0, 0, 1,
+            1, 0, 1, 0, 0, 1, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            ]
+        );
 
         
         this.interface = {
@@ -232,6 +452,25 @@ SES.Tile.set(
             // called when clicking the actions.
             menus : {
                 get :: <- [
+                    [palette, REMOVE_TILE_ID, ::{
+                        @:Window = import(module:'window'); 
+                        @:selected = choiceRadio.choice + scrollable.currentScrollPosition;                   
+                        @paletteData = Project.palettes;
+                        @:selectedPalette = paletteData[selected];                        
+                        
+                        Window.question(text:'Remove palette '+ hexDisplay(number:selectedPalette[0]) +'?',
+                            onResponse ::(which) {
+                                when(!which) empty;
+                                
+                                Project.removePalette(id:selectedPalette[0]);            
+                                Project.save();              
+                                resetRadioChoices();
+                                choiceRadio.choice = -1;
+                                
+                            }
+                        
+                        );
+                    }],                 
                 ]
             },
 
@@ -239,7 +478,7 @@ SES.Tile.set(
                 get :: {
                     return ICON_TILE_ID;
                 }
-            }
+            },
           
         };
         

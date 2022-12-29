@@ -7,6 +7,7 @@ return class(
     inherits:[UI],
     define:::(this) {
         @padding = 1;
+        @freezeReset = false;
         @:resetChildren ::{
             @:requests =  this.childrenSizeRequests;
             @last = 0;
@@ -27,9 +28,7 @@ return class(
             enableBackground
         ) {
             if (enableBackground != empty) this.enableBackground = enableBackground;
-            children->foreach(do:::(i, value){
-                this.addChild(child:value[0] => Object, sizeRequest:value[1] => Number);
-            });
+            this.reset(children);
             return this;
         };
         
@@ -37,6 +36,7 @@ return class(
         this.events.installHooks(
             events: {
                 onChildCountChange ::(detail){
+                    when(freezeReset) empty;
                     resetChildren();            
                 },                            
                 
@@ -57,6 +57,16 @@ return class(
                     padding = value;
                     resetChildren();
                 }
+            },
+            
+            reset::(children) {
+                freezeReset = true;            
+                this.clearChildren();
+                children->foreach(do:::(i, value){
+                    this.addChild(child:value[0] => Object, sizeRequest:value[1] => Number);
+                });
+                freezeReset = false;
+                resetChildren();            
             }
         
             

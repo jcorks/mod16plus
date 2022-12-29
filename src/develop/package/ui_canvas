@@ -1,0 +1,175 @@
+@:class = import(module:'Matte.Core.Class');
+@:UI = import(module:'ui');
+@:TextArea = import(module:'textarea');
+@:Fetcher = import(module:'fetcher');
+@:SES = import(module:'SES.Core');
+@:Debug = import(module:'SES.Debug');
+return class(
+    inherits:[UI],
+    define:::(this) {
+    
+        @:sprite = Fetcher.Sprite.newID();
+        @:tile = Fetcher.Tile.newID();
+        @pen = 1;
+        
+        SES.Sprite.set(
+            index:sprite,
+            tile:tile
+        );  
+        
+        
+        
+        
+        
+        @data = [
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0        
+        ];
+
+        @size = 64;        
+        @inputid;
+        @down = false;
+        @:connectInput = ::{ 
+            when(inputid != empty) empty;  
+            inputid = SES.Input.addCallback(
+                device: SES.Input.DEVICES.POINTER0,
+                callback ::(event, x, y, button) {
+                
+                    
+                
+                    match(event) {                    
+                      (SES.Input.EVENTS.POINTER_BUTTON_DOWN):::<= {
+                        down = true;
+                      },
+                      (SES.Input.EVENTS.POINTER_BUTTON_UP):::<= {
+                        down = false;
+                      }
+                    };
+                    
+                    
+                    when(down) ::<= {
+                        @:thisx = this.x + this.width / 2 - size / 2;
+                        @:thisy = this.y + this.height / 2 - size / 2;
+
+
+
+
+                        when (x < thisx || x > thisx + size || y < thisy || y > thisy + size) empty; 
+                        
+                        @:px = (((x - thisx) / size)*8)->floor;
+                        @:py = (((y - thisy) / size)*8)->floor;
+                        
+                        
+                        data[(px + py * 8)->floor] = pen;
+                        SES.Tile.set(index:tile, data);
+                        
+                        
+                        
+                        print(message:''+px + ', ' + py);
+                    
+                    };
+                }
+            );
+        };        
+        
+        connectInput();
+        @:reposition :: {
+            SES.Sprite.set(
+                index:sprite,
+                x:this.x + this.width / 2 - size / 2,
+                y:this.y + this.height / 2 - size / 2 
+            );
+            SES.Sprite.transform(
+                index:sprite,
+                scaleX: size / 8,
+                scaleY: size / 8
+            );
+
+        
+        };
+        this.events.installHooks(
+            events:{
+                onShow ::(detail){
+                    SES.Sprite.set(
+                        index:sprite,
+                        show: true
+                    );
+                    connectInput();
+                },
+                
+                onHide ::(detail){
+                    SES.Sprite.set(
+                        index:sprite,
+                        show: false
+                    );
+                    if (inputid != empty) ::<= {
+                        SES.Input.removeCallback(device:SES.Input.DEVICES.POINTER0, id:inputid);
+                        inputid = empty;
+                    };
+                    down = false;
+
+                },
+                
+                onResize ::(detail) {
+                    reposition();
+                },
+                
+                onMove ::(detail) {
+                    reposition();
+                },
+                
+                onLayerChange::(detail) {
+                    SES.Sprite.set(
+                        index:sprite,
+                        layer: this.layer
+                    );
+                }
+
+            }
+        );        
+        
+        this.constructor = ::() {
+            SES.Sprite.set(
+                index:sprite,
+                show:true,
+                layer: this.layer
+            );  
+            return this;
+        };
+        
+        this.interface = {
+            palette : {
+                set ::(value => Number) {
+                    SES.Sprite.set(
+                        index:sprite,
+                        palette: value
+                    );  
+                }
+            },
+            
+            pen : {
+                set ::(value => Number) {
+                    pen = value;
+                }
+            },
+
+            size : {
+                set ::(value => Number) {
+                    size = value;
+                    reposition();
+                }
+            }
+            
+        };
+
+        this.enableBackground = false;
+        //this.background = '#030303';
+    }
+);

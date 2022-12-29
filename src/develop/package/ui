@@ -27,7 +27,6 @@ SES.Tile.set(
 
 
 
-
 @:UI = class(
     define:::(this) {
         @children = [];
@@ -36,14 +35,26 @@ SES.Tile.set(
         @layer = 0;
         @x_ = 0;
         @y_ = 0;
-        @height_ = 8;
-        @width_ = 8;
+        @height_ = 0;
+        @width_ = 0;
         @shown = true;
         @enableBackground = true;
         @events = EventSystem.new();
+        @isRoot = false;
 
         @:backgroundSpriteID = Fetcher.Sprite.newID();
         @:backgroundPalette = Fetcher.Palette.newID();
+        
+        @:isRooted = ::{
+            @p = this;
+            return [::] {
+                forever(do::{
+                    when(p == empty) send(message:false);
+                    when(p.isRoot) send(message:true);
+                    p = p.parent;
+                });
+            };
+        };
 
         @:readjustBackground ::{
             SES.Sprite.set(index:backgroundSpriteID,   show:false);
@@ -61,8 +72,8 @@ SES.Tile.set(
                 effect: 
                 SES.Sprite.EFFECTS.Color
             );
-            print(message: 'bg' + width_ + ', '+ height_);
-            print(message: 'ps' + x_ + ', '+ y_);
+            //print(message: 'bg' + width_ + ', '+ height_);
+            //print(message: 'ps' + x_ + ', '+ y_);
             SES.Sprite.transform(
                 index:backgroundSpriteID, 
                 scaleX: width_ / 8,
@@ -177,6 +188,8 @@ SES.Tile.set(
             },
             
             resize ::(width, height) {
+                when(width == width_ && height == height_) empty;                
+                when(!isRooted()) empty;
                 width_ = width;
                 height_ = height;  
                 events.emit(event:'onResize');
@@ -199,10 +212,12 @@ SES.Tile.set(
             },
             
             parent : {
-                get ::<- parent
+                get ::<- parent,
+                set ::(value) <- parent = value
             },
 
             addChild ::(child, sizeRequest) {
+                child.parent = this;
                 children->push(value:child);
                 childRequests->push(value:sizeRequest);
                 events.emit(event:'onChildCountChange');
@@ -210,6 +225,7 @@ SES.Tile.set(
             },
 
             clearChildren :: {
+                children->foreach(do:::(i, child) <- child.parent = empty);
                 children = [];
                 childRequests = [];
                 events.emit(event:'onChildCountChange');
@@ -230,9 +246,16 @@ SES.Tile.set(
                     readjustBackground();
                 }
             },
+            
+            isRoot : {
+                get ::<- isRoot,
+                set ::(value => Boolean) <- isRoot = value	
+            },
 
             
             move ::(x, y) {  
+                when(x == x_ && y == y_) empty;
+                when(!isRooted()) empty;
                 x_ = x;
                 y_ = y;              
                 events.emit(event:'onMove');

@@ -54,12 +54,15 @@ return class(
                 set ::(value => Object) {
                     layout.clearChildren();
                     
+                    
+                    @:set = [];
+                    
                     value->foreach(do:::(i, v) {
                         @:tick = UILabel.new(text:''); 
                         @:child = UIFlat.new(
                             children: [
-                                [tick, 1/6],
-                                [v, 5/6]
+                                [tick, 0],
+                                [v, 1]
                             ]
                         );
                         @:button = UIMousable.new(child);
@@ -70,8 +73,10 @@ return class(
                             };
                         }(value: i);
                         ticks->push(value:tick);
-                        layout.addChild(child:button, sizeRequest:1/value->keycount);
+                        //layout.addChild(child:button, sizeRequest:1/value->keycount);
+                        set->push(value:[button, 1/value->keycount]);
                     });
+                    layout.reset(children:set);
                 }
             },
 
@@ -89,7 +94,7 @@ return class(
                     });
 
                     when(choice < 0 || choice >= ticks->keycount) empty;
-                    ticks[choice].text = 'o';
+                    ticks[choice].text = '>';
 
                     userChoose(choice:value);
                 }

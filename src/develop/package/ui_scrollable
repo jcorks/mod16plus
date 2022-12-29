@@ -66,8 +66,8 @@ return class(
                     match(event) {                    
                       (SES.Input.EVENTS.POINTER_SCROLL): ::<= {
                         itemTop += y;
-                        if (itemTop < 0) itemTop = 0;
                         if (itemTop > itemCount_ - itemsPerPage_) itemTop = itemCount_ - itemsPerPage_;
+                        if (itemTop < 0) itemTop = 0;
                         userScroll(itemTop, itemCount:itemCount_, itemsPerPage:itemsPerPage_);
                         redrawScrollbar();
                       }
@@ -78,21 +78,29 @@ return class(
         connectInput();
         
         @:redrawScrollbar ::{
-            when(itemsPerPage_ >= itemCount_) ::<= {
+            when(itemsPerPage_ > itemCount_) ::<= {
                 SES.Sprite.set(
                     index:scrollbar,
                     show: false
                 );
             };
+            
+            @:scrollX = this.x + this.width - 1;
+            @:scrollY = this.y + (this.height / itemCount_) * itemTop;
+            
             SES.Sprite.set(
                 index:scrollbar,
                 show: true,
-                layer: this.layer,
-                x: this.x + this.width - 1,
-                y: this.y + (this.height / itemCount_) * itemTop
+                layer: this.layer+1,
+                x: scrollX,
+                y: scrollY
             );
 
+
+
+
             @scale = (1 / 8) * this.height * (itemsPerPage_ / itemCount_);
+            print(message:'Scroll: [' + scrollX + ', ' + scrollY + ', ' + scale + ']');
             if (scale <  1/ 8) scale = 1/8;
             SES.Sprite.transform(
                 index:scrollbar,
@@ -138,10 +146,15 @@ return class(
                 onHide ::(detail) {
                     SES.Input.removeCallback(device:SES.Input.DEVICES.POINTER0, id:inputid);
                     inputid = -1;
+                    SES.Sprite.set(
+                        index:scrollbar,
+                        show: false
+                    );
                 },
                 
                 onShow ::(detail) {
                     connectInput();
+                    redrawScrollbar();
                 }
             }
         );        
@@ -159,7 +172,10 @@ return class(
             setupPage ::(itemCount, itemsPerPage) {
                 itemCount_ = itemCount;
                 itemsPerPage_ = itemsPerPage;
+                if (itemTop > itemCount_ - itemsPerPage_) itemTop = itemCount_ - itemsPerPage_;
+                if (itemTop < 0) itemTop = 0;                
                 redrawScrollbar();
+                
             }
             
         };

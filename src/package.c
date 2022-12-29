@@ -354,7 +354,7 @@ int ses_package(const char * dir) {
 
 
     matteArray_t * paletteIDs = matte_array_create(sizeof(uint32_t));
-    matteArray_t * palettes = matte_array_create(sizeof(uint8_t)*12); // uint8_t *, see ses_rom_get_palette
+    matteArray_t * palettes = matte_array_create(sizeof(float)*12); // uint8_t *, see ses_rom_get_palette
     
     
     matteArray_t * bytecodeSegmentNames = matte_array_create(sizeof(matteString_t*));
@@ -467,13 +467,25 @@ int ses_package(const char * dir) {
                 matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)), 
                 &byteLen
             );
-            if (byteLen % 12 != 0) {
-                printf("Palette sheet %s is misaligned and does not contain a multiple of 12 bytes.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
-                exit(1);
+
+            
+            float paletteBytes[12];
+            if (sscanf(bytes, 
+                    "%f %f %f "            
+                    "%f %f %f "            
+                    "%f %f %f "            
+                    "%f %f %f"            
+                    , 
+                paletteBytes,   paletteBytes+1, paletteBytes+2, 
+                paletteBytes+3, paletteBytes+4, paletteBytes+5,
+                paletteBytes+6, paletteBytes+7, paletteBytes+8,
+                paletteBytes+9, paletteBytes+10,paletteBytes+11
+                ) != 12) {
+                printf("Palette sheet %s is malformed. It should contain 12 decimal values.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
+                exit(1);            
             }
-            // raw waveforms (for now)
-            // todo: possibly ogg
-            matte_array_push_n(palettes, bytes, byteLen/12);
+            
+            matte_array_push(palettes, paletteBytes);
             matte_array_push(paletteIDs, id);
 
         }        
@@ -528,7 +540,7 @@ int ses_package(const char * dir) {
         tiles, // uint8_t, see ses_rom_get_tile
 
         paletteIDs, 
-        palettes, // uint8_t, see ses_rom_get_palette
+        palettes, // float, see ses_rom_get_palette
         
         
         bytecodeSegmentNames, // matteString_t *

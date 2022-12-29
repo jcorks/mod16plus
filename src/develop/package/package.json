@@ -24,6 +24,8 @@
     "ui_list",
     "ui_tile",
     "ui_radio_layout",
-    "ui_scrollable"
+    "ui_scrollable",
+    "ui_canvas",
+    "hexdisplay"
   ]
 }

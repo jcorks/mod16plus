@@ -96,8 +96,8 @@ uint32_t ses_rom_get_palette_count();
 // Palettes are always packages in RGB, one byte for each component.
 // Palette color orders are always: background, mid-background, mid-front, and front
 // in order of bytes.
-// Palettes returned are always 12 bytes.
-const uint8_t * ses_rom_get_palette(uint32_t index, uint32_t * id);
+// Palettes returned are always 12 floats.
+const float * ses_rom_get_palette(uint32_t index, uint32_t * id);
 
 
 

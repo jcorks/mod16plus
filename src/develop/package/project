@@ -1,6 +1,6 @@
 @:class = import(module:'Matte.Core.Class');
 @:JSON = import(module:'Matte.Core.JSON');
-
+@:Debug = import(module:'SES.Debug');
 @:package_native__save_source  = getExternalFunction(name:"package_native__save_source");
 @:package_native__make_project = getExternalFunction(name:"package_native__make_project");
 @:package_native__open_source  = getExternalFunction(name:"package_native__open_source");
@@ -31,6 +31,9 @@ return class(
         @sources = [
             'main'
         ];
+        
+        // palette entries. Arrays of id followed by a path to a palette file (plaintext)
+        @palettes = [];
     
         this.interface = {
             isNameAllowed ::(name) {
@@ -45,6 +48,77 @@ return class(
                 }
             },
         
+        
+            newPalette ::(id => Number) {
+                // check if exists.
+                palettes->foreach(do:::(index, value) {
+                    when(value[0] == id) error(detail:'Palette already exists!');
+                });
+                
+                palettes->push(value:[id, 'palette_'+id]);
+                package_native__save_source(a:directory, b:'palette_'+id, c: '1 0 1  0 1 0  0 0 1  1 1 1');
+            },
+            
+            savePalette ::(id => Number, paletteColors => Object) {
+                @entry;
+                when([::] {
+                    palettes->foreach(do:::(index, value) {
+                        when(value[0] == id) ::<= {
+                            entry = value;
+                            send(message:false);
+                        };
+                    });
+                    return true;
+                }) error(detail:'No such palette exists');
+
+    
+                package_native__save_source(a:directory, b:entry[1], c:
+                    '' + 
+                    paletteColors[0] + ' ' + paletteColors[1] + ' ' + paletteColors[2] + ' ' +
+                    paletteColors[3] + ' ' + paletteColors[4] + ' ' + paletteColors[5] + ' ' +
+                    paletteColors[6] + ' ' + paletteColors[7] + ' ' + paletteColors[8] + ' ' +
+                    paletteColors[9] + ' ' + paletteColors[10] + ' ' + paletteColors[11]
+                );
+            },
+            
+            openPalette ::(id => Number) {
+                @entry;
+                when([::] {
+                    palettes->foreach(do:::(index, value) {
+                        when(value[0] == id) ::<= {
+                            entry = value[1];
+                            send(message:false);
+                        };
+                    });
+                    return true;
+                }) error(detail:'No such palette exists');
+            
+                @:out = [];
+                @:text = package_native__open_source(a:directory, b:entry);
+                text->split(token:' ')->foreach(
+                    do:::(index, token) {
+                        when(token == '') empty;
+                        out->push(value:Number.parse(string:token));
+                    }                   
+                );
+                return out;
+            },
+        
+            removePalette ::(id => Number) {
+                @entry;
+                when([::] {
+                    palettes->foreach(do:::(index, value) {
+                        when(value[0] == id) ::<= {
+                            entry = index;
+                            send(message:false);
+                        };
+                    });
+                    return true;
+                }) error(detail:'No such palette exists');
+
+
+                palettes->remove(key:entry);
+            },        
         
             newSource ::(name) {
                 when(!checkNameAllowed(name))
@@ -80,9 +154,15 @@ return class(
                 get::<-[...sources]
             },
             
+            
+            palettes : {
+                get::<- [...palettes]
+            },
+
             save :: {
                 @obj = {
-                    sources: sources
+                    sources: sources,
+                    palettes: palettes
                 };
                 // make object for json
                 // save project.json file
@@ -95,6 +175,7 @@ return class(
                 @str = this.openSource(name:'project.json');
                 @obj = JSON.decode(string:str);
                 sources = obj.sources;
+                palettes = obj.palettes;
             },
             
             package :: {

@@ -16,7 +16,7 @@ typedef struct {
 
 typedef struct {
     uint32_t id;
-    uint8_t data[12];
+    float data[12];
 } SESPalette;
 
 
@@ -174,7 +174,7 @@ matteArray_t * ses_pack_rom(
     matteArray_t * tiles, // uint8_t, see ses_rom_get_tile
 
     matteArray_t * paletteIDs,
-    matteArray_t * palettes, // uint8_t, see ses_rom_get_palette
+    matteArray_t * palettes, // float, see ses_rom_get_palette
     
     
     matteArray_t * bytecodeSegmentNames, // matteString_t *
@@ -235,7 +235,7 @@ matteArray_t * ses_pack_rom(
     for(i = 0; i < len; ++i) {
         SESPalette palette;
         palette.id = matte_array_at(paletteIDs, uint32_t, i);
-        memcpy(palette.data, &matte_array_at(palettes, uint8_t, i*12), 12);
+        memcpy(palette.data, &matte_array_at(palettes, float, i*12), 12);
         PUSHN(
             sizeof(SESPalette),
             &palette
@@ -313,7 +313,7 @@ uint32_t ses_rom_get_palette_count() {
     return matte_array_get_size(rom_palettes);
 }
 
-const uint8_t * ses_rom_get_palette(uint32_t index, uint32_t * id) {
+const float * ses_rom_get_palette(uint32_t index, uint32_t * id) {
     if (!rom_palettes) return NULL;
     if (index >= ses_rom_get_palette_count()) return NULL;
     

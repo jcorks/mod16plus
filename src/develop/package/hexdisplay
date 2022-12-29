@@ -1,0 +1,29 @@
+@:table = {
+    0: '0',
+    1: '1',
+    2: '2',
+    3: '3',
+    4: '4',
+    5: '5',
+    6: '6',
+    7: '7',
+    8: '8',
+    9: '9',
+    10: 'a',
+    11: 'b',
+    12: 'c',
+    13: 'd',
+    14: 'e',
+    15: 'f'
+};
+
+return ::(number) {
+    when(number >= 16*65536) '0x?????';
+    return '0x' + 
+        table[(number  / 65536)->floor]+
+        table[((number / 4096) % 16)->floor]+
+        table[((number / 256) % 16)->floor]+
+        table[((number / 16) % 16)->floor]+
+        table[(number % 16)->floor]
+    ;    
+};

@@ -261,7 +261,7 @@ extern void ses_sdl_gl_render_begin();
 extern void ses_sdl_gl_render_finish_layer();
 
 extern void ses_sdl_gl_render_sprite(
-    float x, float y,
+    int x, int y,
     float scaleX, float scaleY,
     float centerX, float centerY,
     float rotation,
@@ -276,7 +276,7 @@ extern void ses_sdl_gl_render_sprite(
 );
 
 extern void ses_sdl_gl_render_background(
-    float x, float y,
+    int x, int y,
 
     int effect,
 
@@ -924,7 +924,48 @@ matteValue_t ses_sdl_palette_query(matteVM_t * vm, matteValue_t fn, const matteV
         (int)matte_value_as_number(heap, args[0]),
         (int)matte_value_as_number(heap, args[1])
     );  
-    return matte_heap_new_value(heap);
+    
+    
+    uint32_t id = matte_value_as_number(heap, args[0]);
+    if (id >= matte_array_get_size(sdl.main.palettes))
+        return matte_heap_new_value(heap);
+
+    SES_Palette * p = &matte_array_at(sdl.main.palettes, SES_Palette, id);
+
+
+    sesVector_t * color;
+    switch((int)matte_value_as_number(heap, args[1])) {
+      case SESNPA_BACK:
+        color = &p->back;
+        break;
+
+      case SESNPA_MIDBACK:
+        color = &p->midBack;
+        break;
+
+      case SESNPA_MIDFRONT:
+        color = &p->midFront;
+        break;
+
+      case SESNPA_FRONT:
+        color = &p->front;
+        break;
+
+      default:    return matte_heap_new_value(heap);
+    }
+    
+    matteValue_t out = matte_heap_new_value(heap);
+    
+    switch((int)matte_value_as_number(heap, args[2])) {
+      case 0: matte_value_into_number(heap, &out, color->x); break;
+      case 1: matte_value_into_number(heap, &out, color->y); break;
+      case 2: matte_value_into_number(heap, &out, color->z); break;
+    }
+    
+    return out;
+    
+    
+
 }
 matteValue_t ses_sdl_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);

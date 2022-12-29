@@ -15,7 +15,8 @@ void * dump_bytes(const char * filename, uint32_t * len) {
     fseek(f, 0, SEEK_SET);
 
 
-    void * out = malloc(*len);
+    void * out = malloc(*len+1);
+    ((uint8_t*)out)[*len] = 0;
     uint32_t iter = 0;
     while(chunkSize = (fread(chunk, 1, 2048, f))) {
         memcpy(out+iter, chunk, chunkSize);

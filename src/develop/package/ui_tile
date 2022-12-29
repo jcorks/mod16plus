@@ -10,6 +10,31 @@ return class(
     
         @:sprite = Fetcher.Sprite.newID();
         
+        
+        @resizeable = false;
+        
+        @:reposition :: {
+            if (resizeable) ::<= {
+                SES.Sprite.set(
+                    index:sprite,
+                    x:this.x,
+                    y:this.y
+                );
+                SES.Sprite.transform(
+                    index:sprite,
+                    scaleX: this.width / 8,
+                    scaleY: this.height / 8
+                );
+
+            } else 
+                SES.Sprite.set(
+                    index:sprite,
+                    x:this.x + this.width / 2 - 4,
+                    y:this.y + this.height / 2 - 4
+                )
+            ;
+        
+        };
         this.events.installHooks(
             events:{
                 onShow ::(detail){
@@ -27,19 +52,11 @@ return class(
                 },
                 
                 onResize ::(detail) {
-                    SES.Sprite.set(
-                        index:sprite,
-                        x:this.x + this.width / 2 - 4,
-                        y:this.y + this.height / 2 - 4
-                    );
+                    reposition();
                 },
                 
                 onMove ::(detail) {
-                    SES.Sprite.set(
-                        index:sprite,
-                        x:this.x + this.width / 2 - 4,
-                        y:this.y + this.height / 2 - 4
-                    );
+                    reposition();
                 },
                 
                 onLayerChange::(detail) {
@@ -74,14 +91,10 @@ return class(
                 }
             },
 
-            scale : {
-                set ::(value => Number) {
-                    SES.Sprite.transform(
-                        index:sprite,
-                        scaleX: value,
-                        scaleY: value
-                    );
-                    this.resize(width:value * 1/8, height:value * 1 / 8);
+            resizeable : {
+                set ::(value => Boolean) {
+                    resizeable = value;
+                    reposition();
                 }
             },
             

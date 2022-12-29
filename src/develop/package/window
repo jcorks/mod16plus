@@ -134,6 +134,20 @@ content.background = '#251a31';
     });
 };
 
+@:hideView ::{
+    if (currentView != empty) currentView.hide();
+    buttonBot.hide();
+    buttonTop.hide();
+};
+
+@:showView ::{
+    if (currentView != empty) currentView.show();
+    buttonBot.show();
+    buttonTop.show();
+};
+
+
+
 @:views = [];
 
 
@@ -176,6 +190,7 @@ return class(
             dialog.move(x:20, y:30);
 
             @lastChoice = 0;
+            @SETUP_STACK = 0;
             return {
                 setup::(
                     prompt => String,
@@ -186,7 +201,8 @@ return class(
                     onChoice,
                     items
                 ) {
-                    if(currentView) currentView.hide();
+                    SETUP_STACK+=1;
+                    hideView();
                     dialog.show();
                     promptw.text = prompt;
                     if (onYes) ::<= {
@@ -194,7 +210,8 @@ return class(
                         yesButton.onClick = ::{
                             dialog.hide();
                             onYes();
-                            if (currentView) currentView.show();
+                            SETUP_STACK-=1;
+                            if ((SETUP_STACK == 0)) showView();
                         };
                     } else yesButton.hide();
 
@@ -203,7 +220,8 @@ return class(
                         noButton.onClick = ::{
                             dialog.hide();
                             onNo();
-                            if (currentView) currentView.show();
+                            SETUP_STACK-=1;
+                            if ((SETUP_STACK == 0)) showView();
                         };
                     } else noButton.hide();
 
@@ -212,7 +230,8 @@ return class(
                         okButton.onClick = ::{
                             dialog.hide();
                             onOK();
-                            if (currentView) currentView.show();
+                            SETUP_STACK-=1;
+                            if ((SETUP_STACK == 0)) showView();
                         };
                     } else okButton.hide();
 
@@ -316,7 +335,7 @@ return class(
             };
             viewButtons[views->keycount].show();
             views->push(value:view);
-            
+            view.hide();
         };
 
         this.interface = {

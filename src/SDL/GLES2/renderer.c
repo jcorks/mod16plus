@@ -713,7 +713,7 @@ void ses_sdl_gl_render_end() {
 }
 
 void ses_sdl_gl_render_sprite(
-    float x, float y,
+    int x, int y,
     float scaleX, float scaleY,
     float centerX, float centerY,
     float rotation,
@@ -738,10 +738,10 @@ void ses_sdl_gl_render_sprite(
         - position
     */
 
-    float x0real = centerX * scaleX;
-    float y0real = centerY * scaleY;
-    float x1real = (centerX + TILE_SIZE) * scaleX;
-    float y1real = (centerY + TILE_SIZE) * scaleY;
+    int x0real = centerX * scaleX;
+    int y0real = centerY * scaleY;
+    int x1real = (centerX + TILE_SIZE) * scaleX;
+    int y1real = (centerY + TILE_SIZE) * scaleY;
     if (rotation) {
         x0real *= cos(rotation / 180.0 * M_PI);
         y0real *= sin(rotation / 180.0 * M_PI);
@@ -772,7 +772,7 @@ void ses_sdl_gl_render_sprite(
 
 
 void ses_sdl_gl_render_background(
-    float x, float y,
+    int x, int y,
     int effect,
 
     sesVector_t back,

@@ -11,11 +11,99 @@
 @:Project = import(module:'project');
 @:UILabel = import(module:'ui_label');
 @:UI = import(module:'ui');
+@:UIFlat = import(module:'ui_flat');
+@:UITile = import(module:'ui_tile');
+@:UIScrollable = import(module:'ui_scrollable');
+@:UIButton = import(module:'ui_mousable');
+@:UIRadioLayout = import(module:'ui_radio_layout');
+@:UILayout = import(module:'ui_layout');
+@:UICanvas = import(module:'ui_canvas');
+@:hexDisplay = import(module:'hexdisplay');
 
 
+@:PREVIEW_PALETTE_TILE_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:PREVIEW_PALETTE_TILE_ID,
+    data: [
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+        1, 1, 2, 2, 3, 3, 4, 4,
+    ]
+);
 
 
+@:BUTTON_TILE1_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:BUTTON_TILE1_ID,
+    data: [
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1
+    ]
+);
 
+@:BUTTON_TILE2_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:BUTTON_TILE2_ID,
+    data: [
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2,
+    ]
+);
+
+@:BUTTON_TILE3_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:BUTTON_TILE3_ID,
+    data: [
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3,
+    ]
+);
+
+
+@:BUTTON_TILE4_ID = Fetcher.Tile.newID();
+SES.Tile.set(
+    index:BUTTON_TILE4_ID,
+    data: [
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, 4, 4, 4, 4, 4, 4,
+    ]
+);
+
+@:BUTTON_TILES= [
+    BUTTON_TILE1_ID,
+    BUTTON_TILE2_ID,
+    BUTTON_TILE3_ID,
+    BUTTON_TILE4_ID
+];
 
 
 @:Painter = class(
@@ -51,7 +139,196 @@
                 [1, 1, 1, 1]
             ]
         );
+
+
+        @:paletteIDslots = [
+            Fetcher.Palette.newID(),
+            Fetcher.Palette.newID(),
+            Fetcher.Palette.newID(),
+            Fetcher.Palette.newID(),
+            Fetcher.Palette.newID(),
+        ];        
+
+        @:makePaletteChoiceItem ::(index) {
+            @:label = UILabel.new(text:'');
+            @:tile = UITile.new(tile:PREVIEW_PALETTE_TILE_ID, palette:paletteIDslots[index]);
+            @:box = UIFlat.new(children:[
+                [label, 0.8],
+                [tile, 0.2]
+            ]);
+            return box;
+        };
+
+
+        @:paletteChoices = [
+            makePaletteChoiceItem(index:0),
+            makePaletteChoiceItem(index:1),
+            makePaletteChoiceItem(index:2),
+            makePaletteChoiceItem(index:3),
+            makePaletteChoiceItem(index:4)
+        ];
+
+        @:readIntoPalette::(paletteID, storedPaletteIndex => Number) {
+            @:Project = import(module:'project');
+            @:data = Project.openPalette(id:storedPaletteIndex);
+            @:dataFormatted = [
+                [data[0], data[1], data[2]],
+                [data[3], data[4], data[5]],
+                [data[6], data[7], data[8]],
+                [data[9], data[10], data[11]]
+            ];
+            SES.Palette.set(index:paletteID, colors:dataFormatted);
+        };        
+
         
+        @:disablePalette::(paletteID) {
+            @:dataFormatted = [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ];
+            SES.Palette.set(index:paletteID, colors:dataFormatted);
+        };         
+        
+        @:paletteRadio = UIRadioLayout.new(
+            choices : [
+                paletteChoices[0],
+                paletteChoices[1],
+                paletteChoices[2],
+                paletteChoices[3],
+                paletteChoices[4]
+            ]
+        );   
+
+        
+        @chosenPalettesSlot;
+        paletteRadio.onChoose = ::(choice) {
+            @:paletteData = SES.Palette.get(index:paletteIDslots[choice]);
+            SES.Palette.set(index:palette, colors:paletteData);
+        };
+        @:resetPaletteChoices ::{
+            @:Project = import(module:'project');
+            @paletteData = Project.palettes;
+            @:top = scrollable.currentScrollPosition;
+            scrollable.setupPage(itemCount:Project.palettes->keycount, itemsPerPage:5);
+
+            
+            @i = 0;
+            [::] {
+                [top, paletteData->keycount]->for(do:::(index) {
+                    paletteChoices[i].show();
+
+                    readIntoPalette(paletteID:paletteIDslots[i], storedPaletteIndex:paletteData[index][0]);
+                    paletteChoices[i].children[0].text = hexDisplay(number:paletteData[index][0]);
+                        
+                    i+=1;
+                    
+                    when(i == 5) send();
+                });
+                
+                [i, 5]->for(do:::(index) {
+                    paletteChoices[i].hide();
+                });
+            };        
+        };
+        
+
+        @:scrollable = UIScrollable.new(
+            child: paletteRadio,
+            onScroll::(itemTop, itemCount, itemsPerPage) {
+                resetPaletteChoices();
+                
+                when(chosenPalettesSlot == empty) empty;
+                paletteRadio.choice = chosenPalettesSlot - itemTop;
+                
+            },
+            itemCount: 1,  
+            itemsPerPage: 5
+        );
+        
+        @:switchPalette = UIButton.new(child:UILabel.new(text:'Palet.'));
+        @:switchTile = UIButton.new(child:UILabel.new(text:'Tile'));
+        
+        @:buttonBox = UIFlat.new(        
+            children: [
+                [switchPalette, 0.5],
+                [switchTile, 0.5]
+            ]
+        
+        );
+        @:leftbox = UILayout.new(
+            children: [
+                [scrollable, 0.9],
+                [buttonBox, 0.1]
+            ]
+        );
+
+
+
+
+        @:makeColorItem ::(index) {
+            when(index == 0) UILabel.new(text:'');
+            @:label = UITile.new(palette:palette, tile:BUTTON_TILES[index-1]);
+            // todo
+            
+            return label;
+        };
+
+
+        @:colorChoices = [
+            makeColorItem(index:0),
+            makeColorItem(index:1),
+            makeColorItem(index:2),
+            makeColorItem(index:3),
+            makeColorItem(index:4),
+        ];
+        @:colorRadio = UIRadioLayout.new(
+            choices : [
+                colorChoices[0],
+                colorChoices[1],
+                colorChoices[2],
+                colorChoices[3],
+                colorChoices[4]
+            ]
+        );   
+        
+        colorRadio.onChoose = ::(choice) {
+            canvas.pen = choice;
+        };
+            
+        @:canvas = UICanvas.new();
+        canvas.palette = palette;
+        canvas.size = 112;
+
+        @:mainbox = UIFlat.new(
+            children: [
+                [leftbox, 0.325],
+                [canvas, 0.55],
+                [colorRadio, 0.125]
+            ]
+        );
+        mainbox.background = '#222222';
+        
+
+        this.addChild(child:mainbox, sizeRequest:1);
+
+                
+        this.events.installHooks(events: {
+            onMove ::(detail) {
+                mainbox.move(x:this.x, y:this.y);
+            },
+            
+            onResize ::(detail) {
+                mainbox.resize(width:this.width, height:this.height);
+            },
+            
+            onShow ::(detail) {
+                resetPaletteChoices();
+            }
+        });
+
+
 
         
         this.interface = {
