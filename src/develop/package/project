@@ -35,6 +35,10 @@ return class(
         // palette entries. Arrays of id followed by a path to a palette file (plaintext)
         @palettes = [];
     
+        // tile entries. Arrays of id followed by a path to a tile file (plaintext)
+        @tiles = [];
+    
+    
         this.interface = {
             isNameAllowed ::(name) {
                 return checkNameAllowed(name);
@@ -47,6 +51,11 @@ return class(
                     directory = value;
                 }
             },
+        
+        
+        
+        
+        
         
         
             newPalette ::(id => Number) {
@@ -118,7 +127,123 @@ return class(
 
 
                 palettes->remove(key:entry);
-            },        
+            },      
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            newTile ::(id => Number) {
+                when(id >= 0x80000)
+                    error(detail:'Number too high!');
+
+                when(id < 128)
+                    error(detail:'Error: Minimum 128!');
+            
+                // check if exists.
+                tiles->foreach(do:::(index, value) {
+                    when(value[0] == id) error(detail:'Tile already exists!');
+                });
+                
+                tiles->push(value:[id, 'tile_'+id]);
+                package_native__save_source(a:directory, b:'tile_'+id, c: 
+                    String.combine(strings: [
+                        '0 0 0 0 0 0 0 0\n',
+                        '0 0 0 0 0 0 0 0\n',
+                        '0 0 0 0 0 0 0 0\n',
+                        '0 0 0 0 0 0 0 0\n',
+
+                        '0 0 0 0 0 0 0 0\n',
+                        '0 0 0 0 0 0 0 0\n',
+                        '0 0 0 0 0 0 0 0\n',
+                        '0 0 0 0 0 0 0 0\n'
+                    ])
+                    
+                );
+            },
+            
+            saveTile ::(id => Number, data => Object) {
+                @entry;
+                when([::] {
+                    tiles->foreach(do:::(index, value) {
+                        when(value[0] == id) ::<= {
+                            entry = value;
+                            send(message:false);
+                        };
+                    });
+                    return true;
+                }) error(detail:'No such tile exists');
+
+    
+                package_native__save_source(a:directory, b:entry[1], c:
+                    String.combine(
+                        strings: [
+                            ' '+data[0],  ' '+ data[1],  ' '+ data[2],  ' '+ data[3],  ' '+ data[4],  ' '+ data[5],  ' '+ data[6],  ' '+ data[7], '\n',
+                            ' '+data[8],  ' '+ data[9],  ' '+ data[10], ' '+ data[11], ' '+ data[12], ' '+ data[13], ' '+ data[14], ' '+ data[15], '\n',
+                            ' '+data[16], ' '+ data[17], ' '+ data[18], ' '+ data[19], ' '+ data[20], ' '+ data[21], ' '+ data[22], ' '+ data[23], '\n',
+                            ' '+data[24], ' '+ data[25], ' '+ data[26], ' '+ data[27], ' '+ data[28], ' '+ data[29], ' '+ data[30], ' '+ data[31], '\n',
+                            ' '+data[32], ' '+ data[33], ' '+ data[34], ' '+ data[35], ' '+ data[36], ' '+ data[37], ' '+ data[38], ' '+ data[39], '\n',
+                            ' '+data[40], ' '+ data[41], ' '+ data[42], ' '+ data[43], ' '+ data[44], ' '+ data[45], ' '+ data[46], ' '+ data[47], '\n',
+                            ' '+data[48], ' '+ data[49], ' '+ data[50], ' '+ data[51], ' '+ data[52], ' '+ data[53], ' '+ data[54], ' '+ data[55], '\n',
+                            ' '+data[56], ' '+ data[57], ' '+ data[58], ' '+ data[59], ' '+ data[60], ' '+ data[61], ' '+ data[62], ' '+ data[63]                     
+                        ]
+                    )
+                );
+            },
+            
+            openTile ::(id => Number) {
+                @entry;
+                when([::] {
+                    tiles->foreach(do:::(index, value) {
+                        when(value[0] == id) ::<= {
+                            entry = value[1];
+                            send(message:false);
+                        };
+                    });
+                    return true;
+                }) error(detail:'No such tile exists');
+            
+                @:out = [];
+                @text = package_native__open_source(a:directory, b:entry);
+                text = text->replace(key:'\n', with: ' ');
+                text->split(token:' ')->foreach(
+                    do:::(index, token) {
+                        when(token == '') empty;
+                        out->push(value:Number.parse(string:token));
+                    }                   
+                );
+                return out;
+            },
+        
+            removeTile ::(id => Number) {
+                @entry;
+                when([::] {
+                    tiles->foreach(do:::(index, value) {
+                        when(value[0] == id) ::<= {
+                            entry = index;
+                            send(message:false);
+                        };
+                    });
+                    return true;
+                }) error(detail:'No such tile exists');
+
+
+                tiles->remove(key:entry);
+            },                
+            
+            
+            
+            
+            
+            
+            
+              
         
             newSource ::(name) {
                 when(!checkNameAllowed(name))
@@ -159,10 +284,17 @@ return class(
                 get::<- [...palettes]
             },
 
+            tiles : {
+                get::<- [...tiles]
+            },
+
+
+
             save :: {
                 @obj = {
                     sources: sources,
-                    palettes: palettes
+                    palettes: palettes,
+                    tiles: tiles
                 };
                 // make object for json
                 // save project.json file
@@ -176,6 +308,7 @@ return class(
                 @obj = JSON.decode(string:str);
                 sources = obj.sources;
                 palettes = obj.palettes;
+                tiles = obj.tiles;
             },
             
             package :: {

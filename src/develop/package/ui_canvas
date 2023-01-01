@@ -9,8 +9,10 @@ return class(
     define:::(this) {
     
         @:sprite = Fetcher.Sprite.newID();
-        @:tile = Fetcher.Tile.newID();
+        @tile;
         @pen = 1;
+        @onDraw = ::{};
+        @needsUpdate = false;
         
         SES.Sprite.set(
             index:sprite,
@@ -21,17 +23,7 @@ return class(
         
         
         
-        @data = [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
 
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0        
-        ];
 
         @size = 64;        
         @inputid;
@@ -50,6 +42,8 @@ return class(
                       },
                       (SES.Input.EVENTS.POINTER_BUTTON_UP):::<= {
                         down = false;
+                        if (needsUpdate) onDraw();
+                        needsUpdate = false;
                       }
                     };
                     
@@ -67,9 +61,15 @@ return class(
                         @:py = (((y - thisy) / size)*8)->floor;
                         
                         
-                        data[(px + py * 8)->floor] = pen;
-                        SES.Tile.set(index:tile, data);
-                        
+                        if (tile) ::<= {
+                            @data = SES.Tile.get(index:tile);
+                            @:index = (px + py * 8)->floor; 
+                            if (data[index] != pen) ::<= {
+                                data[index] = pen;
+                                SES.Tile.set(index:tile, data);
+                                needsUpdate = true;
+                            };
+                        };
                         
                         
                         print(message:''+px + ', ' + py);
@@ -152,6 +152,24 @@ return class(
                         palette: value
                     );  
                 }
+            },
+
+            tile : {
+                set ::(value => Number) {
+                    tile = value;
+                    SES.Sprite.set(
+                        index:sprite,
+                        tile: value
+                    );  
+                }
+            },
+
+
+            onDraw : {
+                set ::(value => Function) {
+                    onDraw = value;
+                }
+                
             },
             
             pen : {

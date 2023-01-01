@@ -126,9 +126,6 @@ SES.Tile.set(
             ]
         );
 
-
-
-
         @:palette = Fetcher.Palette.newID();
         SES.Palette.set(
             index:palette,
@@ -139,116 +136,300 @@ SES.Tile.set(
                 [1, 1, 1, 1]
             ]
         );
+        
+        @:tile = Fetcher.Tile.newID();
 
 
-        @:paletteIDslots = [
-            Fetcher.Palette.newID(),
-            Fetcher.Palette.newID(),
-            Fetcher.Palette.newID(),
-            Fetcher.Palette.newID(),
-            Fetcher.Palette.newID(),
-        ];        
-
-        @:makePaletteChoiceItem ::(index) {
-            @:label = UILabel.new(text:'');
-            @:tile = UITile.new(tile:PREVIEW_PALETTE_TILE_ID, palette:paletteIDslots[index]);
-            @:box = UIFlat.new(children:[
-                [label, 0.8],
-                [tile, 0.2]
-            ]);
-            return box;
-        };
 
 
-        @:paletteChoices = [
-            makePaletteChoiceItem(index:0),
-            makePaletteChoiceItem(index:1),
-            makePaletteChoiceItem(index:2),
-            makePaletteChoiceItem(index:3),
-            makePaletteChoiceItem(index:4)
-        ];
 
-        @:readIntoPalette::(paletteID, storedPaletteIndex => Number) {
-            @:Project = import(module:'project');
-            @:data = Project.openPalette(id:storedPaletteIndex);
-            @:dataFormatted = [
-                [data[0], data[1], data[2]],
-                [data[3], data[4], data[5]],
-                [data[6], data[7], data[8]],
-                [data[9], data[10], data[11]]
+
+
+
+
+
+
+
+        ////////////////////////////////////////////
+        // PALETTE CHOOSER
+        @paletteScrollable;
+        @resetPaletteChoices;        
+        ::<= {
+
+            @:paletteIDslots = [
+                Fetcher.Palette.newID(),
+                Fetcher.Palette.newID(),
+                Fetcher.Palette.newID(),
+                Fetcher.Palette.newID(),
+                Fetcher.Palette.newID(),
+            ];        
+
+            @:makePaletteChoiceItem ::(index) {
+                @:label = UILabel.new(text:'');
+                @:tile = UITile.new(tile:PREVIEW_PALETTE_TILE_ID, palette:paletteIDslots[index]);
+                @:box = UIFlat.new(children:[
+                    [label, 0.8],
+                    [tile, 0.2]
+                ]);
+                return box;
+            };
+
+
+            @:paletteChoices = [
+                makePaletteChoiceItem(index:0),
+                makePaletteChoiceItem(index:1),
+                makePaletteChoiceItem(index:2),
+                makePaletteChoiceItem(index:3),
+                makePaletteChoiceItem(index:4)
             ];
-            SES.Palette.set(index:paletteID, colors:dataFormatted);
-        };        
 
-        
-        @:disablePalette::(paletteID) {
-            @:dataFormatted = [
-                [0, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 0, 0]
-            ];
-            SES.Palette.set(index:paletteID, colors:dataFormatted);
-        };         
-        
-        @:paletteRadio = UIRadioLayout.new(
-            choices : [
-                paletteChoices[0],
-                paletteChoices[1],
-                paletteChoices[2],
-                paletteChoices[3],
-                paletteChoices[4]
-            ]
-        );   
-
-        
-        @chosenPalettesSlot;
-        paletteRadio.onChoose = ::(choice) {
-            @:paletteData = SES.Palette.get(index:paletteIDslots[choice]);
-            SES.Palette.set(index:palette, colors:paletteData);
-        };
-        @:resetPaletteChoices ::{
-            @:Project = import(module:'project');
-            @paletteData = Project.palettes;
-            @:top = scrollable.currentScrollPosition;
-            scrollable.setupPage(itemCount:Project.palettes->keycount, itemsPerPage:5);
+            @:readIntoPalette::(paletteID, storedPaletteIndex => Number) {
+                @:Project = import(module:'project');
+                @:data = Project.openPalette(id:storedPaletteIndex);
+                @:dataFormatted = [
+                    [data[0], data[1], data[2]],
+                    [data[3], data[4], data[5]],
+                    [data[6], data[7], data[8]],
+                    [data[9], data[10], data[11]]
+                ];
+                SES.Palette.set(index:paletteID, colors:dataFormatted);
+            };        
 
             
-            @i = 0;
-            [::] {
-                [top, paletteData->keycount]->for(do:::(index) {
-                    paletteChoices[i].show();
+            @:disablePalette::(paletteID) {
+                @:dataFormatted = [
+                    [0, 0, 0, 0],
+                    [0, 0, 0, 0],
+                    [0, 0, 0, 0],
+                    [0, 0, 0, 0]
+                ];
+                SES.Palette.set(index:paletteID, colors:dataFormatted);
+            };         
+            
+            @:paletteRadio = UIRadioLayout.new(
+                choices : [
+                    paletteChoices[0],
+                    paletteChoices[1],
+                    paletteChoices[2],
+                    paletteChoices[3],
+                    paletteChoices[4]
+                ]
+            );   
 
-                    readIntoPalette(paletteID:paletteIDslots[i], storedPaletteIndex:paletteData[index][0]);
-                    paletteChoices[i].children[0].text = hexDisplay(number:paletteData[index][0]);
-                        
-                    i+=1;
-                    
-                    when(i == 5) send();
-                });
+            
+            @chosenPalettesSlot;
+            paletteRadio.onChoose = ::(choice) {
+                @:paletteData = SES.Palette.get(index:paletteIDslots[choice]);
+                SES.Palette.set(index:palette, colors:paletteData);
                 
-                [i, 5]->for(do:::(index) {
-                    paletteChoices[i].hide();
-                });
-            };        
+                chosenPalettesSlot = paletteScrollable.currentScrollPosition + choice;
+            };
+            resetPaletteChoices = ::{
+                when (tileMode) empty;
+            
+                @:Project = import(module:'project');
+                @paletteData = Project.palettes;
+                @:top = paletteScrollable.currentScrollPosition;
+                paletteScrollable.setupPage(itemCount:Project.palettes->keycount, itemsPerPage:5);
+
+                
+                @i = 0;
+                [::] {
+                    [top, paletteData->keycount]->for(do:::(index) {
+                        paletteChoices[i].show();
+
+                        readIntoPalette(paletteID:paletteIDslots[i], storedPaletteIndex:paletteData[index][0]);
+                        paletteChoices[i].children[0].text = hexDisplay(number:paletteData[index][0]);
+                            
+                        i+=1;
+                        
+                        when(i == 5) send();
+                    });
+                    
+                    [i, 5]->for(do:::(index) {
+                        paletteChoices[i].hide();
+                    });
+                };        
+            };
+            
+
+            paletteScrollable = UIScrollable.new(
+                child: paletteRadio,
+                onScroll::(itemTop, itemCount, itemsPerPage) {
+                    resetPaletteChoices();
+                    
+                    when(chosenPalettesSlot == empty) empty;
+                    paletteRadio.choice = chosenPalettesSlot - itemTop;
+                    
+                },
+                itemCount: 1,  
+                itemsPerPage: 5
+            );
         };
         
+        
+        
+        /////////////////////////////////// 
+        // TILE CHOOSER
+        @tileScrollable;
+        @resetTileChoices;   
+        @tileSaveID;
+        ::<= {
+            @chosenTilesSlot;
 
-        @:scrollable = UIScrollable.new(
-            child: paletteRadio,
-            onScroll::(itemTop, itemCount, itemsPerPage) {
-                resetPaletteChoices();
+            @:tileIDslots = [
+                Fetcher.Tile.newID(),
+                Fetcher.Tile.newID(),
+                Fetcher.Tile.newID(),
+                Fetcher.Tile.newID(),
+                Fetcher.Tile.newID(),
+            ];        
+
+            @:makeTileChoiceItem ::(index) {
+                @:label = UILabel.new(text:'');
+                @:tile = UITile.new(tile:tileIDslots[index], palette:palette);
+                @:box = UIFlat.new(children:[
+                    [label, 0.8],
+                    [tile, 0.2]
+                ]);
+                return box;
+            };
+
+
+            @:tileChoices = [
+                makeTileChoiceItem(index:0),
+                makeTileChoiceItem(index:1),
+                makeTileChoiceItem(index:2),
+                makeTileChoiceItem(index:3),
+                makeTileChoiceItem(index:4)
+            ];
+
+            @:readIntoTile::(tileID, storedTileIndex => Number) {
+                @:Project = import(module:'project');
+                @:data = Project.openTile(id:storedTileIndex);
+                SES.Tile.set(index:tileID, data);
+            };        
+
+            
+            @:disableTile::(tileID) {
+                @:dataFormatted = [
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0
+                ];
+                SES.Tile.set(index:tileID, colors:dataFormatted);
+            };         
+            
+            @:tileRadio = UIRadioLayout.new(
+                choices : [
+                    tileChoices[0],
+                    tileChoices[1],
+                    tileChoices[2],
+                    tileChoices[3],
+                    tileChoices[4]
+                ]
+            );   
+
+            
+            tileRadio.onChoose = ::(choice) {
+                when (tileChoices[choice].children[0].text == '') empty;
+
+
+                when (tileChoices[choice].children[0].text == ' Add Tile') ::<= {
+                    @:Window = import(module:'window');
+                    Window.entryDialog(text:'Tile ID:', onEntry::(text) {
+                        [::] {
+                            Project.newTile(id:Number.parse(string:text));
+                        } : {
+                            onError ::(message) {
+                                Window.alert(text:'Error: ' + message.data);
+                            }
+                        };
+                        resetTileChoices();
+                        Project.save();
+                    });                                
+                };
+            
+                @:tileData = SES.Tile.get(index:tileIDslots[choice]);
+                SES.Tile.set(index:tile, data:tileData);
                 
-                when(chosenPalettesSlot == empty) empty;
-                paletteRadio.choice = chosenPalettesSlot - itemTop;
+                chosenTilesSlot = tileScrollable.currentScrollPosition + choice;
+                tileSaveID = Project.tiles[chosenTilesSlot][0];
+            };
+            resetTileChoices = ::{
+                when (!tileMode) empty;
+
+                @:Project = import(module:'project');
+                @tileData = Project.tiles;
+                @:top = tileScrollable.currentScrollPosition;
+                tileScrollable.setupPage(itemCount:Project.tiles->keycount, itemsPerPage:5);
+
+                tileData->push(value:[]);
                 
-            },
-            itemCount: 1,  
-            itemsPerPage: 5
-        );
+                
+                
+                
+                @i = 0;
+                [::] {
+                    [top, tileData->keycount]->for(do:::(index) {
+                        tileChoices[i].show();
+
+
+                        if (index == tileData->keycount-1) ::<= {                            
+                            tileChoices[i].children[0].text = ' Add Tile';
+                        } else ::<= {
+                            readIntoTile(tileID:tileIDslots[i], storedTileIndex:tileData[index][0]);
+                            tileChoices[i].children[0].text = hexDisplay(number:tileData[index][0]);
+                        };
+                        i+=1;
+                        
+                        when(i == 5) send();
+                    });
+                    
+                    [i, 5]->for(do:::(index) {
+                        tileChoices[i].hide();
+                    });
+                };        
+            };
+            
+
+            tileScrollable = UIScrollable.new(
+                child: tileRadio,
+                onScroll::(itemTop, itemCount, itemsPerPage) {
+                    resetTileChoices();
+                    
+                    when(chosenTilesSlot == empty) empty;
+                    tileRadio.choice = chosenTilesSlot - itemTop;
+                    
+                },
+                itemCount: 1,  
+                itemsPerPage: 5
+            );
+        };
+        
+        
+        
+        
+        
+        
+        
+                
+        
+        
+        
+        
+        
+        
+        
         
         @:switchPalette = UIButton.new(child:UILabel.new(text:'Palet.'));
         @:switchTile = UIButton.new(child:UILabel.new(text:'Tile'));
+        @tileMode = false;
         
         @:buttonBox = UIFlat.new(        
             children: [
@@ -257,21 +438,43 @@ SES.Tile.set(
             ]
         
         );
-        @:leftbox = UILayout.new(
+        @:leftBox = UILayout.new(
             children: [
-                [scrollable, 0.9],
+                [paletteScrollable, 0.9],
                 [buttonBox, 0.1]
             ]
         );
+        tileScrollable.hide();
+
+
+
+        switchPalette.onClick = ::{
+            leftBox.clearChildren();
+            leftBox.addChild(child:paletteScrollable, sizeRequest:0.9);
+            leftBox.addChild(child:buttonBox, sizeRequest:0.1);
+            paletteScrollable.show();
+            tileScrollable.hide();
+            tileMode = false;
+            resetPaletteChoices();
+
+        };
+
+        switchTile.onClick = ::{
+            leftBox.clearChildren();
+            leftBox.addChild(child:tileScrollable, sizeRequest:0.9);
+            leftBox.addChild(child:buttonBox, sizeRequest:0.1);
+            tileScrollable.show();            
+            paletteScrollable.hide();
+            tileMode = true;
+            resetTileChoices();
+        };
 
 
 
 
         @:makeColorItem ::(index) {
             when(index == 0) UILabel.new(text:'');
-            @:label = UITile.new(palette:palette, tile:BUTTON_TILES[index-1]);
-            // todo
-            
+            @:label = UITile.new(palette:palette, tile:BUTTON_TILES[index-1]);            
             return label;
         };
 
@@ -299,11 +502,21 @@ SES.Tile.set(
             
         @:canvas = UICanvas.new();
         canvas.palette = palette;
+        canvas.tile = tile;
         canvas.size = 112;
+        canvas.onDraw = ::{
+            when(tileSaveID == empty) empty;
+            // when an edit is made, save the sprite 
+            Project.saveTile(id:tileSaveID, data:SES.Tile.get(index:tile));
+            if (tileMode) ::<= {
+                resetTileChoices();
+            };
+            
+        };
 
         @:mainbox = UIFlat.new(
             children: [
-                [leftbox, 0.325],
+                [leftBox, 0.325],
                 [canvas, 0.55],
                 [colorRadio, 0.125]
             ]
@@ -324,7 +537,10 @@ SES.Tile.set(
             },
             
             onShow ::(detail) {
-                resetPaletteChoices();
+                if (tileMode)
+                    resetTileChoices()
+                else
+                    resetPaletteChoices();
             }
         });
 

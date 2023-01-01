@@ -162,9 +162,10 @@
                     @:out = [];
                     ses_native__tile_attrib(a:index, b:ATTRIBS.BIND);
                     [0, 64]->for(do:::(i) {
-                        out->push(value:ses_native__tile_query(a:index));
+                        out->push(value:ses_native__tile_query(a:i));
                     });
                     ses_native__tile_attrib(a:index, b:ATTRIBS.UNBIND);
+                    return out;
                 },
                 
                 copy ::(to => Number, from => Number) {

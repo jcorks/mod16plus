@@ -17,9 +17,11 @@ return class(
     define:::(this) {
 
         @layout = UILayout.new(children:[], enableBackground:false);
-        @ticks = [];
         @choice = -1;
         @userChoose = ::(choice){};
+        @:choiceWidgets = [];
+        
+        
 
         this.constructor = ::(choices, onChoose) {
             this.addChild(child:layout, sizeRequest:1);
@@ -52,29 +54,40 @@ return class(
         this.interface = {
             choices : {
                 set ::(value => Object) {
-                    layout.clearChildren();
-                    
-                    
+                    if (choiceWidgets->keycount < value->keycount) ::<= {
+                        [choiceWidgets->keycount, value->keycount]->for(do:::(i) {
+                            @:tick = UILabel.new(text:''); 
+                            @:child = UIFlat.new(
+                                children: [
+                                    [tick, 0],
+                                ]
+                            );
+                            @:button = UIMousable.new(child);
+                            
+                            
+                            choiceWidgets->push(value:[button, tick, child]);
+                        });
+                    };
+
+                    layout.clearChildren();                    
                     @:set = [];
                     
                     value->foreach(do:::(i, v) {
-                        @:tick = UILabel.new(text:''); 
-                        @:child = UIFlat.new(
-                            children: [
-                                [tick, 0],
-                                [v, 1]
-                            ]
-                        );
-                        @:button = UIMousable.new(child);
+                        @:choice = choiceWidgets[i];
+                    
+                        choice[2].clearChildren();
+                        choice[2].addChild(child:choice[1], sizeRequest: 0);
+                        choice[2].addChild(child:v, sizeRequest: 1);
+                    
                         ::(value){
                             @index = value;
-                            button.onClick = ::{
+                            choice[0].onClick = ::{
                                 this.choice = i;
                             };
                         }(value: i);
-                        ticks->push(value:tick);
+
                         //layout.addChild(child:button, sizeRequest:1/value->keycount);
-                        set->push(value:[button, 1/value->keycount]);
+                        set->push(value:[choice[0], 1/value->keycount]);
                     });
                     layout.reset(children:set);
                 }
@@ -89,12 +102,12 @@ return class(
                 set ::(value => Number) {
                     when (value == choice) empty;
                     choice = value;
-                    ticks->foreach(do:::(i, v) {
-                        v.text = '';
+                    choiceWidgets->foreach(do:::(i, v) {
+                        v[1].text = '';
                     });
 
-                    when(choice < 0 || choice >= ticks->keycount) empty;
-                    ticks[choice].text = '>';
+                    when(choice < 0 || choice >= choiceWidgets->keycount) empty;
+                    choiceWidgets[choice][1].text = '>';
 
                     userChoose(choice:value);
                 }

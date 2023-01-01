@@ -15,18 +15,30 @@
 #include <string.h>
 
 #ifdef __unix__
-    const char * BASE_DIR = "/usr/share/SES/projects/";
+    char * BASE_DIR = NULL;
     #include <unistd.h>
     #include <sys/types.h>
     #include <sys/stat.h>
     #include <dirent.h>
+    
+    static void assert_base_dir() {
+        if (BASE_DIR) return;
+        
+        BASE_DIR = malloc(1024 + 128);
+        getcwd(BASE_DIR, 1024);
+        strcat(BASE_DIR, "/SES_projects");
+        mkdir(matte_string_get_c_str(BASE_DIR), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }   
+    
     static void make_project_dir(const char * name) {
+        assert_base_dir();
         matteString_t * path = matte_string_create_from_c_str("%s%s", BASE_DIR, name);
         mkdir(matte_string_get_c_str(path), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         matte_string_destroy(path);
     };
     
     static matteString_t * build_path(const matteString_t * project, const matteString_t * file) {
+        assert_base_dir();
         matteString_t * out = matte_string_create_from_c_str("%s", BASE_DIR);
         matte_string_concat(out, project);
         matteString_t * slash = matte_string_create_from_c_str("/");
@@ -37,6 +49,7 @@
     }
 
     static matteArray_t * list_projects() {
+        assert_base_dir();
         matteArray_t * arr = matte_array_create(sizeof(matteString_t *));
         struct dirent * dir;
         DIR * d = opendir(BASE_DIR);
@@ -52,15 +65,28 @@
     }
 
 #elif __WIN32__
-    const char * BASE_DIR = "C:\\SES\\projects\\";
+    char * BASE_DIR = NULL;
     #include <windows.h>
+
+    static void assert_base_dir() {
+        if (BASE_DIR) return;
+        
+        BASE_DIR = malloc(1024, 128);
+        _getcwd(BASE_DIR, 1024);
+        strcat(BASE_DIR, "\\SES_projects");
+        CreateDirectoryA(matte_string_get_c_str(BASE_DIR), NULL);
+    }   
+
+
     static void make_project_dir(const char * name) {
+        assert_base_dir();
         matteString_t * path = matte_string_create_from_c_str("%s%s", BASE_DIR, name);
         CreateDirectoryA(matte_string_get_c_str(path), NULL);
         matte_string_destroy(path);
     };
     
     static matteString_t * build_path(const matteString_t * project, const matteString_t * file) {
+        assert_base_dir();
         matteString_t * out = matte_string_create_from_c_str("%s", BASE_DIR);
         matte_string_concat(out, project);
         matteString_t * slash = matte_string_create_from_c_str("\\");
@@ -71,6 +97,7 @@
     }
 
     static matteArray_t * list_projects() {
+        assert_base_dir();
         matteArray_t * arr = matte_array_create(sizeof(matteString_t *));
 
         WIN32_FIND_DATA data;
@@ -341,7 +368,7 @@ int ses_package(const char * dir) {
     
     matteValue_t json = ses_package_get_json(m, dir);
     if (json.binID == 0) return 0;
-    
+    int out = 0;
     // for each source, dump
     uint32_t len;
     uint8_t * bytes;
@@ -373,7 +400,7 @@ int ses_package(const char * dir) {
             matteValue_t name = matte_value_object_access_index(heap, next, i);
             if (name.binID != MATTE_VALUE_TYPE_STRING) {
                 printf("Error on waveform %d: value is not a string.\n", i+1);
-                exit(1);
+                goto L_FAIL;
             }
 
             uint32_t byteLen;
@@ -399,7 +426,7 @@ int ses_package(const char * dir) {
             matteValue_t set = matte_value_object_access_index(heap, next, i);
             if (set.binID != MATTE_VALUE_TYPE_OBJECT) {
                 printf("Error on tile %d: value is not an array.\n", i+1);
-                exit(1);
+                goto L_FAIL;
             }
             
             matteValue_t id   = matte_value_object_access_index(heap, next, 0);
@@ -407,12 +434,12 @@ int ses_package(const char * dir) {
 
             if (id.binID != MATTE_VALUE_TYPE_NUMBER) {
                 printf("Error on tile %d: first array value is not a number.\n", i+1);
-                exit(1);
+                goto L_FAIL;
             }
 
             if (path.binID != MATTE_VALUE_TYPE_STRING) {
                 printf("Error on tile %d: second array value is not a string.\n", i+1);
-                exit(1);
+                goto L_FAIL;
             }
             
             
@@ -424,12 +451,35 @@ int ses_package(const char * dir) {
                 &byteLen
             );
 
-            if (byteLen % 64 != 0) {
-                printf("Tile sheet %s is misaligned and does not contain a multiple of 64 bytes.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
-                exit(1);
+            char paletteBytes[64];
+            if (sscanf(bytes, 
+                    "%c %c %c %c %c %c %c %c"            
+                    "%c %c %c %c %c %c %c %c"            
+                    "%c %c %c %c %c %c %c %c"            
+                    "%c %c %c %c %c %c %c %c"            
+
+                    "%c %c %c %c %c %c %c %c"            
+                    "%c %c %c %c %c %c %c %c"            
+                    "%c %c %c %c %c %c %c %c"            
+                    "%c %c %c %c %c %c %c %c"            
+                , 
+                paletteBytes,    paletteBytes+1,  paletteBytes+2,  paletteBytes+3,  paletteBytes+4,  paletteBytes+5,  paletteBytes+6, paletteBytes+7,
+                paletteBytes+8,  paletteBytes+9,  paletteBytes+10, paletteBytes+11, paletteBytes+12, paletteBytes+13, paletteBytes+14, paletteBytes+15,
+                paletteBytes+16, paletteBytes+17, paletteBytes+18, paletteBytes+19, paletteBytes+20, paletteBytes+21, paletteBytes+22, paletteBytes+23,
+                paletteBytes+24, paletteBytes+25, paletteBytes+26, paletteBytes+27, paletteBytes+28, paletteBytes+29, paletteBytes+30, paletteBytes+31,
+
+                paletteBytes+32, paletteBytes+33, paletteBytes+34, paletteBytes+35, paletteBytes+36, paletteBytes+37, paletteBytes+38, paletteBytes+39,
+                paletteBytes+40, paletteBytes+41, paletteBytes+42, paletteBytes+43, paletteBytes+44, paletteBytes+45, paletteBytes+46, paletteBytes+47,
+                paletteBytes+48, paletteBytes+49, paletteBytes+50, paletteBytes+51, paletteBytes+52, paletteBytes+53, paletteBytes+54, paletteBytes+55,
+                paletteBytes+56, paletteBytes+57, paletteBytes+58, paletteBytes+59, paletteBytes+60, paletteBytes+61, paletteBytes+62, paletteBytes+63
+
+                ) != 64) {
+                printf("Tile sheet %s is malformed. It should contain 64 byte values in text.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
+                goto L_FAIL;
             }
 
-            matte_array_push_n(tiles, bytes, byteLen/64);
+
+            matte_array_push_n(tiles, paletteBytes, 64);
             matte_array_push(tileIDs, id);
         }        
     }
@@ -442,7 +492,7 @@ int ses_package(const char * dir) {
             matteValue_t set = matte_value_object_access_index(heap, next, i);
             if (set.binID != MATTE_VALUE_TYPE_OBJECT) {
                 printf("Error on palette %d: value is not an array.\n", i+1);
-                exit(1);
+                goto L_FAIL;
             }
             
             matteValue_t id   = matte_value_object_access_index(heap, next, 0);
@@ -450,12 +500,12 @@ int ses_package(const char * dir) {
 
             if (id.binID != MATTE_VALUE_TYPE_NUMBER) {
                 printf("Error on palette %d: first array value is not a number.\n", i+1);
-                exit(1);
+                goto L_FAIL;
             }
 
             if (path.binID != MATTE_VALUE_TYPE_STRING) {
                 printf("Error on palette %d: second array value is not a string.\n", i+1);
-                exit(1);
+                goto L_FAIL;
             }
 
 
@@ -482,7 +532,7 @@ int ses_package(const char * dir) {
                 paletteBytes+9, paletteBytes+10,paletteBytes+11
                 ) != 12) {
                 printf("Palette sheet %s is malformed. It should contain 12 decimal values.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
-                exit(1);            
+                goto L_FAIL;
             }
             
             matte_array_push(palettes, paletteBytes);
@@ -501,7 +551,7 @@ int ses_package(const char * dir) {
             matteValue_t name = matte_value_object_access_index(heap, next, i);
             if (name.binID != MATTE_VALUE_TYPE_STRING) {
                 printf("Error on source %d: value is not a string.\n", i+1);
-                exit(1);
+                goto L_FAIL;
             }
 
             uint32_t byteLen;
@@ -550,6 +600,18 @@ int ses_package(const char * dir) {
     
     matteString_t * outname = matte_string_create_from_c_str("%s/%s", dir, "rom.ses");    
 
-    return dump_file(matte_string_get_c_str(outname), matte_array_get_data(romBytes), matte_array_get_size(romBytes));
+    out = dump_file(matte_string_get_c_str(outname), matte_array_get_data(romBytes), matte_array_get_size(romBytes));
+    
+  L_FAIL:;
+    matte_array_destroy(waveformSizes);
+    matte_array_destroy(waveforms);
+    matte_array_destroy(tileIDs);
+    matte_array_destroy(tiles);
+    matte_array_destroy(paletteIDs);
+    matte_array_destroy(palettes);
+    matte_array_destroy(bytecodeSegmentNames);
+    matte_array_destroy(bytecodeSegmentSizes);
+    matte_array_destroy(bytecodeSegments);
+    return out;
 }
 

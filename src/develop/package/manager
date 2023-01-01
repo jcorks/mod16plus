@@ -1,0 +1,93 @@
+@:View = import(module:'view');
+@:SES = import(module:'SES.Core');
+@:Debug = import(module:'SES.Debug');
+@:class = import(module:'Matte.Core.Class');
+@:Fetcher = import(module:'fetcher');
+@:highlightLine = import(module:'editor_highlight');
+@:completer = import(module:'editor_completion').new();
+@:completerBox = import(module:'editor_completion_visual');
+@:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
+@:Textarea = import(module:'textarea');
+@:Project = import(module:'project');
+@:UILabel = import(module:'ui_label');
+@:UI = import(module:'ui');
+@:UIFlat = import(module:'ui_flat');
+@:UITile = import(module:'ui_tile');
+@:UIScrollable = import(module:'ui_scrollable');
+@:UIButton = import(module:'ui_mousable');
+@:UIRadioLayout = import(module:'ui_radio_layout');
+@:UILayout = import(module:'ui_layout');
+@:UICanvas = import(module:'ui_canvas');
+@:hexDisplay = import(module:'hexdisplay');
+
+
+
+@:Painter = class(
+    inherits : [UI],
+    define:::(this) {
+        
+
+        @:ICON_TILE_ID = Fetcher.Tile.newID();
+        SES.Tile.set(
+            index:ICON_TILE_ID,
+            data: [
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 1, 1, 1, 1, 1, 1, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 1, 1, 1, 1, 1, 1, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 1, 1, 1, 1, 1, 1, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]
+        );
+
+        @:palette = Fetcher.Palette.newID();
+        SES.Palette.set(
+            index:palette,
+            colors: [
+                [1, 1, 1, 1],
+                [1, 1, 1, 1],
+                [1, 1, 1, 1],
+                [1, 1, 1, 1]
+            ]
+        );
+        
+        @:tile = Fetcher.Tile.newID();
+
+
+                
+        this.events.installHooks(events: {
+        });
+
+
+
+        
+        this.interface = {
+            // All the menus within the 
+            // view. Should be an array of 
+            // arrays, where each inner array 
+            // is a string for the menu and a function
+            // called when clicking the actions.
+            menus : {
+                get :: <- [
+                ]
+            },
+
+            icon : {
+                get :: {
+                    return ICON_TILE_ID;
+                }
+            }
+          
+        };
+        
+
+        
+    }
+    
+);
+
+
+
+return Painter;

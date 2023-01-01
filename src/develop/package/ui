@@ -146,6 +146,7 @@ SES.Tile.set(
             show :: {
                 when(shown) empty;
                 events.emit(event:'onShow');      
+                shown = true;
             },
             
             events : {
@@ -155,6 +156,7 @@ SES.Tile.set(
             hide :: {
                 when(!shown) empty;
                 events.emit(event:'onHide');
+                shown = false;
             },
             
             shown : {
@@ -188,12 +190,20 @@ SES.Tile.set(
             },
             
             resize ::(width, height) {
-                when(width == width_ && height == height_) empty;                
-                when(!isRooted()) empty;
+                when(width == width_ && height == height_) empty;  
                 width_ = width;
                 height_ = height;  
                 events.emit(event:'onResize');
             },
+            
+            
+            move ::(x, y) {  
+                when(x == x_ && y == y_) empty;
+                x_ = x;
+                y_ = y;              
+                events.emit(event:'onMove');
+            },
+            
             
             children : {
                 get ::<- [...children]
@@ -206,6 +216,7 @@ SES.Tile.set(
             layer : {
                 get ::<- layer,
                 set ::(value) {
+                    when(layer == value) empty;
                     layer = value;
                     events.emit(event:'onLayerChange');
                 }
@@ -252,14 +263,6 @@ SES.Tile.set(
                 set ::(value => Boolean) <- isRoot = value	
             },
 
-            
-            move ::(x, y) {  
-                when(x == x_ && y == y_) empty;
-                when(!isRooted()) empty;
-                x_ = x;
-                y_ = y;              
-                events.emit(event:'onMove');
-            },
             
             enableBackground : {
                 set::(value) {

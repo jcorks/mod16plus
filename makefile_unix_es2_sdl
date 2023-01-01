@@ -7,4 +7,4 @@ all:
 	cd ./src/api/ && ./apipack 
 	cd ./src/debug/ && ./debugpack 
 	cd ./src/SDL/GLES2/shaders && ./shaderpack
-	gcc -g ./src/*.c ./src/develop/*.c ./src/matte/src/*.c ./src/matte/src/rom/native.c ./src/SDL/*.c ./src/SDL/GLES2/*.c -o ses -lm -lSDL2 -lGLESv2
+	gcc -O2 ./src/*.c ./src/develop/*.c ./src/matte/src/*.c ./src/matte/src/rom/native.c ./src/SDL/*.c ./src/SDL/GLES2/*.c -o ses -lm -lSDL2 -lGLESv2

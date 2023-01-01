@@ -22,7 +22,7 @@
 @:Editor = import(module:'editor');
 @:Colorer = import(module:'colorer');
 @:Painter = import(module:'painter');
-
+@:Manager = import(module:'manager');
 
 @:LAYER_DIALOG = 40;
 @:LAYER_BASE = -50;
@@ -69,13 +69,7 @@ menuButtons->foreach(do:::(i, button) <- button.hide());
 
 @:content = UILayout.new(children:[]);
 @:buttonTop = UIFlat.new(
-    children: [
-        [menuButtons[0], 1/8],
-        [menuButtons[1], 1/8],
-        [menuButtons[2], 1/8],
-        [menuButtons[3], 1/8],
-        [menuButtons[4], 1/8],
-        [menuButtons[5], 1/8]    
+    children: [  
     ]
 );
 @:buttonBot = UIFlat.new(
@@ -87,7 +81,6 @@ menuButtons->foreach(do:::(i, button) <- button.hide());
         [viewButtons[4], 1/5]
     ]
 );
-buttonBot.children->foreach(do:::(key, child) <- child.hide());
 
 
 content.background = '#251a31';
@@ -107,7 +100,6 @@ content.background = '#251a31';
 
 );
 
-
 @currentView;
 @:selectView::(view){
     if (currentView) ::<= {
@@ -118,9 +110,12 @@ content.background = '#251a31';
     content.addChild(child:view, sizeRequest:1);
     view.show();
 
+    buttonTop.clearChildren();
+
 
     @menuItemCount = view.menus->keycount;
     view.menus->foreach(do:::(index, menu) {
+        buttonTop.addChild(child:menuButtons[index], sizeRequest:1/8);
         menuButtons[index].show();
         menuButtons[index].children[0].palette = menu[0];
         menuButtons[index].children[0].tile = menu[1];
@@ -129,7 +124,7 @@ content.background = '#251a31';
         };
     });
     
-    [menuItemCount, 5]->for(do:::(i) {
+    [menuItemCount, 6]->for(do:::(i) {
         menuButtons[i].hide();
     });
 };
@@ -155,6 +150,7 @@ content.background = '#251a31';
 
 return class(
     define:::(this) {
+        @SETUP_STACK = 0;
 
         @:dialogControl = ::<= {
         
@@ -190,7 +186,6 @@ return class(
             dialog.move(x:20, y:30);
 
             @lastChoice = 0;
-            @SETUP_STACK = 0;
             return {
                 setup::(
                     prompt => String,
@@ -211,7 +206,7 @@ return class(
                             dialog.hide();
                             onYes();
                             SETUP_STACK-=1;
-                            if ((SETUP_STACK == 0)) showView();
+                            if (SETUP_STACK == 0) showView();
                         };
                     } else yesButton.hide();
 
@@ -221,7 +216,7 @@ return class(
                             dialog.hide();
                             onNo();
                             SETUP_STACK-=1;
-                            if ((SETUP_STACK == 0)) showView();
+                            if (SETUP_STACK == 0) showView();
                         };
                     } else noButton.hide();
 
@@ -231,7 +226,7 @@ return class(
                             dialog.hide();
                             onOK();
                             SETUP_STACK-=1;
-                            if ((SETUP_STACK == 0)) showView();
+                            if (SETUP_STACK == 0) showView();
                         };
                     } else okButton.hide();
 
@@ -289,7 +284,8 @@ return class(
                     onChoice => Function,
                     items => Object
                 ) {
-                    if(currentView) currentView.hide();
+                    SETUP_STACK+=1;
+                    hideView();
                     dialog.show();
                     promptw.text = prompt;
  
@@ -313,7 +309,8 @@ return class(
                                 lastChoice = str;
                                 print(message:lastChoice);
                                 onChoice(choice:lastChoice);
-                                if (currentView) currentView.show();
+                                SETUP_STACK-=1;
+                                if (SETUP_STACK == 0) showView();
                             };
                         })(str:items[i]);
                         list.addChild(child:button, sizeRequest:1);
@@ -344,6 +341,7 @@ return class(
                     addView(view:Editor.new());
                     addView(view:Colorer.new());
                     addView(view:Painter.new());
+                    addView(view:Manager.new());
                 };
                 @:Project = import(module:'project');
                 this.question(
@@ -364,6 +362,9 @@ return class(
                                 }
                             );
                         } else ::<= {
+                            when(Project.all->keycount == 0)
+                                this.alert(text:'No projects available.',onOkay: ::<-this.start());
+                        
                             this.listDialog(
                                 text: 'Open project:',
                                 items: Project.all,
