@@ -12,13 +12,13 @@ with the look and feel of early generations of game consoles.
 
 It is split into 3 parts:
 
-ses developer:  The UI that generates and modifies ROMs.
-ses: The player that, when given a ROM, allows for playing it 
+ses developer:  The UI that generates and modifies Cartridge ROMs.
+ses: The player that, when given a Cartridge ROM, allows for playing it 
 ses debug: Similar to ses, but enables debugging features, which
 makes it convenient to debug ROMs.
 
 
-ROMS consist of different segments of binary data:
+Cartridge ROMs consist of different segments of binary data:
 - Game bytecode that controls the game's logic
 - Audio waveform data for audio samples
 - Initial tile data 
@@ -54,26 +54,19 @@ There are 2 kinds of tiles:
   than 8x8. Backgrounds can only be translated.
 
 
-The total number of possible tiles able to be 
-stored is 524288 (0x80000). 262144 (0 - 0x3ffff) sprites are exclusive to sprites, 
-and 262144 (0x40000 - 0x8ffff) are exclusive to backgrounds.
-
 Tiles of any kind can be copied and moved around 
-freely, so sprite tile memory can be used as "overflow"
+freely within the same cartridge, so sprite tile memory can be used as "overflow"
 or working tile memory.
 
 Sprites
 -------
 
-A total of 4096 sprites may be onscreen at the same time.
 Each sprite consists of 1 tile and can have transform effects
 (position, rotation, scale) applied to it. This can be 
 useful for particle effects, characters, anything thats 
 more-or-less dynamic.
 
-A total of 65536 sprites may be referenced.
-
-Sprites can use tiles from IDs 0 to 0x40000-1
+Sprites can use tiles from IDs 0 to 0x400-1
 
 
 Backgrounds
@@ -81,8 +74,7 @@ Backgrounds
 
 Backgrounds may be used to render collections of tiles 
 simulaneously. This can be convenient for background visuals,
-large images, and more. A total of 512 backgrounds may be 
-defined and used.
+large images, and more. 
 
 Backgrounds are specifically collections of tiles in 
 a predefined order. Backgrounds are 32 tiles wide and 
@@ -97,7 +89,7 @@ For example:
 And so on.
 
 Backgrounds only use background tiles, which start at 
-tile ID 0x40000 and go until tile 0x80000-1
+tile ID 0x400 and go until tile 0x4400-1
 
 Effects
 -------
@@ -130,6 +122,39 @@ as tools in the game making process. Oscillators serve 2 functions:
 The first is a timer mechanism: oscillators can fire a function once 
 a cycle is complete. The second is a time-sensitive version 
 of a sin() function, which is ideal for creating oscillation-based
-effects. Oscillations may be chained together for advanced effects.
-A total of 1024 oscillators are available for use.
+effects. Oscillators may be chained together for advanced effects.
+
+Cartridges
+----------
+
+SES runs what are called cartridges. Cartridges as a whole refer to 
+both the cartridge ROM file as well as runtime resources which it 
+governs
+
+Each cartridge controls its own resources (sprites, tiles, oscillators, 
+etc.) and uses them independent of other cartridges. Each cartridge's
+capabilities are small, so it is likely that a full game will involve
+multiple cartridges.
+
+Resource limits:
+- Tiles: 1024 
+- Backgrounds: 32
+- Palettes: 512
+- Sprites: 512
+- Oscillators: 32
+- Sounds: 128
+- Sources: 64
+- Sub-cartridges: 128
+
+Sub-Cartridges
+--------------
+
+Because of the limits of each cartridge, one cartridge
+usually cannot get the job done alone. Instead a cartridge can 
+refer to additional sub-cartridges to extend its behavior.
+
+Each cartridge can only refer to its own resources, so sub-cartridges 
+have a special "output" script, which returns an object 
+usable in other cartridges. This makes it easy to split up 
+and reuse pieces of projects in other, additional projects.
 

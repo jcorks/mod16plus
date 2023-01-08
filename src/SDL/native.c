@@ -212,6 +212,9 @@ static SES_SDL sdl = {};
 
 
 
+static matteValue_t ses_sdl_get_calling_bank(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+
+
 static matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 static matteValue_t ses_sdl_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 static matteValue_t ses_sdl_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
@@ -1024,6 +1027,9 @@ void ses_native_commit_rom(matte_t * m) {
     matteVM_t * vm = matte_get_vm(m);
 
     // all 3 modes require activating the core features.
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__get_calling_bank"), 0, ses_sdl_get_calling_bank, NULL);
+
+
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__sprite_attrib"), 2, ses_sdl_sprite_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__engine_attrib"), 3, ses_sdl_engine_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_attrib"), 5, ses_sdl_palette_attrib, NULL);
@@ -1501,4 +1507,12 @@ int ses_native_get_palette_info(
     data[3] = p.front;
     return 1;
 }
+
+static matteValue_t ses_sdl_get_calling_bank(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteValue_t v = matte_heap_new_value(matte_vm_get_heap(vm));
+    matte_value_into_number(matte_vm_get_heap(vm), &v, 0);
+    return v;
+}
+
+
 

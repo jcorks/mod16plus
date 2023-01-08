@@ -1,7 +1,7 @@
 @:class = import(module:'Matte.Core.Class');
 @:SES = import(module:'SES.Core');
-
-
+@:Cart = SES.cartridge;
+@:StringRenderer = SES.subCartridge['StringRenderer0'];
 
 @:ses_native__debug_context_enter = getExternalFunction(name:"ses_native__debug_context_enter");
 @:ses_native__debug_context_query = getExternalFunction(name:"ses_native__debug_context_query");
@@ -16,6 +16,14 @@
 @:Text = class(
     name: 'TextArea',
     define:::(this) {
+    
+
+
+
+
+    
+    
+    
         @needsRedraw;
         @spriteOffset_ = 0;
         @onChange_;
@@ -47,54 +55,31 @@
         @scrollX = 0;
         @scrollY = 0;
         
-        @lastSpriteCount = 0;
         @oscID = oscillatorIDPool;
         oscillatorIDPool+=1;
 
 
+        @lineVisuals = [];
 
 
 
 
         @:drawString::(string, x, y, offset, color) {
-             
-            @spr = offset;
-            
-            @chX = 0;
-            @chY = 0;
-            
-            [0, string->length]->for(do:::(i) {
-                SES.Sprite.set(
-                    index: spr,
-                    tile: string->charCodeAt(index:i),
-                    show:true,
-                    x: chX * GLYPH_WIDTH  + x,
-                    y: chY * GLYPH_HEIGHT + y,
-                    palette: color
-                );
-                spr += 1;
-                chX += 1;
-            });
-            return spr;
+            StringRenderer.drawString(string, x, y, r:color[0], g:color[1], b:color[2]);
         };
 
 
 
         @:clearCanvas:: {
-            [spriteOffset_, lastSpriteCount]->for(do:::(i) {
-                SES.Sprite.set(
-                    index:i,
-                    show:false
-                );
-            });
-
+            StringRenderer.clear();
         };
 
 
         @:MIN ::(a, b) <- if (a < b) a else b;
         @:redrawLines :: {
-            SES.Oscillator.set(index:oscID, enable:true, periodMS:17, onCycle::{
-                @spr = spriteOffset_;
+            Cart.Oscillator.set(index:oscID, enable:true, periodMS:17, onCycle::{
+                StringRenderer.clear();
+
                 @i = 0;
                 [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
                     @:line = lines[index];
@@ -114,30 +99,24 @@
                     i+=1;
                 });
                 
-                [spr, lastSpriteCount]->for(do:::(i) {
-                    SES.Sprite.set(
-                        index:i,
-                        show:false
-                    );
-                });                    
                 
                 // cursor
                 if (inputCallbackID != empty) ::<= {
-                    SES.Sprite.set(
+                    /*Cart.Sprite.set(
                         index: spr,
                         tile: 0,
                         show:true,
                         layer: 0,
                         x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
                         y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
-                        effect: SES.Sprite.EFFECTS.Color,
+                        effect: Cart.Sprite.EFFECTS.Color,
                         palette:defaultPalette_
-                    );                    
-                    lastSpriteCount = spr+1;
+                    );*/                    
+                    //lastSpriteCount = spr+1;
                 } else 
-                    lastSpriteCount = spr;
+                    //lastSpriteCount = spr;
 
-                SES.Oscillator.set(index:oscID, enable:false);
+                Cart.Oscillator.set(index:oscID, enable:false);
             });
 
                 
@@ -706,9 +685,9 @@
             
             
             
-            setColor ::(paletteID => Number, y => Number) {
+            setColor ::(rgbArray => Number, y => Number) {
                 when(y < 0 || y >= colors->keycount) empty;
-                colors[y] = paletteID;
+                colors[y] = rgbArray;
             }
 
         };
@@ -747,8 +726,8 @@
     
         display = Text.new();
         display. = {
-            widthChars: (SES.resolutionWidth / 6)->floor,
-            heightChars:((SES.resolutionHeight-3) / 8)->floor,
+            widthChars: (Cart.resolutionWidth / 6)->floor,
+            heightChars:((Cart.resolutionHeight-3) / 8)->floor,
             editable : false,
             scrollable : true
         };
@@ -760,17 +739,17 @@
             heightChars: 1,
             editable : false,
             x: 0,
-            y: SES.resolutionHeight - 8,            
+            y: Cart.resolutionHeight - 8,            
             widthChars: 1,
         };         
 
         entry = Text.new(spriteOffset:4000, defaultPalette:3);
         entry. = {
-            widthChars: (SES.resolutionWidth / 6)->floor,
+            widthChars: (Cart.resolutionWidth / 6)->floor,
             heightChars: 1,
             editable : true,
             x: 6,
-            y: SES.resolutionHeight - 8               
+            y: Cart.resolutionHeight - 8               
         };
 
 
@@ -791,7 +770,7 @@
 
 
         // normal                
-        SES.Palette.set(
+        Cart.Palette.set(
             index: 0,
             colors: [
                 [0, 0, 0],
@@ -802,7 +781,7 @@
         );
 
         // code
-        SES.Palette.set(
+        Cart.Palette.set(
             index: 1,
             colors: [
                 [0, 0, 0],
@@ -813,7 +792,7 @@
         );
 
         // error
-        SES.Palette.set(
+        Cart.Palette.set(
             index: 2,
             colors: [
                 [0, 0, 0],
@@ -824,7 +803,7 @@
         );
 
         // enter
-        SES.Palette.set(
+        Cart.Palette.set(
             index: 3,
             colors: [
                 [0, 0, 0],
@@ -863,7 +842,7 @@
 };
 
 return class(
-    name : 'SES.Debug',
+    name : 'Cart.Debug',
     define::(this) {
         this.interface = {
             'breakpoint' : debug
