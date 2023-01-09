@@ -97,43 +97,14 @@ typedef struct {
 } SES_InputCallbackSet;
 
 
-typedef struct {
-    // locked function from user
-    matteValue_t function;
-
-    // the length of the alarm wait time in MS
-    uint32_t lengthMS;
-    
-    // when the oscillator was made active
-    uint32_t startMS;
-    
-    uint32_t endMS;
-
-    // whether the oscillator is active
-    int active;
-    
-    // sin for the current 
-    float sinValue;
-
-} SES_Oscillator;
 
 
-typedef struct {
-    // all oscillators
-    SES_Oscillator all[OSCILLATOR_MAX];
-    
-    // array of active oscillators
-    SES_Oscillator * active[OSCILLATOR_MAX];
-    
-    // number of active oscillators;
-    uint32_t activeCount;
 
-} SES_OscillatorContext;
 
 
 typedef struct SES_ActiveSprite SES_ActiveSprite;
 
-
+/*
 typedef struct {
 
     // array of user callbacks for input.
@@ -169,22 +140,26 @@ typedef struct {
 
 
 } SES_Context;
+*/
+
+
+
+
 
 typedef struct {
     // SDL window
     SDL_Window    * window;
     
-    // SDL GLES context
-    SDL_GLContext * ctx;
 
     
     matteVM_t * vm;
 
-    
-    SES_Context main;
-    
-    SES_Context aux;
-    
+
+
+
+
+    // every cartridge has a 
+    sesCartridge_t * mainCart;
     
     // delay before updating the next frame
     uint32_t frameUpdateDelayMS;
@@ -212,212 +187,36 @@ static SES_SDL sdl = {};
 
 
 
-static matteValue_t ses_sdl_get_calling_bank(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_api_get_calling_bank(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
 
-static matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_sdl_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_sdl_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_sdl_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_sdl_input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_sdl_audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_api_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_api_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_api_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_api_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_api_input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_api_audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_api_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
-static matteValue_t ses_sdl_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_sdl_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-
-
-
-
-
-/////// EXTERNAL OPENGL INTERFACE  
-
-
-// initializes the OpenGL context and window.
-extern void ses_sdl_gl_init(SDL_Window ** window, SDL_GLContext ** context);
-
-
-
-// Sets a tile ID as the "working tile"
-// for either writing or reading.
-extern void ses_sdl_gl_bind_tile(uint32_t id);
-
-// Sets a texel / pixel for the currently bound 
-// tile ID.
-// location should be a number from 0 to 63 (the 
-// tile to edit) and value should be the new 
-// value to derive the color from the palette, from 0 to 4.
-extern void ses_sdl_gl_set_tile_pixel(uint8_t location, uint8_t value);
-
-// Gets the current texel/pixel from the currently bound tile ID.
-// location should be a number from 0 to 63
-extern uint8_t ses_sdl_gl_get_tile_pixel(uint8_t location);
-
-// Copies tile data from another tile into the bound tile.
-extern void ses_sdl_gl_copy_from(uint32_t otherTileID);
-
-// Unbinds a tile, committing a tiles new data if edited.
-extern void ses_sdl_gl_unbind_tile();
-
-extern void ses_sdl_gl_render_begin();
-
-extern void ses_sdl_gl_render_finish_layer();
-
-extern void ses_sdl_gl_render_sprite(
-    int x, int y,
-    float scaleX, float scaleY,
-    float centerX, float centerY,
-    float rotation,
-    int effect,
-
-    sesVector_t back,
-    sesVector_t midBack,
-    sesVector_t midFront,
-    sesVector_t front,
-            
-    uint32_t id
-);
-
-extern void ses_sdl_gl_render_background(
-    int x, int y,
-
-    int effect,
-
-    sesVector_t back,
-    sesVector_t midBack,
-    sesVector_t midFront,
-    sesVector_t front,
-            
-    uint32_t id
-);
+static matteValue_t ses_api_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_api_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
 
 
 
-extern int ses_sdl_gl_get_render_width();
-
-extern int ses_sdl_gl_get_render_height();
- 
-
-extern void ses_sdl_gl_render_end();
 
 
 
-////////
 
-
-
-static void ses_sdl_render() {
+static void ses_api_render() {
     // re-sort sprites and bgs into layer buckets;
-    ses_sdl_gl_render_begin();
-
-    SES_Sprite * iter = sdl.main.activeSprites;
-    while(iter) {
-        SES_GraphicsLayer * layer = sdl.main.layers+iter->layer-(LAYER_MIN);
-        matte_array_push(layer->sprites, iter);
-        iter = iter->next;
-    }
-
-
-
-    SES_Background * bg = matte_array_get_data(sdl.main.bgs);
-    int i, n;
-    int len = matte_array_get_size(sdl.main.bgs);
-    for(i = 0; i < len; ++i, bg++) {
-        if (bg->enabled == 0) continue;
-
-
-        SES_GraphicsLayer * layer = sdl.main.layers+bg->layer-(LAYER_MIN);
-        matte_array_push(layer->bgs, bg);
-    }
-
-
-
-
-    // draw each layer in order
-    for(i = 0; i < 128; ++i) {
-        SES_GraphicsLayer * layer = sdl.main.layers+i;
-    
-        // start with backgrounds
-        uint32_t lenBackgrounds = matte_array_get_size(layer->bgs);
-        if (lenBackgrounds) { 
-            for(n = 0; n < lenBackgrounds; ++n) {        
-                bg = matte_array_at(layer->bgs, SES_Background *, n);
-            
-                SES_Palette p = {};
-                if (bg->palette < matte_array_get_size(sdl.main.palettes)) {
-                    p = matte_array_at(sdl.main.palettes, SES_Palette, bg->palette);
-                }
-                
-                ses_sdl_gl_render_background(
-                    bg->x, bg->y,
-                    bg->effect,
-                    
-                    p.back,
-                    p.midBack,
-                    p.midFront,
-                    p.front,
-                    
-                    bg->id
-                );
-
-            }
-            matte_array_set_size(layer->bgs, 0);
-
-        }
-        // then do sprites
-        len = matte_array_get_size(layer->sprites);
-        if (!len) {
-            if (lenBackgrounds) ses_sdl_gl_render_finish_layer();
-            continue;
-        }
-        for(n = 0; n < len; ++n) {        
-            iter = matte_array_at(layer->sprites, SES_Sprite *, n);
-        
-            SES_Palette p = {};
-            if (iter->palette < matte_array_get_size(sdl.main.palettes)) {
-                p = matte_array_at(sdl.main.palettes, SES_Palette, iter->palette);
-            }
-
-            
-            ses_sdl_gl_render_sprite(
-                iter->x, iter->y,
-                iter->scaleX, iter->scaleY,
-                iter->centerX, iter->centerY,
-                iter->rotation,
-                iter->effect,
-                
-                p.back,
-                p.midBack,
-                p.midFront,
-                p.front,
-                
-                iter->tile
-            );
-        }
-        ses_sdl_gl_render_finish_layer();
-        matte_array_set_size(layer->sprites, 0);
-    }
-
-    // commit to framebuffer 0    
-    ses_sdl_gl_render_end();
+    ses_cartridge_push_graphics(ses.mainCart, ses.graphics);
+    ses_graphics_context_render(ses.graphics);
 }
 
 
 
 
-static uint32_t ses_sdl_emit_frame_event(uint32_t interval, void * param) {
-    
-    SDL_Event event;
-    SDL_UserEvent userevent = {};
-
-    userevent.type = SDL_USEREVENT;
-    event.type = SDL_USEREVENT;
-    event.user = userevent;
-
-    SDL_PushEvent(&event);    
-    return sdl.frameUpdateDelayMS;
-}
 
 
 typedef enum {
@@ -459,41 +258,7 @@ matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteV
         SES_Sprite * spr = &sdl.main.sprites[id];
         switch((int)matte_value_as_number(heap, *flag)) {
           case SESNSA_ENABLE: {
-            int enabled = matte_value_as_number(heap, *value);
-            if (spr->enabled == enabled) break;
-            
-            
-            spr->enabled = enabled;
-            if (enabled) {
-                if (sdl.main.activeSpriteCount > SPRITE_MAX) {
-                    matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Maximum number of sprites active reached."));                
-                    return matte_heap_new_value(heap);
-                }
-
-                // take from inactive list and place as new head 
-                // to main active list.
-                spr->prev = NULL;
-                spr->next = sdl.main.activeSprites;
-                if (spr->next) {
-                    spr->next->prev = spr;
-                }
-                sdl.main.activeSprites = spr;
-                
-            } else {
-                if (spr == sdl.main.activeSprites) {
-                    if (sdl.main.activeSprites->next)
-                        sdl.main.activeSprites->next->prev = NULL;
-                    sdl.main.activeSprites = spr->next;
-                } else {
-                    if (spr->next) {
-                        spr->next->prev = spr->prev;
-                    }
-                    if (spr->prev) {
-                        spr->prev->next = spr->next;
-                    }
-                }
-            }
-
+            ses_cartridge_enable_sprite(cart, id, matte_value_as_number(heap, *value))
             break;
           }  
           case SESNSA_ROTATION:
@@ -584,30 +349,7 @@ matteValue_t ses_sdl_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const ma
 
         switch((int)matte_value_as_number(heap, *flag)) {
           case SESNOA_ENABLE:
-            if (osc->active && matte_value_as_boolean(heap, *value)) {
-                // resets the oscillator when re-enabled
-                osc->startMS = SDL_GetTicks();
-                osc->endMS = osc->lengthMS + osc->startMS;                
-            } else if (matte_value_as_boolean(heap, *value) != osc->active) {
-                osc->active = matte_value_as_boolean(heap, *value);            
-                if (osc->active) {
-                    sdl.main.osc.active[sdl.main.osc.activeCount++] = osc;
-                    osc->startMS = SDL_GetTicks();
-                    osc->endMS = osc->lengthMS + osc->startMS;
-                } else {
-                    int found = 0;
-                    for(n = 0; n < sdl.main.osc.activeCount-1; ++n) {
-                        if (osc_get_index(sdl.main.osc.active[n]) == id) {
-                            found = 1;
-                        } 
-                        
-                        if (found) {
-                            sdl.main.osc.active[n] = sdl.main.osc.active[n+1];
-                        }
-                    }
-                    sdl.main.osc.activeCount--;
-                }
-            }
+            ses_cartridge_enable_oscillator(ses.mainCart, id, matte_value_as_boolean(heap, *value));
             break;
             
           case SESNOA_PERIODMS:
@@ -1400,27 +1142,7 @@ int ses_native_update(matte_t * m) {
         }
 
         // finally, check alarms
-        int i;
-        int len = sdl.main.osc.activeCount;
-        uint32_t ticks = SDL_GetTicks();
-        for(i = 0; i < len; ++i) {
-            SES_Oscillator * alarm = sdl.main.osc.active[i];
-            if (ticks >= alarm->endMS) {
-                if (alarm->function.binID) {
-                    matte_vm_call(
-                        sdl.vm,
-                        alarm->function,
-                        matte_array_empty(),
-                        matte_array_empty(),
-                        NULL
-                    );
-                }
-
-                alarm->startMS = ticks;
-                alarm->endMS = ticks + alarm->lengthMS;
-            }
-        }
-        
+        ses_cartridge_poll_oscillators(ses.mainCart, SDL_GetTicks());
 
     }
 
@@ -1432,12 +1154,12 @@ int ses_native_update(matte_t * m) {
 }
 
 
-int ses_native_main_loop(matte_t * m) {
-    while(ses_native_update(m)) {}
+int ses_api_main_loop(matte_t * m) {
+    while(ses_api_update(m)) {}
     return 0;
 }
 
-
+/*
 int ses_native_get_sprite_info(
     uint32_t index,
     
@@ -1513,6 +1235,6 @@ static matteValue_t ses_sdl_get_calling_bank(matteVM_t * vm, matteValue_t fn, co
     matte_value_into_number(matte_vm_get_heap(vm), &v, 0);
     return v;
 }
-
+*/
 
 
