@@ -167,34 +167,21 @@
             this.interface = {
             
                 // data is a plain array of numbers, 0 - 4
-                set ::(index => Number, data => Object) {
-                    ses_native__tile_attrib(a:index, b:ATTRIBS.BIND);
-                    [0, 64]->for(do:::(i) {
-                        ses_native__tile_attrib(
-                            a:i,
-                            b:ATTRIBS.SETTEXEL,
-                            c:data[i] => Number
-                        );
-                    });
-                    ses_native__tile_attrib(a:index, b:ATTRIBS.UNBIND);
-
+                set ::(index => Number, data => Object) {                    
+                    ses_native__tile_attrib(
+                        a:index,
+                        b:ATTRIBS.SET,
+                        c:data
+                    );
                 },
                 
                 
                 get ::(index => Number) {
-                    @:out = [];
-                    ses_native__tile_attrib(a:index, b:ATTRIBS.BIND);
-                    [0, 64]->for(do:::(i) {
-                        out->push(value:ses_native__tile_query(a:i));
-                    });
-                    ses_native__tile_attrib(a:index, b:ATTRIBS.UNBIND);
-                    return out;
+                    return ses_native__tile_query(id);
                 },
                 
                 copy ::(to => Number, from => Number) {
-                    ses_native__tile_attrib(a:to, b:ATTRIBS.BIND);
-                    ses_native__tile_attrib(a:from, b:ATTRIBS.COPY);
-                    ses_native__tile_attrib(a:to, b:ATTRIBS.UNBIND);
+                    ses_native__tile_attrib(a:from, b:ATTRIBS.COPY, b:to);
                 }
 
             };

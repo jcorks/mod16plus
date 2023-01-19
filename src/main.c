@@ -19,7 +19,7 @@
 
 
 #include "api/api_rom"
-#include "debug/debug_rom"
+//#include "debug/debug_rom"
 static int IS_DEBUG = 0;
 static uint8_t * ses_native__import(
     matteVM_t * vm,
@@ -35,13 +35,16 @@ static uint8_t * ses_native__import(
         uint8_t * out = malloc(API_ROM_SIZE);
         memcpy(out, API_ROM_DATA, API_ROM_SIZE);
         return out;       
-    } else if (IS_DEBUG && matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "SES.Debug"))) {
+    } 
+    /*
+    else if (IS_DEBUG && matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "SES.Debug"))) {
         *dataLength = DEBUG_ROM_SIZE;
         *preexistingFileID = matte_vm_get_new_file_id(vm, importPath);
         uint8_t * out = malloc(DEBUG_ROM_SIZE);
         memcpy(out, DEBUG_ROM_DATA, DEBUG_ROM_SIZE);
         return out;       
     }
+    */
     
     // else, linear search for proper name.
     uint32_t i;
@@ -129,9 +132,9 @@ developRom = 1;
 
 
 
-
     // dump rom to memory and hook import
-    int result = ses_unpack_rom(romBytes, romLength); 
+    int result = -1;
+    sesROM_t * rom = ses_unpack_rom(romBytes, romLength, &result); 
     if (result != 0) {
         printf("Unpacking ROM resulted in error:\n");
         switch(result) {
@@ -158,7 +161,7 @@ developRom = 1;
     }
 
     // tell the implementing backend to process the rom.
-    ses_native_commit_rom(m);
+    ses_native_commit_rom(rom, m);
     
     
     // next link up import
@@ -178,6 +181,7 @@ developRom = 1;
     );    
 
     if (IS_DEBUG) {
+        /*
         ses_native_swap_context();
         matte_vm_import(
             vm,
@@ -185,6 +189,7 @@ developRom = 1;
             matte_heap_new_value(matte_vm_get_heap(vm))
         );    
         ses_native_swap_context();
+        */
     }
 
     

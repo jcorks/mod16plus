@@ -4,9 +4,10 @@
 #include "matte/src/matte_vm.h"
 #include "matte/src/matte_heap.h"
 #include "linear.h"
+#include "rom.h"
 
 
-void ses_native_commit_rom();
+void ses_native_commit_rom(sesROM_t *, matte_t *);
 int ses_native_main_loop(matte_t *);
 // normally called for you
 // returns whether to continue;

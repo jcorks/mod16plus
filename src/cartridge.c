@@ -1,13 +1,13 @@
 #include "cartridge.h"
-
+#include <stdlib.h>
 
 
 typedef struct {
     // all oscillators
-    SES_Oscillator all[SES_CARTRIDGE__MAX_OSCILLATOR_COUNT];
+    sesCartridge_Oscillator_t all[SES_CARTRIDGE__MAX_OSCILLATOR_COUNT];
     
     // array of active oscillators
-    SES_Oscillator * active[SES_CARTRIDGE__MAX_OSCILLATOR_COUNT];
+    sesCartridge_Oscillator_t * active[SES_CARTRIDGE__MAX_OSCILLATOR_COUNT];
     
     // number of active oscillators;
     uint32_t activeCount;
@@ -15,10 +15,11 @@ typedef struct {
 } sesCartridge_OscillatorContext_t;
 
 struct sesCartridge_t {
+    sesGraphicsContext_Storage_t * storage;
 
     // an array of SES_Sprite, representing all accessed 
     // sprites.
-    SES_Sprite sprites[SES_CARTRIDGE__MAX_SPRITE_COUNT];   
+    sesGraphicsContext_Sprite_t sprites[SES_CARTRIDGE__MAX_SPRITE_COUNT];   
 
 
     // all oscillators
@@ -26,17 +27,18 @@ struct sesCartridge_t {
     
     // linked list of active sprites
     // This ref is the head (prev == NULL)
-    SES_Sprite * activeSprites;
+    sesGraphicsContext_Sprite_t * activeSprites;
 };
+
+
 
 
 void ses_cartridge_enable_sprite(sesCartridge_t * cart, uint16_t index, int enabled) {
     if (index >= SES_CARTRIDGE__MAX_SPRITE_COUNT) return;
     
-    sesCartridge_Sprite_t * spr = &cart->sprites[index];
+    sesGraphicsContext_Sprite_t * spr = &cart->sprites[index];
 
-    int enabled = matte_value_as_number(heap, *value);
-    if (spr->enabled == enabled) break;
+    if (spr->enabled == enabled) return;;
     
     
     spr->enabled = enabled;
@@ -117,7 +119,7 @@ void ses_cartridge_poll_oscillators(sesCartridge_t * cart, double ticks) {
     int i;
     int len = sdl.main.osc.activeCount;
     for(i = 0; i < len; ++i) {
-        SES_Oscillator * alarm = sdl.main.osc.active[i];
+        sesCartridge_OscillatorContext_t * alarm = sdl.main.osc.active[i];
         if (ticks >= alarm->endMS) {
             if (alarm->function.binID) {
                 matte_vm_call(
@@ -139,24 +141,22 @@ void ses_cartridge_poll_oscillators(sesCartridge_t * cart, double ticks) {
 
 
 sesCartridge_t * ses_cartridge_push_graphics(sesCartridge_t * cart, sesGraphicsContext_t * ctx) {
-    sesCartridge_Sprite_t * iter = cart->activeSprites;
+    sesGraphicsContext_Sprite_t * iter = cart->activeSprites;
     while(iter) {
-        sesGraphicsContext_Layer_t * layer = ses_graphics_context_get_layer(ctx, iter->layer-(LAYER_MIN));
-        ses_graphics_context_layer_add_sprite(layer, iter);
+        ses_graphics_context_add_sprite(ctx, iter, cart->storage);
         iter = iter->next;
     }
 
 
 
-    sesCartridge_Background_t * bg = matte_array_get_data(cart->bgs);
+    sesGraphicsContext_Background_t * bg = matte_array_get_data(cart->bgs);
     int i, n;
     int len = matte_array_get_size(sdl.main.bgs);
     for(i = 0; i < len; ++i, bg++) {
         if (bg->enabled == 0) continue;
 
 
-        sesGraphicsContext_Layer_t * layer = ses_graphics_context_get_layer(ctx, bg->layer-(LAYER_MIN));
-        ses_graphics_context_layer_add_background(layer->bgs, bg);
+        ses_graphics_context_add_background(ctx, bg, cart->storage);
     }
 }
 

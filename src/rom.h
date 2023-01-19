@@ -38,7 +38,7 @@ typedef enum {
 // bytecode blobs of Matte logic that the games themselves 
 // import.
 // 
-sesROM_t * ses_rom_unpack(const uint8_t * romBytes, uint32_t romLength, SESUnpackError_t * error);
+sesROM_t * ses_rom_unpack(const uint8_t * romBytes, uint32_t romLength, sesROM_UnpackError_t * error);
 
 
 
@@ -73,14 +73,14 @@ sesROM_t * ses_rom_create(
     // bytecode.
     matteArray_t * bytecodeSegmentNames, // matteString_t *
     matteArray_t * bytecodeSegmentSizes, // uint32_t
-    matteArray_t * bytecodeSegments // uint8_t *
+    matteArray_t * bytecodeSegments, // uint8_t *
     
     // Pre-compiled SES cartridge ROMs to be accessible as 
     // sub-cartridges. Each subcartridge is named, and each 
     // rom is assumed to have been made with ses_rom_pack() 
     matteArray_t * subcartridgeNames, // matteString_t *
     matteArray_t * subcartridgeROMSizes, // uint32_t 
-    matteArray_t * subcartridgeROMs, // uint8_t *
+    matteArray_t * subcartridgeROMs // uint8_t *
 );
 
 
