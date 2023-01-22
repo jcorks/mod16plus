@@ -1,4 +1,5 @@
-@:Cart = SES.cartridge;
+@:SES = import(module:'SES.Core');
+@:Cart = SES.Cartridge;
 
 
 // Sets ascii tiles 
@@ -1397,10 +1398,14 @@ Cart.Tile.set(
 
 
 @count = 0;
-@:free = [];
+@free = [];
 
 @countPalettes = 0;
 @:freePalettes = [];
+
+@:GLYPH_HEIGHT = 8;
+@:GLYPH_WIDTH = 6;
+
 
 return {
     create::(string, x, y, r, g, b) {
@@ -1408,7 +1413,7 @@ return {
         @refs = {
             sprites : [],
             palette : if (freePalettes->keycount) 
-                            freePalettes->pop()
+                            freePalettes->pop
                       else ::<= {
                             count += 1;
                             return count - 1;
@@ -1430,7 +1435,7 @@ return {
         @chY = 0;
                 
         [0, string->length]->for(do:::(i) {
-            @spr = if (free->keycount) free->pop() else ::<= {
+            @spr = if (free->keycount) free->pop else ::<= {
                 count += 1;
                 return count - 1;
             };
@@ -1440,17 +1445,17 @@ return {
                 show:true,
                 x: chX * GLYPH_WIDTH  + x,
                 y: chY * GLYPH_HEIGHT + y,
-                palette: color
+                palette: refs.palette
             );
             chX += 1;
-            refs->push(value:spr);
+            refs.sprites->push(value:spr);
         });
         return refs;
     },
     
     
     destroy::(refs) {
-        refs->foreach(do:::(i, spr) {
+        refs.sprites->foreach(do:::(i, spr) {
             Cart.Sprite.set(
                 index: spr,
                 show:false

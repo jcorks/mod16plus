@@ -135,7 +135,7 @@ void ses_graphics_context_render(sesGraphicsContext_t * ctx) {
             continue;
         }
         for(n = 0; n < len; ++n) {        
-            FullSprite_t * iter = matte_array_at(layer->sprites, FullSprite_t *, n);
+            FullSprite_t * iter = &matte_array_at(layer->sprites, FullSprite_t, n);
             if (iter->data.tile >= SES_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) continue;
             const sesGraphicsContext_Palette_t * p = ses_graphics_context_storage_get_palette(iter->src, iter->data.palette);
             if (!p) continue;                

@@ -326,7 +326,7 @@ matteValue_t ses_package_get_json(matte_t * m, const char * dir) {
         
     
 
-    matteString_t * fullpath = matte_string_create_from_c_str("%s/%s", dir, "package.json");
+    matteString_t * fullpath = matte_string_create_from_c_str("%s/%s", dir, "cartridge.json");
     uint32_t srclen = 0;
     uint8_t * srcbytes = dump_bytes(matte_string_get_c_str(fullpath), &srclen);
     if (srclen == 0 || srcbytes == NULL)
@@ -360,10 +360,30 @@ matteValue_t ses_package_get_json(matte_t * m, const char * dir) {
 }
 
 
+void ses_package_debug_callback(
+    matteVM_t * vm, 
+    matteVMDebugEvent_t event, 
+    uint32_t file, 
+    int lineNumber, 
+    matteValue_t value, 
+    void *  userdata
+) {
+    if (event == MATTE_VM_DEBUG_EVENT__ERROR_RAISED) {
+        printf(
+            "ERROR: %s\n",
+            matte_string_get_c_str(matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), matte_value_as_string(matte_vm_get_heap(vm), value)))            
+        );
+    }
+}
+
+
 int ses_package(const char * dir) {
     matte_t * m = matte_create();
     matteVM_t * vm = matte_get_vm(m);
     matteHeap_t * heap = matte_vm_get_heap(vm);
+    
+    
+    matte_vm_set_debug_callback(vm, ses_package_debug_callback, NULL);
     
     
     matteValue_t json = ses_package_get_json(m, dir);

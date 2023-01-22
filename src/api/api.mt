@@ -147,10 +147,8 @@
 // preset tiles are loaded from the rom
 @:Tile = ::<= {
     @:ATTRIBS = {
-        BIND       : 0,
-        SETTEXEL   : 1,
-        UNBIND     : 2,
-        COPY       : 3
+        SET        : 0,
+        COPY       : 1
     };
 
     return class(
@@ -179,7 +177,7 @@
                 
                 
                 get ::(index => Number) {
-                    return ses_native__tile_query(a:cartID_, b:id);
+                    return ses_native__tile_query(a:cartID_, b:index);
                 },
                 
                 copy ::(to => Number, from => Number) {
@@ -838,13 +836,7 @@
 };
 
 
-@:Links = ::<= {
 
-    return class(
-        
-    
-    );
-};
 
 @:SES = class(
     name: 'SES',
@@ -912,7 +904,6 @@
                         Background: Background.new(cartID:cart),
                         Audio     : AudioStore.new(cartID:cart),
                         Oscillator: Oscillator.new(cartID:cart),
-                        Links     : Links.new(cartID:cart),
                         
                         subCartridge::(name => String) {
                             return ses_native__get_sub_cartridge_main(a:cart, b:name);

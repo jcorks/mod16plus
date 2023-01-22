@@ -90,7 +90,7 @@ int main(int argc, char ** argv) {
     // For develop, the UI is a preset ROM.
     const uint8_t * romBytes = NULL;
     uint32_t romLength = 0;
-    if (!strcmp(argv[1], "package")) {
+    if (!strcmp(argv[1], "package")) {    
         return ses_package(argv[2]);
         
     } else if (!strcmp(argv[1], "develop")) {

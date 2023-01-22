@@ -287,9 +287,7 @@ matteValue_t ses_native_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const
             
             
           case SESNOA_GET: {
-            uint32_t prog = (osc->endMS - ses_window_get_ticks(ses.window)) / (double)osc->lengthMS;
-            if (prog < 0) prog = 0;
-            if (prog > 1) prog = 1;
+            float prog = (osc->endMS - ses_window_get_ticks(ses.window)) / (double)osc->lengthMS;
             double frac = 0.5*(1+sin((prog) * (2*M_PI)));
             matteValue_t fracVal = matte_heap_new_value(heap);
             matte_value_into_number(heap, &fracVal, frac);
@@ -590,7 +588,7 @@ matteValue_t ses_native_has_boot_context(matteVM_t * vm, matteValue_t fn, const 
     matte_value_into_boolean(
         matte_vm_get_heap(vm), 
         &v, 
-        ses_cartridge_get_active_boot_context() == NULL
+        ses_cartridge_get_active_boot_context() != NULL
     );
     return v;
 
@@ -605,7 +603,7 @@ matteValue_t ses_native_get_source(matteVM_t * vm, matteValue_t fn, const matteV
     
     
     matteValue_t out = matte_heap_new_value(matte_vm_get_heap(vm));
-    if (cart) return out;
+    if (!cart) return out;
     return ses_cartridge_get_source(cart, name);
 }
 
@@ -623,7 +621,7 @@ matteValue_t ses_native_get_sub_cartridge_main(matteVM_t * vm, matteValue_t fn, 
     
     
     matteValue_t out = matte_heap_new_value(matte_vm_get_heap(vm));
-    if (cart) return out;
+    if (!cart) return out;
     return ses_cartridge_get_main(cart);
 }
 

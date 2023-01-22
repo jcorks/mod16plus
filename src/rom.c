@@ -104,7 +104,7 @@ sesROM_t * ses_rom_unpack(const uint8_t * romBytes, uint32_t romLength, sesROM_U
     uint32_t tileCount            = SES_CHOMP(uint32_t);
     uint32_t paletteCount         = SES_CHOMP(uint32_t);
     uint32_t bytecodeSegmentCount = SES_CHOMP(uint32_t);
-    uint32_t subcartridgeCount = SES_CHOMP(uint32_t);
+    uint32_t subcartridgeCount    = SES_CHOMP(uint32_t);
     
     
     
@@ -376,6 +376,8 @@ matteArray_t * ses_rom_pack(const sesROM_t * rom) {
         SESBytecodeSegment seg = matte_array_at(rom->bytecodeSegments, SESBytecodeSegment, i);
     
         uint32_t length = seg.length;
+        PUSHCOPY(uint32_t, length);
+
         matteString_t * name = seg.name;
         uint32_t nameLen = matte_string_get_byte_length(name);
         PUSHCOPY(uint32_t, nameLen);
@@ -398,6 +400,8 @@ matteArray_t * ses_rom_pack(const sesROM_t * rom) {
         SESSubCartridge sub = matte_array_at(rom->subcartridges, SESSubCartridge, i);
     
         uint32_t length = sub.length;
+        PUSHCOPY(uint32_t, length);
+
         matteString_t * name = sub.name;
         uint32_t nameLen = matte_string_get_byte_length(name);
         PUSHCOPY(uint32_t, nameLen);
@@ -432,7 +436,6 @@ void ses_rom_destroy(sesROM_t * rom) {
     for(i = 0; i < len; ++i) {
         free(matte_array_at(rom->waveforms, SESWaveform, i).data);
     }
-    matte_array_destroy(rom->waveforms);
     matte_array_destroy(rom->waveforms);
     matte_array_destroy(rom->tiles);
     matte_array_destroy(rom->palettes);

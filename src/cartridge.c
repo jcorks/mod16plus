@@ -88,9 +88,17 @@ sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphic
     cart->sourceValues = calloc(ses_rom_get_bytecode_segment_count(rom), sizeof(matteValue_t));
     cart->sourcesRun = calloc(ses_rom_get_bytecode_segment_count(rom), 1);
     
+    
+    
     matte_array_push(ALL_CARTRIDGES, cart);
     
     int i;
+    for(i = 0; i < SES_CARTRIDGE__MAX_SPRITE_COUNT; ++i) {
+        cart->sprites[i].scaleX = 1;
+        cart->sprites[i].scaleY = 1;
+    }
+    
+    
     matteString_t * name = matte_string_create();
     for(i = 0; i < ses_rom_get_subcartridge_rom_count(rom); ++i) {
         uint32_t bytelen;

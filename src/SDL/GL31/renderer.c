@@ -262,6 +262,11 @@ int ses_sd_gl_new_background_texture(sesSDLGL_t * gl) {
 
 
 void ses_sdl_gl_set_sprite_tile(sesSDLGL_t * gl, int tileTexture, uint16_t index, const sesGraphicsContext_Tile_t * data) {
+    sesGraphicsContext_Tile_t converted = {};
+    int i;
+    for(i = 0; i < 64; ++i) {
+        converted.data[i] = data->data[i] * (255 / 4);
+    }
 
     glBindTexture(GL_TEXTURE_2D, tileTexture);
     glTexSubImage2D(
@@ -273,7 +278,7 @@ void ses_sdl_gl_set_sprite_tile(sesSDLGL_t * gl, int tileTexture, uint16_t index
         SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS,
         GL_RED,
         GL_UNSIGNED_BYTE,
-        data->data // always 64 bytes
+        converted.data // always 64 bytes
     );
     glBindTexture(GL_TEXTURE_2D, 0);  
 }
@@ -423,7 +428,7 @@ void ses_sdl_gl_render_sprite(
     };
     SES_GLSpriteBatch * batch = matte_table_find_by_int(gl->spriteBatches, SPRITE_BATCH_KEY(effect, spriteTexture));
     if (batch == NULL) {
-        if (matte_array_get_size(gl->spriteBatchPool)) {
+        if (!matte_array_get_size(gl->spriteBatchPool)) {
             batch = calloc(1, sizeof(SES_GLSpriteBatch));
             batch->vertices = matte_array_create(sizeof(SES_VBOvertex));
         } else {
@@ -432,6 +437,7 @@ void ses_sdl_gl_render_sprite(
         }
         batch->effect = effect;
         batch->texture = spriteTexture;
+        matte_table_insert_by_int(gl->spriteBatches, SPRITE_BATCH_KEY(effect, spriteTexture), batch);
     }
     matte_array_push_n(batch->vertices, vboData, 6);
 }
