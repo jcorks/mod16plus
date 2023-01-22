@@ -1,6 +1,9 @@
 {
     "sources" : [
         "main",
-        "output"
+    ],
+    
+    "subcartridges" : [
+        "ascii-renderer"
     ]
 }

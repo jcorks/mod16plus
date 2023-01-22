@@ -1,12 +1,14 @@
 #ifndef H_SES_SDL_GL__INCLUDED
 #define H_SES_SDL_GL__INCLUDED
 
+#include "../window.h"
+#include "../graphics_context.h"
 
 // Abstraction of general OpenGL features
 typedef struct sesSDLGL_t sesSDLGL_t;
 
 
-sesSDLGL_t * void ses_sdl_gl_create(sesWindow_t *);
+sesSDLGL_t * ses_sdl_gl_create(sesWindow_t *);
 
 // Creates a new texture object for sprite objects
 int ses_sdl_gl_new_sprite_texture(sesSDLGL_t *);

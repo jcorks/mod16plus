@@ -1,4 +1,5 @@
 #include "../../matte/src/matte_array.h"
+#include "../../matte/src/matte_table.h"
 #include "../../linear.h"
 #include "../gl.h"
 #include "glad/include/glad/glad.h"
@@ -111,12 +112,13 @@ struct sesSDLGL_t {
     matteArray_t * spriteBatchPool;
     matteTableIter_t * spriteBatchIter;
     matteArray_t * bgBatches;
-    SDL_Window * window;
-    SDL_GL_Context * context;
+    sesWindow_t * srcWindow;
+    SDL_GLContext context;
 };
 
 
 
+static SES_GLProgram create_program(const char * srcVertex, const char * srcFragment);
 static SES_GLFramebuffer create_framebuffer(int w, int h);
 static int ses_sdl_gl_get_error();
 static void ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, float * u1, float * v1);
@@ -126,7 +128,24 @@ static uint8_t background_empty[
     SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS *
     SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS
 ] = {};
+static void projection_orthographic(sesMatrix_t * out,
+    float left, float right,
+    float top, float bottom,
+    float zNear, float zFar
+);
+static void ses_sdl_gl_render_background_batch(sesSDLGL_t * gl, SES_GLBackgroundBatch * batch);
+static void ses_sdl_gl_render_sprite_batch(sesSDLGL_t * gl, SES_GLSpriteBatch * batch);
 
+#include "shaders/ses_sdl__renderer_gl31__sprite_frag_data"
+#include "shaders/ses_sdl__renderer_gl31__sprite_vtx_data"
+#include "shaders/ses_sdl__renderer_gl31__screen_frag_data"
+#include "shaders/ses_sdl__renderer_gl31__screen_vtx_data"
+
+
+
+
+// Internal function to expose SDL features.
+extern SDL_Window * ses_window_get_sdl_window(sesWindow_t *);
 
 sesSDLGL_t * ses_sdl_gl_create(sesWindow_t * w) {
     sesSDLGL_t * gl = calloc(1, sizeof(sesSDLGL_t));    
@@ -134,8 +153,8 @@ sesSDLGL_t * ses_sdl_gl_create(sesWindow_t * w) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);        
-    gl->w = window;    
-    gl->context = SDL_GL_CreateContext(*window);
+    gl->srcWindow = w;    
+    gl->context = SDL_GL_CreateContext(ses_window_get_sdl_window(w));
 
     gladLoadGLLoader(SDL_GL_GetProcAddress);
 
@@ -161,14 +180,6 @@ sesSDLGL_t * ses_sdl_gl_create(sesWindow_t * w) {
     );
     
     SDL_GL_SetSwapInterval(0);
-    int i, n;
-    for(i = 0; i < RE_COUNT; ++i) {
-        for(n = 0; n < TEXTURE_COUNT; ++n) {
-            SES_GLSpriteBatch * batch = &gl->spriteBatches[i][n];
-            batch->effect = i;
-            batch->vertices = matte_array_create(sizeof(SES_VBOvertex));
-        }
-    }
     gl->bgBatches = matte_array_create(sizeof(SES_GLBackgroundBatch));
     gl->spriteBatchPool = matte_array_create(sizeof(SES_GLSpriteBatch *));
     gl->spriteBatches = matte_table_create_hash_pointer();
@@ -178,9 +189,9 @@ sesSDLGL_t * ses_sdl_gl_create(sesWindow_t * w) {
 
 
 
-int ses_sd_gl_new_sprite_texture(sesSDLGL_t * gl) {
+int ses_sdl_gl_new_sprite_texture(sesSDLGL_t * gl) {
     GLint texture;
-    glGenTextures(1, texture);
+    glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     uint8_t * emptyTexture = calloc(1, SES_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS);
     int tileLength = SPRITE_TEX_LENGTH_TILES;
@@ -250,7 +261,7 @@ int ses_sd_gl_new_background_texture(sesSDLGL_t * gl) {
 }
 
 
-void ses_sdl_gl_set_sprite_tile(sesSDLGL_t * gl, int tileTexture, uint16_t index, const sesGrahicsContext_Tile_t * data) {
+void ses_sdl_gl_set_sprite_tile(sesSDLGL_t * gl, int tileTexture, uint16_t index, const sesGraphicsContext_Tile_t * data) {
 
     glBindTexture(GL_TEXTURE_2D, tileTexture);
     glTexSubImage2D(
@@ -267,8 +278,8 @@ void ses_sdl_gl_set_sprite_tile(sesSDLGL_t * gl, int tileTexture, uint16_t index
     glBindTexture(GL_TEXTURE_2D, 0);  
 }
 
-void ses_sdl_gl_set_background_tile(sesSDLGL_t *, int tileTexture, int x, int y, const sesGraphicsContext_Tile_t * data) {
-    glBindTexture(GL_TEXTURE_2D, bound_tile_background->texture);
+void ses_sdl_gl_set_background_tile(sesSDLGL_t * gl, int bgTexture, int x, int y, const sesGraphicsContext_Tile_t * data) {
+    glBindTexture(GL_TEXTURE_2D, bgTexture);
     glTexSubImage2D(
         GL_TEXTURE_2D,
         0,
@@ -326,7 +337,7 @@ void ses_sdl_gl_render_begin(sesSDLGL_t * gl) {
 
 
 
-void ses_sdl_gl_render_finish_layer(sesSDLGL_t & gl) {
+void ses_sdl_gl_render_finish_layer(sesSDLGL_t * gl) {
     glEnable(GL_DEPTH_TEST);
     // actually render everything
     // start with the backgrounds 
@@ -341,16 +352,16 @@ void ses_sdl_gl_render_finish_layer(sesSDLGL_t & gl) {
     // then sprites
    
     for(
-        matte_table_iter_start(gl->spriteBatchIter);
+        matte_table_iter_start(gl->spriteBatchIter, gl->spriteBatches);
         !matte_table_iter_is_end(gl->spriteBatchIter);
-        matte_table_iter_proceed(gl->spriteBatchIter);
+        matte_table_iter_proceed(gl->spriteBatchIter)
     ) {
         SES_GLSpriteBatch * batch = matte_table_iter_get_value(gl->spriteBatchIter);
         ses_sdl_gl_render_sprite_batch(gl, batch);
         matte_array_set_size(batch->vertices, 0);
-        matte_array_push(batch->spriteBatchPool, batch);
+        matte_array_push(gl->spriteBatchPool, batch);
     }
-    matte_table_clear(batch->spriteBatchIter);
+    matte_table_clear(gl->spriteBatches);
     glFinish();
 }
 
@@ -383,11 +394,10 @@ void ses_sdl_gl_render_sprite(
         - rotation 
         - position
     */
-
     int x0real = centerX * scaleX;
     int y0real = centerY * scaleY;
-    int x1real = (centerX + TILE_SIZE) * scaleX;
-    int y1real = (centerY + TILE_SIZE) * scaleY;
+    int x1real = (centerX + SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS) * scaleX;
+    int y1real = (centerY + SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS) * scaleY;
     if (rotation) {
         x0real *= cos(rotation / 180.0 * M_PI);
         y0real *= sin(rotation / 180.0 * M_PI);
@@ -441,8 +451,6 @@ void ses_sdl_gl_render_background(
     int backgroundTexture,
     uint32_t id
 ) {
-    SES_GLBackgroundTexture * bg = gl->backgrounds[id];
-    if (bg == NULL) return;    
 
     SES_GLBackgroundBatch b = {};
     b.x = x;
@@ -472,7 +480,7 @@ void ses_sdl_gl_render_end(sesSDLGL_t * gl) {
     glUseProgram(gl->screenProgram.handle);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     int w, h;
-    SDL_GetWindowSize(gl->window, &w, &h);
+    ses_window_get_size(gl->srcWindow, &w, &h);
     glViewport(0, 0, w, h);
     
     glClearColor(1, 0, 1, 0);
@@ -536,10 +544,6 @@ int ses_sdl_gl_get_render_height(sesSDLGL_t * gl) {
 
 
 
-#include "shaders/ses_sdl__renderer_gl31__sprite_frag_data"
-#include "shaders/ses_sdl__renderer_gl31__sprite_vtx_data"
-#include "shaders/ses_sdl__renderer_gl31__screen_frag_data"
-#include "shaders/ses_sdl__renderer_gl31__screen_vtx_data"
 
 static SES_GLProgram create_program(const char * srcVertex, const char * srcFragment) {
     SES_GLProgram program = {};
@@ -659,8 +663,6 @@ static SES_GLProgram create_program(const char * srcVertex, const char * srcFrag
 static void ses_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, float * u1, float * v1) {
     *u = 0;
     *v = 0;
-    if (id > TILE_SPRITE_MAX_ID)
-        return 1;
     int index = id;            
     int TILES_PER_ROW = SPRITE_TEX_LENGTH_TILES;
     int REAL_TEX_SIZE = TILES_PER_ROW * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
@@ -749,14 +751,16 @@ static void ses_sdl_gl_render_background_batch(sesSDLGL_t * gl, SES_GLBackground
 
 
     glBindBuffer(GL_ARRAY_BUFFER, gl->spriteProgram.vbo);
+    int BACKGROUND_PIXEL_WIDTH  = SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES  * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
+    int BACKGROUND_PIXEL_HEIGHT = SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
     SES_VBOvertex vboData[] = {
-        {batch->x, batch->y, 0, 0                                                                 , batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
-        {batch->x+BACKGROUND_TILE_WIDTH*TILE_SIZE, batch->y, 1,      0                            , batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
-        {batch->x+BACKGROUND_TILE_WIDTH*TILE_SIZE, batch->y+BACKGROUND_TILE_HEIGHT*TILE_SIZE, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
+        {batch->x, batch->y, 0, 0                                               , batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
+        {batch->x+BACKGROUND_PIXEL_WIDTH, batch->y, 1, 0                        , batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
+        {batch->x+BACKGROUND_PIXEL_WIDTH, batch->y+BACKGROUND_PIXEL_HEIGHT, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
 
-        {batch->x+BACKGROUND_TILE_WIDTH*TILE_SIZE, batch->y+BACKGROUND_TILE_HEIGHT*TILE_SIZE, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
-        {batch->x,batch->y+BACKGROUND_TILE_HEIGHT*TILE_SIZE, 0, 1,                                  batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
-        {batch->x, batch->y, 0, 0,                                                                  batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z}
+        {batch->x+BACKGROUND_PIXEL_WIDTH, batch->y+BACKGROUND_PIXEL_HEIGHT, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
+        {batch->x,batch->y+BACKGROUND_PIXEL_HEIGHT, 0, 1,                         batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z},
+        {batch->x, batch->y, 0, 0,                                                batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z}
     };
     
     glBufferData(GL_ARRAY_BUFFER, sizeof(SES_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);

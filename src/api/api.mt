@@ -2,9 +2,10 @@
 
 
 
-@:ses_native__get_calling_bank = getExternalFunction(name:"ses_native__get_calling_bank");
-@:ses_native__get_linked_catridge_output = getExternalFunction(name:'ses_native__get_linked_catridge');
-
+@:ses_native__get_context_cartridge_id = getExternalFunction(name:"ses_native__get_context_cartridge_id");
+@:ses_native__has_boot_context = getExternalFunction(name:"ses_native__has_boot_context");
+@:ses_native__get_source = getExternalFunction(name:"ses_native__get_source");
+@:ses_native__get_sub_cartridge_main = getExternalFunction(name:"ses_native__get_sub_cartridge_main");
 
 
 @:ses_native__sprite_attrib = getExternalFunction(name:"ses_native__sprite_attrib");
@@ -81,9 +82,9 @@
         
         define:::(this) {
         
-            @bank_;
-            this.constructor = ::(bank) {
-                bank_ = bank;
+            @cartID_;
+            this.constructor = ::(cartID) {
+                cartID_ = cartID;
                 return this;
             };
         
@@ -100,10 +101,10 @@
                     @colorMidFront = parseColor(input:colors[2]);
                     @colorFront    = parseColor(input:colors[3]);
 
-                    ses_native__palette_attrib(a:index, b:COLORS.BACK,     c:colorBack[0],     d:colorBack[1],     e:colorBack[2]);
-                    ses_native__palette_attrib(a:index, b:COLORS.MIDBACK,  c:colorMidBack[0],  d:colorMidBack[1],  e:colorMidBack[2]);
-                    ses_native__palette_attrib(a:index, b:COLORS.MIDFRONT, c:colorMidFront[0], d:colorMidFront[1], e:colorMidFront[2]);
-                    ses_native__palette_attrib(a:index, b:COLORS.FRONT,    c:colorFront[0],    d:colorFront[1],    e:colorFront[2]);
+                    ses_native__palette_attrib(a:cartID_, b:index, c:COLORS.BACK,     d:colorBack[0],     e:colorBack[1],     f:colorBack[2]);
+                    ses_native__palette_attrib(a:cartID_, b:index, c:COLORS.MIDBACK,  d:colorMidBack[0],  e:colorMidBack[1],  f:colorMidBack[2]);
+                    ses_native__palette_attrib(a:cartID_, b:index, c:COLORS.MIDFRONT, d:colorMidFront[0], e:colorMidFront[1], f:colorMidFront[2]);
+                    ses_native__palette_attrib(a:cartID_, b:index, c:COLORS.FRONT,    d:colorFront[0],    e:colorFront[1],    f:colorFront[2]);
                         
                 },
                 
@@ -113,27 +114,27 @@
                 ) {
                     return [
                         [
-                            ses_native__palette_query(a:index, b:COLORS.BACK, c:0),
-                            ses_native__palette_query(a:index, b:COLORS.BACK, c:1),
-                            ses_native__palette_query(a:index, b:COLORS.BACK, c:2)
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.BACK, d:0),
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.BACK, d:1),
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.BACK, d:2)
                         ],
                         
                         [
-                            ses_native__palette_query(a:index, b:COLORS.MIDBACK, c:0),
-                            ses_native__palette_query(a:index, b:COLORS.MIDBACK, c:1),
-                            ses_native__palette_query(a:index, b:COLORS.MIDBACK, c:2)
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDBACK, d:0),
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDBACK, d:1),
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDBACK, d:2)
                         ],
                         
                         [
-                            ses_native__palette_query(a:index, b:COLORS.MIDFRONT, c:0),
-                            ses_native__palette_query(a:index, b:COLORS.MIDFRONT, c:1),
-                            ses_native__palette_query(a:index, b:COLORS.MIDFRONT, c:2)
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDFRONT, d:0),
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDFRONT, d:1),
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDFRONT, d:2)
                         ],
                     
                         [
-                            ses_native__palette_query(a:index, b:COLORS.FRONT, c:0),
-                            ses_native__palette_query(a:index, b:COLORS.FRONT, c:1),
-                            ses_native__palette_query(a:index, b:COLORS.FRONT, c:2)
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:0),
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:1),
+                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:2)
                         ]
                     ];
                 }
@@ -156,10 +157,10 @@
         name: 'SES.Tile',
         
         define:::(this) {
-            @bank_;
+            @cartID_;
             
-            this.constructor = ::(bank) {
-                bank_ = bank;
+            this.constructor = ::(cartID) {
+                cartID_ = cartID;
                 return this;
             };
         
@@ -169,19 +170,20 @@
                 // data is a plain array of numbers, 0 - 4
                 set ::(index => Number, data => Object) {                    
                     ses_native__tile_attrib(
-                        a:index,
-                        b:ATTRIBS.SET,
-                        c:data
+                        a:cartID_, 
+                        b:index,
+                        c:ATTRIBS.SET,
+                        d:data
                     );
                 },
                 
                 
                 get ::(index => Number) {
-                    return ses_native__tile_query(id);
+                    return ses_native__tile_query(a:cartID_, b:id);
                 },
                 
                 copy ::(to => Number, from => Number) {
-                    ses_native__tile_attrib(a:from, b:ATTRIBS.COPY, b:to);
+                    ses_native__tile_attrib(a:cartID_, b:from, c:ATTRIBS.COPY, d:to);
                 }
 
             };
@@ -576,9 +578,9 @@
 @:AudioStore = class(
     name: 'SES.Audio',
     define:::(this) {
-        @bank_;
-        this.constructor = ::(bank) {
-            bank_ = bank;
+        @cartID_;
+        this.constructor = ::(cartID) {
+            cartID_ = cartID;
             return this;
         };
     
@@ -591,7 +593,7 @@
                 loop    => Boolean
                 
             ) {
-                ses_native__audio_attrib(a:Audio.ACTIONS.PLAY, b:sample, c:channel, d:loop);
+                ses_native__audio_attrib(a:cartID_, b:Audio.ACTIONS.PLAY, c:sample, d:channel, e:loop);
             }
         };
     }
@@ -601,8 +603,7 @@
 // backgrounds are specifically
 // sets of tiles collated together.
 //
-// Tiles above id 0x40000 correspond to 
-// background tiles. Backgrounds ALWAYS read 
+// Backgrounds ALWAYS read 
 // the same tiles, so the user will work with 
 // backgrounds by populating the tiles 
 // corresponding to the expected IDs.
@@ -643,9 +644,9 @@
             HEIGHT_TILES:16
         },
         define:::(this) {
-            @bank_;
-            this.constructor = ::(bank) {
-                bank_ = bank;
+            @cartID_;
+            this.constructor = ::(cartID) {
+                cartID_ = cartID;
                 return this;
             };
         
@@ -660,23 +661,23 @@
                     palette
                 ) {
                     if (show != empty) 
-                        ses_native__bg_attrib(a:index, b:ATTRIBS.ENABLE, c:if((show => Boolean) == true) 1 else 0);
+                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.ENABLE, d:if((show => Boolean) == true) 1 else 0);
  
                     if (x != empty)
-                        ses_native__bg_attrib(a:index, b:ATTRIBS.POSITIONX, c:x=>Number);
+                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.POSITIONX, d:x=>Number);
 
                     if (y != empty)
-                        ses_native__bg_attrib(a:index, b:ATTRIBS.POSITIONY, c:y=>Number);
+                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.POSITIONY, d:y=>Number);
 
 
                     if (layer != empty)
-                        ses_native__bg_attrib(a:index, b:ATTRIBS.LAYER, c:layer=>Number);            
+                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.LAYER, d:layer=>Number);            
 
                     if (effect != empty)                        
-                        ses_native__bg_attrib(a:index, b:ATTRIBS.EFFECT, c:effect=>Number);                        
+                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.EFFECT, d:effect=>Number);                        
 
                     if (palette != empty)
-                        ses_native__bg_attrib(a:index, b:ATTRIBS.PALETTE, c:palette=>Number);
+                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.PALETTE, d:palette=>Number);
 
                 },
                 
@@ -731,9 +732,9 @@
     return class(
         name: 'SES.Sprite',
         define:::(this) {
-            @bank_;
-            this.constructor = ::(bank) {
-                bank_ = bank;
+            @cartID_;
+            this.constructor = ::(cartID) {
+                cartID_ = cartID;
                 return this;
             };
         
@@ -757,7 +758,7 @@
                     if (effect != empty) commands   = [...commands, ATTRIBS.EFFECT, effect=>Number];                        
                     if (palette != empty) commands  = [...commands, ATTRIBS.PALETTE, palette=>Number];
 
-                    ses_native__sprite_attrib(a:index, b:commands);
+                    ses_native__sprite_attrib(a:cartID_, b:index, c:commands);
 
                 },
                 
@@ -778,7 +779,7 @@
                     if (centerX != empty) commands  = [...commands, ATTRIBS.CENTERX, centerX=>Number];
                     if (centerY != empty) commands  = [...commands, ATTRIBS.CENTERY, centerY=>Number];
 
-                    ses_native__sprite_attrib(a:index, b:commands);
+                    ses_native__sprite_attrib(a:cartID_, b:index, c:commands);
                 
                 },
              
@@ -804,9 +805,9 @@
     return class(
         name: 'SES.Oscillator',
         define:::(this) {
-            @bank_;
-            this.constructor = ::(bank) {
-                bank_ = bank;
+            @cartID_;
+            this.constructor = ::(cartID) {
+                cartID_ = cartID;
                 return this;
             };
             this.interface = {
@@ -822,13 +823,13 @@
                     if (periodMS != empty) commands   = [...commands, ATTRIBS.PERIODMS, periodMS=>Number];
                     if (onCycle != empty) commands = [...commands, ATTRIBS.ONCYCLE, onCycle=>Function];
 
-                    ses_native__oscillator_attrib(a:index, b:commands);
+                    ses_native__oscillator_attrib(a:cartID_, b:index, c:commands);
                                     
                 },
                 
                 
                 get ::(index => Number) {
-                    return ses_native__oscillator_attrib(a:index, b:[ATTRIBS.GET, 0]);
+                    return ses_native__oscillator_attrib(a:cartID_, b:index, c:[ATTRIBS.GET, 0]);
                 }
             
             };
@@ -886,37 +887,45 @@
         ses_native__engine_attrib(a:ATTRIBS.UPDATEFUNC, b:update);
         ses_native__engine_attrib(a:ATTRIBS.RESOLUTION, b:resolution);
     
-        @:allbanks = {};
+        @:allcartIDs = {};
     
     
         this.interface = {     
             // refers to the current ROM
             Cartridge : {
                 get :: {
-                    @:cart = ses_native__get_calling_bank();
-                    @out = allbanks[cart];
+                    // Cartridges should be querried and cached on startup and not 
+                    // during calls to the update function. This simplifies the 
+                    // environment design greatly.
+                    when (!ses_native__has_boot_context()) error(detail:
+                        "SES.Cartridge can only be accessed on cartridge boot. Please access and store at the start of your scripts and not during frame updates."
+                    );
+                    @:cart = ses_native__get_context_cartridge_id();
+                    
+                    @out = allcartIDs[cart];
                     when(out != empty) out;
                     
                     out = {
-                        Sprite    : Sprite.new(bank:cart),
-                        Palette   : Palette.new(bank:cart),
-                        Tile      : Tile.new(bank:cart),
-                        Background: Background.new(bank:cart),
-                        Audio     : AudioStore.new(bank:cart),
-                        Oscillator: Oscillator.new(bank:cart),
-                        Links     : Links.new(bank:cart)
+                        Sprite    : Sprite.new(cartID:cart),
+                        Palette   : Palette.new(cartID:cart),
+                        Tile      : Tile.new(cartID:cart),
+                        Background: Background.new(cartID:cart),
+                        Audio     : AudioStore.new(cartID:cart),
+                        Oscillator: Oscillator.new(cartID:cart),
+                        Links     : Links.new(cartID:cart),
+                        
+                        subCartridge::(name => String) {
+                            return ses_native__get_sub_cartridge_main(a:cart, b:name);
+                        },
+                        
+                        
+                        import::(source => String) { // for safety, as the native function directly unsafely retrieves string for speed.
+                            return ses_native__get_source(a:cart, b:source);
+                        },                        
                     };
 
 
-
-
-
-
-
-
-
-
-                    allbanks[cart] = out;
+                    allcartIDs[ses_native__get_context_cartridge_id()] = out;
                     return out;
                 }
             
@@ -927,6 +936,8 @@
             Audio     : {get ::<- Audio},
             Input     : {get ::<- Input},
             RESOLUTION : RESOLUTION,
+            
+            
 
             resolution : {
                 set ::(value => Number) {

@@ -160,14 +160,15 @@ const uint8_t * ses_rom_get_bytecode_segment(const sesROM_t *, uint32_t i, uint3
 
 // Gets the number of subcartridges in the 
 // rom.  
-uint32_t ses_rom_get_subcartridge_count(const sesROM_t *);
+uint32_t ses_rom_get_subcartridge_rom_count(const sesROM_t *);
 
 // Retrieves the subcartridge at the given index.
 // The raw bytes are returned. Length is populated with the number 
 // of bytes in the returned segment.
 // Name should be an allocated string. It will be 
 // updated with the name of the subcartridge.
-const uint8_t * ses_rom_get_subcartridge(const sesROM_t *, uint32_t i, uint32_t * length, matteString_t * name);
+const uint8_t * ses_rom_get_subcartridge_rom(const sesROM_t *, uint32_t i, uint32_t * length, matteString_t * name);
+
 
 
 

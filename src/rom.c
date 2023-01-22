@@ -1,7 +1,7 @@
 #include "rom.h"
 #include <string.h>
 #include <stdlib.h>
-
+#include <stdint.h>
 
 
 typedef struct {
@@ -119,7 +119,7 @@ sesROM_t * ses_rom_unpack(const uint8_t * romBytes, uint32_t romLength, sesROM_U
     }
     
     // tiles 
-    matte_array_set_size(rom_tiles, tileCount);
+    matte_array_set_size(rom->tiles, tileCount);
     SES_CHOMP_LARGE(
         tileCount * sizeof(SESTile),
         matte_array_get_data(rom->tiles)
@@ -127,7 +127,7 @@ sesROM_t * ses_rom_unpack(const uint8_t * romBytes, uint32_t romLength, sesROM_U
     
 
     // palettes
-    matte_array_set_size(rom_tiles, paletteCount);
+    matte_array_set_size(rom->tiles, paletteCount);
     SES_CHOMP_LARGE(
         paletteCount * sizeof(SESPalette),
         matte_array_get_data(rom->palettes)
@@ -209,14 +209,14 @@ sesROM_t * ses_rom_create(
     // bytecode.
     matteArray_t * bytecodeSegmentNames, // matteString_t *
     matteArray_t * bytecodeSegmentSizes, // uint32_t
-    matteArray_t * bytecodeSegments // uint8_t *
+    matteArray_t * bytecodeSegments, // uint8_t *
     
     // Pre-compiled SES cartridge ROMs to be accessible as 
     // sub-cartridges. Each subcartridge is named, and each 
     // rom is assumed to have been made with ses_rom_pack() 
     matteArray_t * subcartridgeNames, // matteString_t *
     matteArray_t * subcartridgeROMSizes, // uint32_t 
-    matteArray_t * subcartridgeROMs, // uint8_t *
+    matteArray_t * subcartridgeROMs // uint8_t *
 ) {
     sesROM_t * rom = calloc(1, sizeof(sesROM_t));
 
@@ -235,10 +235,10 @@ sesROM_t * ses_rom_create(
         uint32_t length = matte_array_at(waveformSizes, uint32_t, i);
         uint8_t * data = matte_array_at(waveforms, uint8_t *, i);
 
-        SESWaveForm wav = {};
+        SESWaveform wav = {};
         wav.length = length;
         wav.data = malloc(length);
-        memcpy(wav.data, data);
+        memcpy(wav.data, data, wav.length);
         
         matte_array_push(rom->subcartridges, wav);
     }
@@ -270,7 +270,7 @@ sesROM_t * ses_rom_create(
     for(i = 0; i < len; ++i) {
         uint32_t length = matte_array_at(bytecodeSegmentSizes, uint32_t, i);
         matteString_t * name = matte_array_at(bytecodeSegmentNames, matteString_t *, i);
-        const uint8_t * data = matte_array_at(bytecodeSegments, uint8_t *, i)
+        const uint8_t * data = matte_array_at(bytecodeSegments, uint8_t *, i);
         
         SESBytecodeSegment seg;
         seg.name = matte_string_clone(name);
@@ -286,7 +286,7 @@ sesROM_t * ses_rom_create(
     for(i = 0; i < len; ++i) {
         uint32_t length = matte_array_at(subcartridgeROMSizes, uint32_t, i);
         matteString_t * name = matte_array_at(subcartridgeNames, matteString_t *, i);
-        const uint8_t * data = matte_array_at(subcartridgeROMs, uint8_t *, i)
+        const uint8_t * data = matte_array_at(subcartridgeROMs, uint8_t *, i);
         
         SESSubCartridge sub;
         sub.name = matte_string_clone(name);
@@ -339,7 +339,7 @@ matteArray_t * ses_rom_pack(const sesROM_t * rom) {
     // waveforms
     len = matte_array_get_size(rom->waveforms);
     for(i = 0; i < len; ++i) {
-        SESWaveForm wav = matte_array_at(rom->waveforms, SESWaveForm, i);
+        SESWaveform wav = matte_array_at(rom->waveforms, SESWaveform, i);
     
         uint32_t length = wav.length;
         uint8_t * data = wav.data;
@@ -519,13 +519,13 @@ const uint8_t * ses_rom_get_bytecode_segment(const sesROM_t * rom, uint32_t id, 
     return seg.data;
 }
 
-uint32_t ses_rom_get_subcartridge_count(const sesROM_t * rom) {
+uint32_t ses_rom_get_subcartridge_rom_count(const sesROM_t * rom) {
     return matte_array_get_size(rom->subcartridges);
 }
 
-const uint8_t * ses_rom_get_subcartridge(const sesROM_t * rom, uint32_t id, uint32_t * length, matteString_t * name) {
+const uint8_t * ses_rom_get_subcartridge_rom(const sesROM_t * rom, uint32_t id, uint32_t * length, matteString_t * name) {
     *length = 0;
-    if (id >= ses_rom_get_subcartridge_count(rom)) return NULL;
+    if (id >= ses_rom_get_subcartridge_rom_count(rom)) return NULL;
 
     SESSubCartridge sub = matte_array_at(rom->subcartridges, SESSubCartridge, id);
     *length = sub.length;

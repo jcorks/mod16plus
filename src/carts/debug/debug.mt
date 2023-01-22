@@ -1,7 +1,7 @@
 @:class = import(module:'Matte.Core.Class');
 @:SES = import(module:'SES.Core');
 @:Cart = SES.cartridge;
-@:StringRenderer = SES.subCartridge['StringRenderer0'];
+@:StringRenderer = Cart.subCartridge(name:'ascii-renderer');
 
 @:ses_native__debug_context_enter = getExternalFunction(name:"ses_native__debug_context_enter");
 @:ses_native__debug_context_query = getExternalFunction(name:"ses_native__debug_context_query");

@@ -17,13 +17,29 @@ typedef struct sesCartridge_t sesCartridge_t;
 
 
 // Creates a cartridge based on a ROM
-sesCartridge_t * ses_cartridge_create(sesROM_t * rom, sesGraphicsContext_t *);
+sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphicsContext_t *);
 
 sesROM_t * ses_cartridge_get_rom(const sesCartridge_t *);
 
 
 // Gets the context storage for this 
 sesGraphicsContext_Storage_t * ses_cartridge_get_context_storage(sesCartridge_t *);
+
+
+// Initializes and runs the "main" and "output" scripts for 
+// Every sub cartridge and this cartridge instance. 
+void ses_cartridge_bootup(sesCartridge_t *);
+
+// Gets the singleton instance representing the state of the 
+// main script. This is used as the singleton instance given when 
+// querying subcartridges under normal operation.
+//
+// The lifetime of the object persists with the cartridge
+// The object is empty until the bootup call is initiated
+matteValue_t ses_cartridge_get_main(sesCartridge_t *);
+
+
+const matteString_t * ses_cartridge_get_name(sesCartridge_t *);
 
 
 
@@ -68,7 +84,7 @@ typedef struct {
 
 // Enables or disables a cartridge oscillator.
 // oscillators are repolled with ses_cartridge_poll_oscillators
-void ses_cartridge_enable_oscillator(sesCartridge_t *, uint16_t index, int enabled);
+void ses_cartridge_enable_oscillator(sesCartridge_t *, uint16_t index, int enabled, double ticks);
 
 // Gets the specified oscillator or NULL 
 // if there is no such oscillator.
@@ -88,12 +104,27 @@ void ses_cartridge_poll_oscillators(sesCartridge_t *, double ticks);
 // to then be rendered when ready.
 sesCartridge_t * ses_cartridge_push_graphics(sesCartridge_t *, sesGraphicsContext_t *);
 
-// Gets the index'th sub-cartridge loaded by this cartridge.
-// Optionally, name may be presented. If non-NULL, the string will be 
-// set to the name.
-sesCartridge_t * ses_cartridge_get_subcartridge(sesCartridge_t * rom, uint16_t index, matteString_t * name);
+// Gets the subcartridge by name. If non exists, NULL is returned.
+sesCartridge_t * ses_cartridge_get_subcartridge(sesCartridge_t * rom, const matteString_t *);
 
 
+// When booting the rom, the active context is the one
+// currently booting. This is useful for context controls 
+// in the matteVM to discern which cartridge's storage 
+// specifics should be referenced at a given time.
+sesCartridge_t * ses_cartridge_get_active_boot_context();
+
+// Uniquely identifies the cartridge globally.
+uint32_t ses_cartridge_get_id(const sesCartridge_t *);
+
+// Retrieves a matteValue_t representing the cartridge source data (script).
+// If the source has not been run yet, it is run. Its return value is the 
+// matteValue_t stored. It is cached and returned on subsequent calls to 
+// this function.
+matteValue_t ses_cartridge_get_source(sesCartridge_t * cart, const matteString_t * source);
+
+// Retrieves the cartridge from 
+sesCartridge_t * ses_cartridge_from_id(uint32_t id);
 
 
 #endif

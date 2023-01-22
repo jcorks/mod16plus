@@ -27,7 +27,7 @@
         BASE_DIR = malloc(1024 + 128);
         getcwd(BASE_DIR, 1024);
         strcat(BASE_DIR, "/SES_projects");
-        mkdir(matte_string_get_c_str(BASE_DIR), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        mkdir(BASE_DIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }   
     
     static void make_project_dir(const char * name) {
@@ -388,6 +388,12 @@ int ses_package(const char * dir) {
     matteArray_t * bytecodeSegmentSizes = matte_array_create(sizeof(uint32_t));
     matteArray_t * bytecodeSegments = matte_array_create(sizeof(uint8_t*));
     
+    
+    matteArray_t * subcartridgeNames = matte_array_create(sizeof(matteString_t*));
+    matteArray_t * subcartridgeROMSizes = matte_array_create(sizeof(uint32_t));
+    matteArray_t * subcartridgeROMSegments = matte_array_create(sizeof(uint8_t*));
+    
+    
     uint32_t i;
     
     
@@ -560,6 +566,7 @@ int ses_package(const char * dir) {
                 matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, name)),
                 &byteLen
             );
+            uint8_t * ref = bytes;
 
             // now that we have a source, compile it
             uint32_t segmentLength;
@@ -572,7 +579,7 @@ int ses_package(const char * dir) {
                 NULL
             );
             currentCompiled = NULL;
-            
+            free(ref);
             const matteString_t * line = matte_value_string_get_string_unsafe(heap, name);
             
             matte_array_push(bytecodeSegments, bytes);
@@ -582,7 +589,35 @@ int ses_package(const char * dir) {
         }
     }
     
-    matteArray_t * romBytes = ses_pack_rom(
+    // subcartridges
+    next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "subcartridges"));
+    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+        len = matte_value_object_get_number_key_count(heap, next);
+        for(i = 0; i < len; ++i) {
+            matteValue_t name = matte_value_object_access_index(heap, next, i);
+            if (name.binID != MATTE_VALUE_TYPE_STRING) {
+                printf("Error on subcartridge %d: value is not a string.\n", i+1);
+                goto L_FAIL;
+            }
+
+            uint32_t byteLen;
+            bytes = dump_bytes_relative(
+                dir,
+                matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, name)),
+                &byteLen
+            );
+
+            const matteString_t * line = matte_value_string_get_string_unsafe(heap, name);
+
+            
+            matte_array_push(subcartridgeROMSegments, bytes);
+            matte_array_push(subcartridgeROMSizes, byteLen);
+            matte_array_push(subcartridgeNames, line);
+            
+        }
+    }    
+    
+    sesROM_t *romV = ses_rom_create(
         waveformSizes, // uint32_t
         waveforms, // uint8_t *     
 
@@ -595,8 +630,16 @@ int ses_package(const char * dir) {
         
         bytecodeSegmentNames, // matteString_t *
         bytecodeSegmentSizes, // uint32_t
-        bytecodeSegments // uint8_t *    
+        bytecodeSegments, // uint8_t *    
+        
+        
+        subcartridgeNames, // matteString_t *
+        subcartridgeROMSizes, // uint32_t
+        subcartridgeROMSegments // uint8_t *            
+        
     );
+
+    matteArray_t * romBytes = ses_rom_pack(romV);
     
     matteString_t * outname = matte_string_create_from_c_str("%s/%s", dir, "rom.ses");    
 
@@ -612,6 +655,9 @@ int ses_package(const char * dir) {
     matte_array_destroy(bytecodeSegmentNames);
     matte_array_destroy(bytecodeSegmentSizes);
     matte_array_destroy(bytecodeSegments);
+    matte_array_destroy(subcartridgeNames);
+    matte_array_destroy(subcartridgeROMSizes);
+    matte_array_destroy(subcartridgeROMSegments);
     return out;
 }
 

@@ -23,7 +23,7 @@ struct sesWindow_t {
     
 };
 
-static uint32_t ses_sdl_emit_frame_event(uint32_t interval, void * param) {
+static uint32_t ses_window_emit_frame_event(uint32_t interval, void * param) {
     
     SDL_Event event;
     SDL_UserEvent userevent = {};
@@ -32,8 +32,10 @@ static uint32_t ses_sdl_emit_frame_event(uint32_t interval, void * param) {
     event.type = SDL_USEREVENT;
     event.user = userevent;
 
+    sesWindow_t * window = param;
+
     SDL_PushEvent(&event);    
-    return sdl.frameUpdateDelayMS;
+    return window->frameUpdateDelayMS;
 }
 
 
@@ -49,12 +51,12 @@ sesWindow_t * ses_window_create() {
         printf("SDL2 subsystem init failure.\n");
         exit(1);
     }    
-    sdl.frameUpdateDelayMS = (1 / 60.0)*1000;
     
-    SDL_AddTimer(sdl.frameUpdateDelayMS, ses_sdl_emit_frame_event, NULL);
     sesWindow_t * out = calloc(1, sizeof(sesWindow_t));
-    *window  = SDL_CreateWindow("Sprite Entertainment System", 0, 0, 240*4, 160*4, SDL_WINDOW_OPENGL);
+    out->window  = SDL_CreateWindow("Sprite Entertainment System", 0, 0, 240*4, 160*4, SDL_WINDOW_OPENGL);
     out->graphics = ses_graphics_context_create(out);
+    out->frameUpdateDelayMS = (1 / 60.0)*1000;
+    SDL_AddTimer(out->frameUpdateDelayMS, ses_window_emit_frame_event, out);
     return out;
 };
 
@@ -80,7 +82,14 @@ void ses_window_set_clipboard(sesWindow_t * window, const matteString_t * str) {
 void ses_window_get_size(sesWindow_t * window, int * w, int * h) {
     SDL_GetWindowSize(window->window, w, h);
 }
+void ses_window_set_frame_update_delay(sesWindow_t * window, double delay) {
+    window->frameUpdateDelayMS = delay;
+}
 
+void ses_window_set_event_callback(sesWindow_t * window, sesWindow_Event_t evt, ses_window_event_callback_t func, void * data) {
+    window->callbacks[evt] = func;
+    window->callbackData[evt] = data;
+}
 
 
 void ses_window_resolve_events(sesWindow_t * window) {
@@ -127,7 +136,7 @@ void ses_window_resolve_events(sesWindow_t * window) {
                     window->callbackData[SES_WINDOW_EVENT__TEXT]
                 );
                 
-                matte_string_destroy(textdata.text);
+                matte_string_destroy((matteString_t*)textdata.text);
                 break;
             }                 
           }
@@ -146,7 +155,7 @@ void ses_window_resolve_events(sesWindow_t * window) {
                 window->callbacks[SES_WINDOW_EVENT__POINTER_BUTTON](
                     window,
                     SES_WINDOW_EVENT__POINTER_BUTTON,
-                    &pointerdata,
+                    &pdata,
                     window->callbackData[SES_WINDOW_EVENT__POINTER_BUTTON]
                 );
             }
@@ -166,7 +175,7 @@ void ses_window_resolve_events(sesWindow_t * window) {
                 window->callbacks[SES_WINDOW_EVENT__POINTER_SCROLL](
                     window,
                     SES_WINDOW_EVENT__POINTER_SCROLL,
-                    &pointerdata,
+                    &pdata,
                     window->callbackData[SES_WINDOW_EVENT__POINTER_SCROLL]
                 );
             }
@@ -183,7 +192,7 @@ void ses_window_resolve_events(sesWindow_t * window) {
                 window->callbacks[SES_WINDOW_EVENT__POINTER_MOTION](
                     window,
                     SES_WINDOW_EVENT__POINTER_MOTION,
-                    &pointerdata,
+                    &pdata,
                     window->callbackData[SES_WINDOW_EVENT__POINTER_MOTION]
                 );
             }
@@ -219,6 +228,16 @@ void ses_window_thread_wait(sesWindow_t * w, uint32_t ms) {
 }
 double ses_window_get_ticks(sesWindow_t * w) {
     return SDL_GetTicks();
+}
+
+
+
+
+
+/// internal
+
+SDL_Window * ses_window_get_sdl_window(sesWindow_t * w) {
+    return w->window;
 }
 
 

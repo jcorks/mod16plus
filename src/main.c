@@ -26,16 +26,20 @@ static uint8_t * ses_native__import(
     const matteString_t * importPath,
     uint32_t * preexistingFileID,
     uint32_t * dataLength,
-    void * usrdata
+    void * rom
 ) {
-    // special case
+    // Import is ONLY used for SES.Core
+    // 
     if (matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "SES.Core"))) {
         *dataLength = API_ROM_SIZE;
         *preexistingFileID = matte_vm_get_new_file_id(vm, importPath);
         uint8_t * out = malloc(API_ROM_SIZE);
         memcpy(out, API_ROM_DATA, API_ROM_SIZE);
         return out;       
-    } 
+    } else {
+        *dataLength = 0;    
+        return NULL;
+    }
     /*
     else if (IS_DEBUG && matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "SES.Debug"))) {
         *dataLength = DEBUG_ROM_SIZE;
@@ -46,24 +50,7 @@ static uint8_t * ses_native__import(
     }
     */
     
-    // else, linear search for proper name.
-    uint32_t i;
-    matteString_t * str = matte_string_create();
-    for(i = 0; i < ses_rom_get_bytecode_segment_count(); ++i) {
-        const uint8_t * data = ses_rom_get_bytecode_segment(
-            i, 
-            dataLength,
-            str
-        );
-        
-        if (matte_string_test_eq(importPath, str)) {
-            *preexistingFileID = matte_vm_get_new_file_id(vm, str);
-            uint8_t * out = malloc(*dataLength);
-            memcpy(out, data, *dataLength);
-            return out;
-        }
-    }   
-    *dataLength = 0;
+ 
     return NULL;
 }
 
@@ -133,27 +120,27 @@ developRom = 1;
 
 
     // dump rom to memory and hook import
-    int result = -1;
-    sesROM_t * rom = ses_unpack_rom(romBytes, romLength, &result); 
+    sesROM_UnpackError_t result = SES_ROM_UNPACK_ERROR__SIZE_MISMATCH;
+    sesROM_t * rom = ses_rom_unpack(romBytes, romLength, &result); 
     if (result != 0) {
         printf("Unpacking ROM resulted in error:\n");
         switch(result) {
-          case SES_UNPACK_ERROR__TOO_SMALL:
+          case SES_ROM_UNPACK_ERROR__TOO_SMALL:
             printf("The ROM is too small to be valid.\n");
             break;
             
-          case SES_UNPACK_ERROR__BAD_HEADER:
+          case SES_ROM_UNPACK_ERROR__BAD_HEADER:
             printf("The header is incorrect. This can happen if the ROM source is corrupted at the start or is not a ROM file.\n");
             break;
           
             
-          case SES_UNPACK_ERROR__UNSUPPORTED_VERSION:
+          case SES_ROM_UNPACK_ERROR__UNSUPPORTED_VERSION:
             printf("The ROM version is unsupported.\n");
             break;
             
             // the ROM data has an invalid size of some kind,
             // likely indicating a corrupted ROM.
-          case SES_UNPACK_ERROR__SIZE_MISMATCH:
+          case SES_ROM_UNPACK_ERROR__SIZE_MISMATCH:
             printf("The ROM has inconsistencies and is unreadable, likely due to corruption.\n");
             
         }
@@ -168,7 +155,7 @@ developRom = 1;
     matte_vm_set_import(
         vm,
         ses_native__import,
-        NULL
+        rom
     );
     
     
@@ -198,12 +185,6 @@ developRom = 1;
         ses_package_bind_natives(vm);
     }
     
-    // run main
-    matteValue_t output = matte_vm_import(
-        vm,
-        MATTE_VM_STR_CAST(vm, "main"),
-        matte_heap_new_value(matte_vm_get_heap(vm))
-    );
     
     // begin the loop
     return ses_native_main_loop(m);

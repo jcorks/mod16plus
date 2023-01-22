@@ -7,9 +7,7 @@
 #include "window.h"
 #include "cartridge.h"
 #include <math.h>
-#define LAYER_MIN -63
-#define LAYER_MID 0
-#define LAYER_MAX 64
+#include <string.h>
 #define SPRITE_MAX 4096
 #define OSCILLATOR_MAX 1024
 #define SPRITE_COUNT_TOTAL 65536
@@ -104,7 +102,7 @@ static sesNative_t ses = {};
 
 
 
-static matteValue_t ses_native_get_calling_bank(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t ses_native_get_context_cartridge_id(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
 
 static matteValue_t ses_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
@@ -154,11 +152,15 @@ typedef enum {
 
 
 
-matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
-    uint32_t id = matte_value_as_number(heap, args[0]);
-    sesGraphicsContext_Sprite_t * spr = ses_cartridge_get_sprite(ses.mainCart, id);
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+
+
+    uint32_t id = matte_value_as_number(heap, args[1]);
+    sesGraphicsContext_Sprite_t * spr = ses_cartridge_get_sprite(cart, id);
     
     if (!spr) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Sprite accessed beyond limit"));                
@@ -166,15 +168,15 @@ matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteV
     }
 
 
-    uint32_t len = matte_value_object_get_number_key_count(heap, args[1]);
+    uint32_t len = matte_value_object_get_number_key_count(heap, args[2]);
     uint32_t i;
     for(i = 0; i < len; i+=2) {
-        matteValue_t * flag  = matte_value_object_array_at_unsafe(heap, args[1], i);
-        matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[1], i+1);
+        matteValue_t * flag  = matte_value_object_array_at_unsafe(heap, args[2], i);
+        matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[2], i+1);
 
         switch((int)matte_value_as_number(heap, *flag)) {
           case SESNSA_ENABLE: {
-            ses_cartridge_enable_sprite(ses.mainCart, id, matte_value_as_number(heap, *value));
+            ses_cartridge_enable_sprite(cart, id, matte_value_as_number(heap, *value));
             break;
           }  
           case SESNSA_ROTATION:
@@ -207,8 +209,8 @@ matteValue_t ses_sdl_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteV
 
           case SESNSA_LAYER:
             spr->layer = matte_value_as_number(heap, *value);
-            if (spr->layer > LAYER_MAX) spr->layer = LAYER_MAX;
-            if (spr->layer < LAYER_MIN) spr->layer = LAYER_MIN;
+            if (spr->layer > SES_GRAPHICS_CONTEXT__LAYER_MAX) spr->layer = SES_GRAPHICS_CONTEXT__LAYER_MAX;
+            if (spr->layer < SES_GRAPHICS_CONTEXT__LAYER_MIN) spr->layer = SES_GRAPHICS_CONTEXT__LAYER_MIN;
             break;
 
           case SESNSA_TILEINDEX:
@@ -241,11 +243,15 @@ typedef enum {
 
 
 
-matteValue_t ses_sdl_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
-    uint32_t id = matte_value_as_number(heap, args[0]);
-    sesCartridge_Oscillator_t * osc = ses_cartridge_get_oscillator(ses.mainCart, id);
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+
+
+    uint32_t id = matte_value_as_number(heap, args[1]);
+    sesCartridge_Oscillator_t * osc = ses_cartridge_get_oscillator(cart, id);
     
     if (!osc) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Oscillator accessed beyond limit"));
@@ -253,16 +259,16 @@ matteValue_t ses_sdl_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const ma
     }
     
 
-    uint32_t len = matte_value_object_get_number_key_count(heap, args[1]);
+    uint32_t len = matte_value_object_get_number_key_count(heap, args[2]);
     uint32_t i;
     int n;
     for(i = 0; i < len; i+=2) {
-        matteValue_t * flag  = matte_value_object_array_at_unsafe(heap, args[1], i);
-        matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[1], i+1);
+        matteValue_t * flag  = matte_value_object_array_at_unsafe(heap, args[2], i);
+        matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[2], i+1);
 
         switch((int)matte_value_as_number(heap, *flag)) {
           case SESNOA_ENABLE:
-            ses_cartridge_enable_oscillator(ses.mainCart, id, matte_value_as_boolean(heap, *value));
+            ses_cartridge_enable_oscillator(cart, id, matte_value_as_boolean(heap, *value), ses_window_get_ticks(ses.window));
             break;
             
           case SESNOA_PERIODMS:
@@ -310,7 +316,7 @@ typedef enum {
 
 
 
-matteValue_t ses_sdl_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     printf("ENGINE   ID: %d\n",
         (int)matte_value_as_number(heap, args[0])
@@ -361,13 +367,16 @@ typedef enum {
     SESNPA_FRONT
 } SESNative_PaletteAttribs_t;
 
-matteValue_t ses_sdl_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
-    uint32_t id = matte_value_as_number(heap, args[0]);
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+    
+    uint32_t id = matte_value_as_number(heap, args[1]);
     const sesGraphicsContext_Palette_t * pin = ses_graphics_context_storage_get_palette(
         ses_cartridge_get_context_storage(
-            ses.mainCart
+            cart
         ),
         id
     );
@@ -378,29 +387,29 @@ matteValue_t ses_sdl_palette_attrib(matteVM_t * vm, matteValue_t fn, const matte
     sesGraphicsContext_Palette_t p = *pin;
 
 
-    switch((int)matte_value_as_number(heap, args[1])) {
+    switch((int)matte_value_as_number(heap, args[2])) {
       case SESNPA_BACK:
-        p.back.x = matte_value_as_number(heap, args[2]);
-        p.back.y = matte_value_as_number(heap, args[3]);
-        p.back.z = matte_value_as_number(heap, args[4]);
+        p.back.x = matte_value_as_number(heap, args[3]);
+        p.back.y = matte_value_as_number(heap, args[4]);
+        p.back.z = matte_value_as_number(heap, args[5]);
         break;
 
       case SESNPA_MIDBACK:
-        p.midBack.x = matte_value_as_number(heap, args[2]);
-        p.midBack.y = matte_value_as_number(heap, args[3]);
-        p.midBack.z = matte_value_as_number(heap, args[4]);
+        p.midBack.x = matte_value_as_number(heap, args[3]);
+        p.midBack.y = matte_value_as_number(heap, args[4]);
+        p.midBack.z = matte_value_as_number(heap, args[5]);
         break;
 
       case SESNPA_MIDFRONT:
-        p.midFront.x = matte_value_as_number(heap, args[2]);
-        p.midFront.y = matte_value_as_number(heap, args[3]);
-        p.midFront.z = matte_value_as_number(heap, args[4]);
+        p.midFront.x = matte_value_as_number(heap, args[3]);
+        p.midFront.y = matte_value_as_number(heap, args[4]);
+        p.midFront.z = matte_value_as_number(heap, args[5]);
         break;
 
       case SESNPA_FRONT:
-        p.front.x = matte_value_as_number(heap, args[2]);
-        p.front.y = matte_value_as_number(heap, args[3]);
-        p.front.z = matte_value_as_number(heap, args[4]);
+        p.front.x = matte_value_as_number(heap, args[3]);
+        p.front.y = matte_value_as_number(heap, args[4]);
+        p.front.z = matte_value_as_number(heap, args[5]);
         break;
 
             
@@ -409,7 +418,7 @@ matteValue_t ses_sdl_palette_attrib(matteVM_t * vm, matteValue_t fn, const matte
     
     ses_graphics_context_storage_set_palette(
         ses_cartridge_get_context_storage(
-            ses.mainCart
+            cart
         ),
         id,
         &p
@@ -423,17 +432,17 @@ typedef enum {
 } SESNative_TileAttribs_t;
 
 
-matteValue_t ses_sdl_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
-    printf("TILE     ID: %d, ATTRIB: %d\n",
-        (int)matte_value_as_number(heap, args[0]),
-        (int)matte_value_as_number(heap, args[1])
-    );  
 
-    uint32_t id = matte_value_as_number(heap, args[0]);
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+
+
+    uint32_t id = matte_value_as_number(heap, args[1]);
     const sesGraphicsContext_Tile_t * tilep = ses_graphics_context_storage_get_tile(
         ses_cartridge_get_context_storage(
-            ses.mainCart
+            cart
         ),
         id    
     );
@@ -446,10 +455,10 @@ matteValue_t ses_sdl_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteVal
     sesGraphicsContext_Tile_t tile = *tilep;
 
 
-    switch((int)matte_value_as_number(heap, args[1])) {
+    switch((int)matte_value_as_number(heap, args[2])) {
         
       case SESNTA_SET: {
-        matteValue_t array = args[2];
+        matteValue_t array = args[3];
         int pixelCount = SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS*SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
         if (matte_value_object_get_number_key_count(heap, array) != pixelCount) {
             matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Tile data is not the correct number of members."));
@@ -465,7 +474,7 @@ matteValue_t ses_sdl_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteVal
         
         ses_graphics_context_storage_set_tile(
             ses_cartridge_get_context_storage(
-                ses.mainCart
+                cart
             ),
             id,
             &tile            
@@ -475,10 +484,10 @@ matteValue_t ses_sdl_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteVal
       }
         
       case SESNTA_COPY: {
-        uint32_t tid = matte_value_as_number(heap, args[2]);
+        uint32_t tid = matte_value_as_number(heap, args[3]);
         const sesGraphicsContext_Tile_t * tilet = ses_graphics_context_storage_get_tile(
             ses_cartridge_get_context_storage(
-                ses.mainCart
+                cart
             ),
             tid    
         );
@@ -489,7 +498,7 @@ matteValue_t ses_sdl_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteVal
         
         ses_graphics_context_storage_set_tile(
             ses_cartridge_get_context_storage(
-                ses.mainCart
+                cart
             ),
             tid,
             &tile           
@@ -509,7 +518,7 @@ typedef enum {
     SESNIA_REMOVE
 } SESNative_InputAction_t;
 
-matteValue_t ses_sdl_input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     printf("INPUT    ID: %d, ATTRIB: %d\n",
         (int)matte_value_as_number(heap, args[0]),
@@ -554,14 +563,73 @@ matteValue_t ses_sdl_input_attrib(matteVM_t * vm, matteValue_t fn, const matteVa
 
     return matte_heap_new_value(heap);
 }
-matteValue_t ses_sdl_audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
-    printf("AUDIO    ID: %d, ATTRIB: %d\n",
-        (int)matte_value_as_number(heap, args[0]),
-        (int)matte_value_as_number(heap, args[1])
-    );  
     return matte_heap_new_value(heap);
 }
+
+
+
+matteValue_t ses_native_get_context_cartridge_id(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+
+    matteValue_t v = matte_heap_new_value(matte_vm_get_heap(vm));
+    matte_value_into_number(
+        matte_vm_get_heap(vm), 
+        &v, 
+        ses_cartridge_get_id(
+            ses_cartridge_get_active_boot_context()
+        )    
+    );
+    return v;
+
+}
+
+matteValue_t ses_native_has_boot_context(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+
+    matteValue_t v = matte_heap_new_value(matte_vm_get_heap(vm));
+    matte_value_into_boolean(
+        matte_vm_get_heap(vm), 
+        &v, 
+        ses_cartridge_get_active_boot_context() == NULL
+    );
+    return v;
+
+}
+
+
+matteValue_t ses_native_get_source(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    uint32_t id = matte_value_as_number(matte_vm_get_heap(vm), args[0]);
+    const matteString_t * name = matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), args[1]);
+
+    sesCartridge_t * cart = ses_cartridge_from_id(id);
+    
+    
+    matteValue_t out = matte_heap_new_value(matte_vm_get_heap(vm));
+    if (cart) return out;
+    return ses_cartridge_get_source(cart, name);
+}
+
+
+
+
+matteValue_t ses_native_get_sub_cartridge_main(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    uint32_t id = matte_value_as_number(matte_vm_get_heap(vm), args[0]);
+    const matteString_t * name = matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), args[1]);
+
+    sesCartridge_t * cart = ses_cartridge_get_subcartridge(
+        ses_cartridge_from_id(id),
+        name
+    );
+    
+    
+    matteValue_t out = matte_heap_new_value(matte_vm_get_heap(vm));
+    if (cart) return out;
+    return ses_cartridge_get_main(cart);
+}
+
+
+
+
 
 
 
@@ -575,7 +643,7 @@ typedef enum {
 
 } SESNative_BackgroundAttribs_t;
 
-matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     /*
     printf("BG       ID: %d, ATTRIB: %d\n",
@@ -584,8 +652,12 @@ matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue
     );
     */  
 
-    uint32_t id = matte_value_as_number(heap, args[0]);
-    sesGraphicsContext_Background_t * bg = ses_cartridge_get_background(ses.mainCart, id);
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+
+
+    uint32_t id = matte_value_as_number(heap, args[1]);
+    sesGraphicsContext_Background_t * bg = ses_cartridge_get_background(cart, id);
     
     if (!bg) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "BG accessed beyond limit"));                
@@ -593,31 +665,31 @@ matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue
     }
     
     
-    switch((int)matte_value_as_number(heap, args[1])) {
+    switch((int)matte_value_as_number(heap, args[2])) {
       case SESNBA_ENABLE:
-        bg->enabled = matte_value_as_number(heap, args[2]);
+        bg->enabled = matte_value_as_number(heap, args[3]);
         break;
 
       case SESNBA_POSITIONX:
-        bg->x = matte_value_as_number(heap, args[2]);
+        bg->x = matte_value_as_number(heap, args[3]);
         break;
       
       case SESNBA_POSITIONY:
-        bg->y = matte_value_as_number(heap, args[2]);
+        bg->y = matte_value_as_number(heap, args[3]);
         break;
 
       case SESNBA_LAYER:
-        bg->layer = matte_value_as_number(heap, args[2]);
-        if (bg->layer > LAYER_MAX) bg->layer = LAYER_MAX;
-        if (bg->layer < LAYER_MIN) bg->layer = LAYER_MIN;
+        bg->layer = matte_value_as_number(heap, args[3]);
+        if (bg->layer > SES_GRAPHICS_CONTEXT__LAYER_MAX) bg->layer = SES_GRAPHICS_CONTEXT__LAYER_MAX;
+        if (bg->layer < SES_GRAPHICS_CONTEXT__LAYER_MIN) bg->layer = SES_GRAPHICS_CONTEXT__LAYER_MIN;
         break;
       
       case SESNBA_EFFECT:
-        bg->effect = matte_value_as_number(heap, args[2]);
+        bg->effect = matte_value_as_number(heap, args[3]);
         break;
 
       case SESNBA_PALETTE:
-        bg->palette = matte_value_as_number(heap, args[2]);
+        bg->palette = matte_value_as_number(heap, args[3]);
         break;
 
             
@@ -628,17 +700,19 @@ matteValue_t ses_sdl_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue
 
 
 
-matteValue_t ses_sdl_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     printf("P.QUERY  ID: %d, ATTRIB: %d\n",
         (int)matte_value_as_number(heap, args[0]),
         (int)matte_value_as_number(heap, args[1])
     );  
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
     
-    uint32_t id = matte_value_as_number(heap, args[0]);
+    uint32_t id = matte_value_as_number(heap, args[1]);
     const sesGraphicsContext_Palette_t * p = ses_graphics_context_storage_get_palette(
         ses_cartridge_get_context_storage(
-            ses.mainCart
+            cart
         ),
         id
     );
@@ -648,7 +722,7 @@ matteValue_t ses_sdl_palette_query(matteVM_t * vm, matteValue_t fn, const matteV
     }   
 
     const sesVector_t * color;
-    switch((int)matte_value_as_number(heap, args[1])) {
+    switch((int)matte_value_as_number(heap, args[2])) {
       case SESNPA_BACK:
         color = &p->back;
         break;
@@ -670,7 +744,7 @@ matteValue_t ses_sdl_palette_query(matteVM_t * vm, matteValue_t fn, const matteV
     
     matteValue_t out = matte_heap_new_value(heap);
     
-    switch((int)matte_value_as_number(heap, args[2])) {
+    switch((int)matte_value_as_number(heap, args[3])) {
       case 0: matte_value_into_number(heap, &out, color->x); break;
       case 1: matte_value_into_number(heap, &out, color->y); break;
       case 2: matte_value_into_number(heap, &out, color->z); break;
@@ -681,18 +755,23 @@ matteValue_t ses_sdl_palette_query(matteVM_t * vm, matteValue_t fn, const matteV
     
 
 }
-matteValue_t ses_sdl_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t ses_native_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     matteValue_t out = matte_heap_new_value(heap);
 
-    uint32_t id = matte_value_as_number(heap, args[0]);
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+
+    uint32_t id = matte_value_as_number(heap, args[1]);
     const sesGraphicsContext_Tile_t * tilep = ses_graphics_context_storage_get_tile(
         ses_cartridge_get_context_storage(
-            ses.mainCart
+            cart
         ),
         id    
     );
-    
+
+    if (tilep == NULL)
+        return out;    
     
     int i;
     int count = SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
@@ -746,28 +825,31 @@ static sesContext_t context_create() {
 }
 
 void ses_native_commit_rom(sesROM_t * rom, matte_t * m) {
-    // nothing yet!
+    matteVM_t * vm = matte_get_vm(m);
     ses.window = ses_window_create();
     ses.graphics = ses_window_get_graphics(ses.window);
-    ses.mainCart = ses_cartridge_create(rom, ses.graphics);
-    matteVM_t * vm = matte_get_vm(m);
+    ses.mainCart = ses_cartridge_create(vm, rom, ses.graphics);
 
     // all 3 modes require activating the core features.
-    //matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__get_calling_bank"), 0, ses_sdl_get_calling_bank, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__get_context_cartridge_id"), 0, ses_native_get_context_cartridge_id, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__has_boot_context"), 0, ses_native_has_boot_context, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__get_source"), 2, ses_native_get_source, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__get_sub_cartridge_main"), 2, ses_native_get_sub_cartridge_main, NULL);
 
 
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__sprite_attrib"), 2, ses_sdl_sprite_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__engine_attrib"), 3, ses_sdl_engine_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_attrib"), 5, ses_sdl_palette_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_attrib"), 3, ses_sdl_tile_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__input_attrib"), 3, ses_sdl_input_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__audio_attrib"), 4, ses_sdl_audio_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__bg_attrib"), 4, ses_sdl_bg_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__oscillator_attrib"), 2, ses_sdl_oscillator_attrib, NULL);
+
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__sprite_attrib"), 3, ses_native_sprite_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__engine_attrib"), 4, ses_native_engine_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_attrib"), 6, ses_native_palette_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_attrib"), 4, ses_native_tile_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__input_attrib"), 4, ses_native_input_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__audio_attrib"), 5, ses_native_audio_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__bg_attrib"), 5, ses_native_bg_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__oscillator_attrib"), 3, ses_native_oscillator_attrib, NULL);
 
 
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_query"), 3, ses_sdl_palette_query, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_query"), 2, ses_sdl_tile_query, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_query"), 4, ses_native_palette_query, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_query"), 3, ses_native_tile_query, NULL);
 
 
     ses.mainContext = context_create();
@@ -1173,11 +1255,59 @@ int ses_native_main_loop(matte_t * m) {
     ses_window_set_event_callback(ses.window, SES_WINDOW_EVENT__FRAME_RENDER,   ses_native_update__frame_render_callback, NULL);
 
 
+    ses_cartridge_bootup(ses.mainCart);    
+
+
+
     while(ses_native_update(m)) {}
     return 0;
 }
 
-/*
+
+
+int ses_native_get_palette_info(
+    uint32_t index,
+    sesVector_t * data
+) {
+
+    const sesGraphicsContext_Palette_t * p = ses_graphics_context_storage_get_palette(
+        ses_cartridge_get_context_storage(
+            ses.mainCart
+        ),
+        index
+    );
+    if (!p) {
+        return 0;
+    }   
+
+
+    data[0] = p->back;
+    data[1] = p->midBack;
+    data[2] = p->midFront;
+    data[3] = p->front;
+    return 1;
+}
+
+int ses_native_get_tile_info(
+    uint32_t tile,
+    uint8_t * data
+) {
+    const sesGraphicsContext_Tile_t * tilep = ses_graphics_context_storage_get_tile(
+        ses_cartridge_get_context_storage(
+            ses.mainCart
+        ),
+        tile
+    );
+    if (!tilep) {
+        return 0;
+    }   
+    memcpy(data, tilep->data, SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS);
+
+    return 1;    
+}
+
+
+
 int ses_native_get_sprite_info(
     uint32_t index,
     
@@ -1196,10 +1326,13 @@ int ses_native_get_sprite_info(
     uint32_t * tile    
     
 ) {
-    SES_Context * ctx = sdl.swapped ? &sdl.aux : &sdl.main;
-    if (index >= SPRITE_COUNT_TOTAL) return 0;
+    sesGraphicsContext_Sprite_t * spr = ses_cartridge_get_sprite(ses.mainCart, index);
     
-    SES_Sprite * spr = &ctx->sprites[index];
+    if (!spr) {
+        return 0;
+    }
+    
+
     *x = spr->x;
     *y = spr->y;
     *rotation = spr->rotation;
@@ -1216,43 +1349,7 @@ int ses_native_get_sprite_info(
 }
 
 
-int ses_native_get_tile_info(
-    uint32_t tile,
-    uint8_t * data
-) {
-    if (tile > TILE_ID_MAX) return 0;
-    ses_sdl_gl_bind_tile(tile);
-    
-    int i;
-    for(i = 0; i < 64; ++i) {
-        data[i] = ses_sdl_gl_get_tile_pixel(i);
-    }
-    
-    ses_sdl_gl_unbind_tile(tile);
-    return 1;    
-}
 
 
-int ses_native_get_palette_info(
-    uint32_t index,
-    sesVector_t * data
-) {
-    SES_Context * ctx = sdl.swapped ? &sdl.aux : &sdl.main;
-    if (index >= matte_array_get_size(ctx->palettes)) return 0;
-
-    SES_Palette p = matte_array_at(ctx->palettes, SES_Palette, index);
-    data[0] = p.back;
-    data[1] = p.midBack;
-    data[2] = p.midFront;
-    data[3] = p.front;
-    return 1;
-}
-
-static matteValue_t ses_sdl_get_calling_bank(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteValue_t v = matte_heap_new_value(matte_vm_get_heap(vm));
-    matte_value_into_number(matte_vm_get_heap(vm), &v, 0);
-    return v;
-}
-*/
 
 

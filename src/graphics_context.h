@@ -2,6 +2,7 @@
 #define H_SES_GRAPHICS_CONTEXT__INCLUDED 
 
 #include "linear.h"
+#include <stdint.h>
 
 // The graphics context manages all lower-level
 // rendering operations within SES. 
@@ -12,6 +13,10 @@ typedef struct sesGraphicsContext_Layer_t sesGraphicsContext_Layer_t;
 
 #define SES_GRAPHICS_CONTEXT__LAYER_COUNT      128
 #define SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS 8
+#define SES_GRAPHICS_CONTEXT__LAYER_MIN -63
+#define SES_GRAPHICS_CONTEXT__LAYER_MID 0
+#define SES_GRAPHICS_CONTEXT__LAYER_MAX 64
+
 
 
 typedef struct sesGraphicsContext_Sprite_t sesGraphicsContext_Sprite_t;
