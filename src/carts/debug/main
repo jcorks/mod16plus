@@ -1,12 +1,8 @@
 @:class = import(module:'Matte.Core.Class');
 @:SES = import(module:'SES.Core');
-@:Cart = SES.cartridge;
+@:Cart = SES.Cartridge;
 @:StringRenderer = Cart.subCartridge(name:'ascii-renderer');
 
-@:ses_native__debug_context_enter = getExternalFunction(name:"ses_native__debug_context_enter");
-@:ses_native__debug_context_query = getExternalFunction(name:"ses_native__debug_context_query");
-@:ses_native__debug_context_is_allowed = getExternalFunction(name:"ses_native__debug_context_is_allowed");
-@:ses_native__debug_context_bind = getExternalFunction(name:"ses_native__debug_context_bind");
 
 @inDebugContext = false;
 
@@ -43,7 +39,7 @@
 
 
         @lines = [''];
-        @colors = [0];
+        @colors = [[1, 1, 1]];
         
         @offsetX = 0;
         @offsetY = 0;
@@ -55,72 +51,46 @@
         @scrollX = 0;
         @scrollY = 0;
         
-        @oscID = oscillatorIDPool;
-        oscillatorIDPool+=1;
-
 
         @lineVisuals = [];
 
 
 
 
-        @:drawString::(string, x, y, offset, color) {
-            StringRenderer.drawString(string, x, y, r:color[0], g:color[1], b:color[2]);
-        };
 
 
 
-        @:clearCanvas:: {
-            StringRenderer.clear();
-        };
 
 
         @:MIN ::(a, b) <- if (a < b) a else b;
         @:redrawLines :: {
-            Cart.Oscillator.set(index:oscID, enable:true, periodMS:17, onCycle::{
-                StringRenderer.clear();
 
-                @i = 0;
-                [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
-                    @:line = lines[index];
-                    @:color = colors[index];
-                    when(line->length == 0) ::<= {
-                        i+=1;
-                    };
-                    
-                    @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
-                    when(scrolledLine == empty || scrolledLine->length == 0) ::<= {
-                        i+=1;
-                    };
-
-
-                    spr = drawString(offset:spr, x:offsetX, y: i*8 + offsetY, string:scrolledLine, color);
-                    print(message: ' test'+index);
+            this.release();
+            
+            
+            @i = 0;
+            [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
+                @:line = lines[index];
+                @:color = colors[index];
+                when(line->length == 0) ::<= {
                     i+=1;
-                });
+                };
                 
-                
-                // cursor
-                if (inputCallbackID != empty) ::<= {
-                    /*Cart.Sprite.set(
-                        index: spr,
-                        tile: 0,
-                        show:true,
-                        layer: 0,
-                        x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
-                        y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
-                        effect: Cart.Sprite.EFFECTS.Color,
-                        palette:defaultPalette_
-                    );*/                    
-                    //lastSpriteCount = spr+1;
-                } else 
-                    //lastSpriteCount = spr;
+                @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
+                when(scrolledLine == empty || scrolledLine->length == 0) ::<= {
+                    i+=1;
+                };
 
-                Cart.Oscillator.set(index:oscID, enable:false);
+
+                lineVisuals->push(value:StringRenderer.create(x:offsetX, y: i*8 + offsetY, string:scrolledLine, r:color[0], g:color[1], b:color[2]));
+                i+=1;
             });
-
-                
+            
+           
         };
+        
+        
+        
 
 
         @:insertText ::(src, at, text) {
@@ -307,7 +277,7 @@
                         cursorY += 1;
                         cursorX = 0;
                         lines->insert(value:'', at:cursorY);  
-                        colors->insert(value:0, at:cursorY);              
+                        colors->insert(value:[1, 1, 1], at:cursorY);              
                         movedDown();
                         movedLeft();
 
@@ -318,7 +288,7 @@
                         @line = lines[cursorY];
                         lines[cursorY] = '';
                         @color = colors[cursorY];
-                        colors[cursorY] = 0;
+                        colors[cursorY] = [1, 1, 1];
                         cursorY += 1;
                         cursorX = 0;
                         lines->insert(value:line, at:cursorY);
@@ -336,7 +306,7 @@
                     lines[cursorY] = lines[cursorY]->substr(from:0, to:cursorX-1);
 
                     if (colors[cursorY] == empty)
-                        colors[cursorY] = 0;
+                        colors[cursorY] = [1, 1, 1];
 
                     cursorY += 1;
                     cursorX = 0;
@@ -404,6 +374,13 @@
                     redrawLines();
                 },
                 get ::<- offsetY
+            },
+            
+            release :: {
+                lineVisuals->foreach(do:::(i, v) {
+                    StringRenderer.destroy(refs:v);
+                });
+                lineVisuals = [];            
             },
 
             scrollX : {
@@ -582,12 +559,12 @@
 
                     if (value == '' || value == '\n') ::<= {
                         lines = [''];
-                        colors = [0];
+                        colors = [[1, 1, 1]];
                     } else ::<= {                                                                       
                         lines = value->split(token:'\n');
                         [0, lines->keycount]->for(do:::(i) {
                             @:line = lines[i];
-                            colors[i] = defaultPalette_;
+                            colors[i] = [1, 1, 1];
                         });
                     };
 
@@ -596,7 +573,7 @@
                         colors = colors->subset(from:0, to:LINE_LIMIT);
                         if (lines == empty) ::<= {
                             lines = [''];
-                            colors = [0];
+                            colors = [[1, 1, 1]];
                         };
                     };
 
@@ -608,7 +585,7 @@
             
             addLine ::(text) {
                 lines->push(value:text);
-                colors->push(value:defaultPalette_);
+                colors->push(value:[1, 1, 1]);
                 
                 if (LINE_LIMIT > 0)
                     lines = lines->subset(from:0, to:LINE_LIMIT);
@@ -685,7 +662,7 @@
             
             
             
-            setColor ::(rgbArray => Number, y => Number) {
+            setColor ::(rgbArray => Object, y => Number) {
                 when(y < 0 || y >= colors->keycount) empty;
                 colors[y] = rgbArray;
             }
@@ -708,7 +685,16 @@
     
     @:onDebugPrint::(text => String, colorHint) {
         display.addLine(text);
-        display.setColor(paletteID:colorHint, y:display.getLineCount()-1);
+        
+        display.setColor(
+            rgbArray:match(colorHint) {
+              (SES.Debug.COLOR_HINT.NORMAL): [0.6, 0.6, 0.6],
+              (SES.Debug.COLOR_HINT.CODE):   [0.87, 0.8, 0.5],
+              (SES.Debug.COLOR_HINT.ERROR):  [1, 0.3, 0.3],
+              default: [1, 1, 1]
+            }, 
+            y:display.getLineCount()-1
+        );
     };
 
     @:onDebugCommit:: {
@@ -722,12 +708,11 @@
     
     @:onDebugEnter :: {
 
-
     
         display = Text.new();
         display. = {
-            widthChars: (Cart.resolutionWidth / 6)->floor,
-            heightChars:((Cart.resolutionHeight-3) / 8)->floor,
+            widthChars: (SES.resolutionWidth / 6)->floor,
+            heightChars:((SES.resolutionHeight-3) / 8)->floor,
             editable : false,
             scrollable : true
         };
@@ -739,17 +724,17 @@
             heightChars: 1,
             editable : false,
             x: 0,
-            y: Cart.resolutionHeight - 8,            
+            y: SES.resolutionHeight - 8,            
             widthChars: 1,
         };         
 
         entry = Text.new(spriteOffset:4000, defaultPalette:3);
         entry. = {
-            widthChars: (Cart.resolutionWidth / 6)->floor,
+            widthChars: (SES.resolutionWidth / 6)->floor,
             heightChars: 1,
             editable : true,
             x: 6,
-            y: Cart.resolutionHeight - 8               
+            y: SES.resolutionHeight - 8               
         };
 
 
@@ -759,7 +744,7 @@
             callback:::(event, text, key) {
                 when(event != SES.Input.EVENTS.KEY_DOWN) empty;
                 if (key == SES.Input.KEYS.RETURN) ::<= {
-                    ses_native__debug_context_query(a:entry.text => String);
+                    SES.Debug.query(expression:entry.text => String);
                     entry.text = '';
                     entry.scrollY = 0;
                     entry.moveCursor(x:0, y:0); 
@@ -768,55 +753,15 @@
         );                
 
 
-
-        // normal                
-        Cart.Palette.set(
-            index: 0,
-            colors: [
-                [0, 0, 0],
-                [0, 0, 0],
-                [0, 0, 0],
-                [0.6, 0.6, 0.6]
-            ]
-        );
-
-        // code
-        Cart.Palette.set(
-            index: 1,
-            colors: [
-                [0, 0, 0],
-                [0, 0, 0],
-                [0, 0, 0],
-                [0.87, 0.8, 0.5]
-            ]
-        );
-
-        // error
-        Cart.Palette.set(
-            index: 2,
-            colors: [
-                [0, 0, 0],
-                [0, 0, 0],
-                [0, 0, 0],
-                [1, 0.3, 0.3]
-            ]
-        );
-
-        // enter
-        Cart.Palette.set(
-            index: 3,
-            colors: [
-                [0, 0, 0],
-                [0, 0, 0],
-                [0, 0, 0],
-                [1, 1, 1]
-            ]
-        );     
     };
 
 
     @:onDebugLeave ::{
         SES.Input.removeCallback(id:callbackID, device:SES.Input.DEVICES.KEYBOARD);
+        display.release();
+        cursor.release();
+        entry.release();
+    
         entry.editable = false;
         display.text = '';
         entry.text = '';
@@ -826,17 +771,15 @@
         
 
 
-    ses_native__debug_context_bind(
-        a:onDebugPrint, b:onDebugClear, c:onDebugEnter, d:onDebugCommit, e:onDebugLeave
+    SES.Debug.bind(
+        onDebugPrint, onDebugClear, onDebugEnter, onDebugCommit, onDebugLeave
     );
 
 
 
     return ::{    
-        when(!ses_native__debug_context_is_allowed()) empty;
-        when (inDebugContext) empty;
 
-        ses_native__debug_context_enter();
+        SES.Debug.enter();
 
     };
 };

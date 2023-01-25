@@ -26,6 +26,14 @@
 
 
 
+@:ses_native__debug_context_is_allowed = getExternalFunction(name:"ses_native__debug_context_is_allowed");
+@:ses_native__debug_context_enter = getExternalFunction(name:"ses_native__debug_context_enter");
+@:ses_native__debug_context_query = getExternalFunction(name:"ses_native__debug_context_query");
+@:ses_native__debug_context_bind = getExternalFunction(name:"ses_native__debug_context_bind");
+
+
+
+
 // preset palettes are loaded from the rom
 @:Palette = ::<= {
     @:hexToNum = {
@@ -836,6 +844,66 @@
 };
 
 
+@:Debug = ::<= {
+    @inDebugContext = false;
+
+    @:COLOR_HINT = {
+        NORMAL: 0,
+        CODE: 1,
+        ERROR: 2
+    };
+
+
+    return class(
+        define:::(this) {
+            this.interface = {
+                COLOR_HINT: {
+                    get::<-COLOR_HINT
+                },
+                bind::(
+                    onDebugPrint  => Function,
+                    onDebugClear  => Function,
+                    onDebugCommit => Function,
+                    onDebugEnter  => Function,
+                    onDebugLeave  => Function
+                ) {
+                    when(!ses_native__debug_context_is_allowed()) empty;                    
+                    ses_native__debug_context_bind(
+                        a:onDebugPrint, 
+                        b:onDebugClear, 
+                        d:onDebugCommit, 
+                        c:::{
+                            when(inDebugContext) empty;
+                            print(message:'DEBUG CONTEXT:::ENTERED!!!!!!!!!!!!!!!');
+                            inDebugContext = true;
+                            onDebugEnter();
+                        }, 
+                        e:::{
+                            print(message:'DEBUG CONTEXT:::EXITED!!!!!!!!!!!!!!!');
+                            inDebugContext = false;
+                            onDebugLeave();
+                        }
+                    );
+                
+                },
+                
+                enter::() {
+                    when(!ses_native__debug_context_is_allowed()) empty;                    
+                    ses_native__debug_context_enter();
+                
+                },
+                
+                query::(expression => String) {
+                    when(!ses_native__debug_context_is_allowed()) empty;                    
+                    ses_native__debug_context_query(a:expression);
+                
+                }
+            
+            };
+        }
+    ).new();
+};
+
 
 
 @:SES = class(
@@ -927,6 +995,7 @@
             Audio     : {get ::<- Audio},
             Input     : {get ::<- Input},
             RESOLUTION : RESOLUTION,
+            Debug     : {get ::<- Debug},
             
             
 

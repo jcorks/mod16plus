@@ -78,6 +78,7 @@ typedef struct {
 
 
     sesContext_t mainContext;
+    sesContext_t auxContext;
 
     // every cartridge has a 
     sesCartridge_t * mainCart;
@@ -851,16 +852,16 @@ void ses_native_commit_rom(sesROM_t * rom, matte_t * m) {
 
 
     ses.mainContext = context_create();
-    //sdl.aux = context_create();    
+    ses.auxContext = context_create();    
 
    
 }
 
 void ses_native_swap_context() {
-    //SES_Context c = sdl.main;
-    //sdl.main = sdl.aux;
-    //sdl.aux = c;
-    //sdl.swapped = !sdl.swapped;
+    sesContext_t c = ses.mainContext;
+    ses.mainContext = ses.auxContext;
+    ses.auxContext = c;
+    ses.swapped = !ses.swapped;
 }
 
 
@@ -1058,9 +1059,7 @@ static void ses_native_update__text_callback(
     int w, h;
     
     
-    matteString_t * textRaw = matte_string_create_from_c_str("%s", evt->text);
-    matte_value_into_string(heap, &textval, textRaw);
-    matte_string_destroy(textRaw);
+    matte_value_into_string(heap, &textval, evt->text);
     matte_value_into_number(heap, &eventVal, 1);
 
 
@@ -1237,7 +1236,8 @@ int ses_native_update(matte_t * m) {
     ses.vm = matte_get_vm(m);
     matteHeap_t * heap = matte_vm_get_heap(ses.vm);
     ses_window_resolve_events(ses.window);
-    ses_cartridge_poll_oscillators(ses.mainCart, ses_window_get_ticks(ses.window));
+    if (!ses.swapped)
+        ses_cartridge_poll_oscillators(ses.mainCart, ses_window_get_ticks(ses.window));
     ses_window_thread_wait(ses.window, 1);
    
     return 1;
