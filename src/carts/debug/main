@@ -53,7 +53,7 @@
         
 
         @lineVisuals = [];
-
+        @cursorVisual;
 
 
 
@@ -66,7 +66,6 @@
         @:redrawLines :: {
 
             this.release();
-            
             
             @i = 0;
             [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
@@ -82,11 +81,14 @@
                 };
 
 
-                lineVisuals->push(value:StringRenderer.create(x:offsetX, y: i*8 + offsetY, string:scrolledLine, r:color[0], g:color[1], b:color[2]));
+                lineVisuals->push(value:StringRenderer.create(layer:64, x:offsetX, y: i*8 + offsetY, string:scrolledLine, color));
                 i+=1;
             });
             
-           
+            if (inputCallbackID != empty) ::<= {
+                @:color = colors[cursorY];
+                cursorVisual = StringRenderer.create(layer:64, x:offsetX + (cursorX - scrollX)*GLYPH_WIDTH, y: (cursorY - scrollY) *GLYPH_HEIGHT + offsetY, string:'_', color); 
+            };
         };
         
         
@@ -380,7 +382,12 @@
                 lineVisuals->foreach(do:::(i, v) {
                     StringRenderer.destroy(refs:v);
                 });
-                lineVisuals = [];            
+                lineVisuals = [];       
+                     
+                if (cursorVisual != empty) ::<= {
+                    StringRenderer.destroy(refs:cursorVisual);
+                    cursorVisual = empty;
+                };
             },
 
             scrollX : {
@@ -679,7 +686,23 @@
     @cursor;
     @entry;
     @callbackID;    
+    @tilebg = 1;
+    Cart.Tile.set(
+        index: tilebg,
+        data: [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
 
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1
+        ]
+    );
+    
+    @spritebg = 1;
 
 
     
@@ -704,23 +727,41 @@
     
     @:onDebugClear:: {
         display.text = '';
+        display.scrollY = 0;
+        display.redraw();
     };
     
     @:onDebugEnter :: {
 
+
+        Cart.Sprite.set(
+            index: spritebg,
+            tile: tilebg,
+            show: true,
+            y : (SES.resolutionHeight) / 2 - 3,
+            x : 0,
+            layer: 63
+        );
+        
+        Cart.Sprite.transform(
+            index: spritebg,
+            scaleX: (SES.resolutionWidth / 8)->floor,
+            scaleY:((SES.resolutionHeight + 8) / 8)/2
+        );
     
         display = Text.new();
         display. = {
             widthChars: (SES.resolutionWidth / 6)->floor,
-            heightChars:((SES.resolutionHeight-3) / 8)->floor,
+            heightChars:(((SES.resolutionHeight-3) / 8) / 2)->floor,
             editable : false,
-            scrollable : true
+            scrollable : true,
+            y : (SES.resolutionHeight-3) / 2
         };
 
 
         cursor = Text.new(spriteOffset:3999);
         cursor. = {
-            text : '>',
+            text : '$',
             heightChars: 1,
             editable : false,
             x: 0,
@@ -730,7 +771,7 @@
 
         entry = Text.new(spriteOffset:4000, defaultPalette:3);
         entry. = {
-            widthChars: (SES.resolutionWidth / 6)->floor,
+            widthChars: (SES.resolutionWidth / 6)->floor - 2,
             heightChars: 1,
             editable : true,
             x: 6,
@@ -766,7 +807,12 @@
         display.text = '';
         entry.text = '';
         cursor.text = '';
-        inDebugContext = false;         
+        inDebugContext = false;   
+        
+        Cart.Sprite.set(
+            index: spritebg,
+            show: false
+        );              
     };
         
 

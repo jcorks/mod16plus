@@ -1,18 +1,17 @@
 @:class = import(module:'Matte.Core.Class');
-@:UI = import(module:'ui');
-@:TextArea = import(module:'textarea');
-@:Fetcher = import(module:'fetcher');
 @:SES = import(module:'SES.Core');
+@:Cartridge = SES.Cartridge;
+@:Fetcher = Cartridge.import(source:'fetcher');
+@:TextArea = Cartridge.subCartridge(name:'textarea');
+@:UI = Cartridge.import(source:'ui');
+
 return class(
     inherits:[UI],
     define:::(this) {
     
-        @:offset = Fetcher.Sprite.newID();
-        @:foregroundPalette = Fetcher.Palette.newID();
         
-        Fetcher.Sprite.claimIDs(amount:30);
-    
-        @:textarea = TextArea.new(spriteOffset:offset);
+        @foregroundPalette = [1, 1, 1];
+        @:textarea = TextArea.new();
         textarea. = {
             editable : false,
             heightChars: 1,
@@ -69,15 +68,8 @@ return class(
         this.interface = {
             foreground : {
                 set ::(value => String) {
-                    SES.Palette.set(
-                        index:foregroundPalette,
-                        colors: [
-                            value,
-                            value,
-                            value,
-                            value
-                        ]
-                    );                
+                    foregroundPalette = value;
+                    textarea.defaultPalette = foregroundPalette;
                 }
             },
             

@@ -1408,8 +1408,8 @@ Cart.Tile.set(
 
 
 return {
-    create::(string, x, y, r, g, b) {
-        
+    create::(string, x, y, color, layer) {
+        if (layer == empty) layer = 0;
         @refs = {
             sprites : [],
             palette : if (freePalettes->keycount) 
@@ -1423,10 +1423,10 @@ return {
         Cart.Palette.set(
             index:refs.palette,
             colors: [
-                [r, g, b],
-                [r, g, b],
-                [r, g, b],
-                [r, g, b]
+                color,
+                color,
+                color,
+                color
             ]
         );
         
@@ -1445,7 +1445,8 @@ return {
                 show:true,
                 x: chX * GLYPH_WIDTH  + x,
                 y: chY * GLYPH_HEIGHT + y,
-                palette: refs.palette
+                palette: refs.palette,
+                layer
             );
             chX += 1;
             refs.sprites->push(value:spr);

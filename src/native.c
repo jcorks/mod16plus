@@ -827,7 +827,7 @@ void ses_native_commit_rom(sesROM_t * rom, matte_t * m) {
     matteVM_t * vm = matte_get_vm(m);
     ses.window = ses_window_create();
     ses.graphics = ses_window_get_graphics(ses.window);
-    ses.mainCart = ses_cartridge_create(vm, rom, ses.graphics);
+    ses.mainCart = ses_cartridge_create(vm, rom, ses.graphics, MATTE_VM_STR_CAST(vm, "ROM"), NULL);
 
     // all 3 modes require activating the core features.
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__get_context_cartridge_id"), 0, ses_native_get_context_cartridge_id, NULL);
@@ -894,7 +894,7 @@ static void push_motion_callback() {
     matteValue_t eventVal = matte_heap_new_value(heap);                
     
     int wr, hr;
-    ses_graphics_context_get_render_size(ses.graphics, &w, &h);
+    ses_graphics_context_get_render_size(ses.graphics, &wr, &hr);
     
     matte_value_into_number(heap, &xval, (ses.pointerX / (float) w) * wr);
     matte_value_into_number(heap, &yval, (ses.pointerY / (float) h) * hr);
@@ -1126,7 +1126,7 @@ static void ses_native_update__pointer_button_callback(
     
 
     int wr, hr;
-    ses_graphics_context_get_render_size(ses.graphics, &w, &h);
+    ses_graphics_context_get_render_size(ses.graphics, &wr, &hr);
     
     
     matte_value_into_number(heap, &xval, (evt->x / (float) w) * wr);

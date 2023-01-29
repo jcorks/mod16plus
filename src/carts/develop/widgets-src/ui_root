@@ -1,8 +1,11 @@
 @:class = import(module:'Matte.Core.Class');
-@:UI = import(module:'ui');
-@:TextArea = import(module:'textarea');
-@:Fetcher = import(module:'fetcher');
-@:Debug = import(module:'SES.Debug');
+@:SES = import(module:'SES.Core');
+@:Cartridge = SES.Cartridge;
+@:Fetcher = Cartridge.import(source:'fetcher');
+@:UI = Cartridge.import(source:'ui');
+
+
+
 return class(
     inherits:[UI],
     define:::(this) {

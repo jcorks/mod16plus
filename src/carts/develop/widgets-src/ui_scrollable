@@ -1,13 +1,13 @@
 @:class = import(module:'Matte.Core.Class');
-@:UI = import(module:'ui');
-@:TextArea = import(module:'textarea');
-@:Fetcher = import(module:'fetcher');
 @:SES = import(module:'SES.Core');
+@:Cartridge = SES.Cartridge;
+@:Fetcher = Cartridge.import(source:'fetcher');
+@:UI = Cartridge.import(source:'ui');
 
 
 
 @:palette = Fetcher.Palette.newID();
-SES.Palette.set(
+Cartridge.Palette.set(
     index:palette,
     colors: [
         [1, 1, 1],
@@ -19,7 +19,7 @@ SES.Palette.set(
 
 
 @:line = Fetcher.Tile.newID();
-SES.Tile.set(
+Cartridge.Tile.set(
     index:line,
     data: [
         1, 0, 0, 0, 0, 0, 0, 0,
@@ -44,7 +44,7 @@ return class(
 
 
         @:scrollbar = Fetcher.Sprite.newID();
-        SES.Sprite.set(
+        Cartridge.Sprite.set(
             index:scrollbar,
             show: false,
             tile: line,
@@ -79,7 +79,7 @@ return class(
         
         @:redrawScrollbar ::{
             when(itemsPerPage_ > itemCount_) ::<= {
-                SES.Sprite.set(
+                Cartridge.Sprite.set(
                     index:scrollbar,
                     show: false
                 );
@@ -88,7 +88,7 @@ return class(
             @:scrollX = this.x + this.width - 1;
             @:scrollY = this.y + (this.height / itemCount_) * itemTop;
             
-            SES.Sprite.set(
+            Cartridge.Sprite.set(
                 index:scrollbar,
                 show: true,
                 layer: this.layer+1,
@@ -102,7 +102,7 @@ return class(
             @scale = (1 / 8) * this.height * (itemsPerPage_ / itemCount_);
             print(message:'Scroll: [' + scrollX + ', ' + scrollY + ', ' + scale + ']');
             if (scale <  1/ 8) scale = 1/8;
-            SES.Sprite.transform(
+            Cartridge.Sprite.transform(
                 index:scrollbar,
                 scaleY: scale
             );
@@ -146,7 +146,7 @@ return class(
                 onHide ::(detail) {
                     SES.Input.removeCallback(device:SES.Input.DEVICES.POINTER0, id:inputid);
                     inputid = -1;
-                    SES.Sprite.set(
+                    Cartridge.Sprite.set(
                         index:scrollbar,
                         show: false
                     );

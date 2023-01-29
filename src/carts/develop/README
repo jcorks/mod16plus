@@ -1,0 +1,112 @@
+Overview
+--------
+
+
+The develop tool is meant to allow you to make full game 
+ROMs by providing tools to write code, edit sprites,
+build backgrounds, and import sounds.
+
+The UI consists of 3 parts, the menu bar, 
+the view canvas, and the view switcher.
+
+- The menu bar is a line of text buttons that give 
+  additional features to manage the view. Located 
+  at the top of the screen
+
+- The view canvas has the tool features
+
+- The view switcher switches between views using 
+  button icons at the bottom of the screen.
+
+
+
+View is GBA:
+- 30 8x8 tiles wide
+- 20 8x8 tiles high 
+
+- 1 row is dedicated to menu (top)
+- 1 row is dedicated to view switcher (bottom)
+
+
+
+The Project view 
+----------------
+ Menu:
+   - project
+     - New 
+     - Save
+     - Save As 
+     
+ Layout:
+    - Entry for name 
+    - Entry for version
+    - Entry for authors 
+    - Large entry for notes (scrollable)
+
+
+The editor view 
+---------------
+
+ Menu:
+   - File 
+     - New 
+     - Save
+     
+   - Switch
+   
+   
+ Layout:
+    Text editor with syntax highlighting
+    
+The canvas (layer 1) view 
+-------------------------
+
+ Layout:
+    - left side is a scrollable view consisting of 
+      all tiles. Each line is tile visual (1:1) in the palette
+      color currently selected follwoed by a hex of its ID.
+      One of them is always selected. Default is 0x0.
+      
+    - Middle is a view consisting of 2:1 tiles. The cursor is a 
+      16x16 square snapped to 16x16 grid increments. If the pencil tool 
+      is selected and the cursor clicked, the area highlighted is replaced 
+      with the current tile + palette. If the erase tool is selected,
+      the tile is removed.
+      
+      The region is scrollable using ctrl + drag and is effectively infinite.
+      
+      
+    - Right side has 3 buttons:
+        1. Pencil tool. Toggled on or off 
+        2. Erase tool. Toggled on or off, opposite of pencil.
+        3. Palette chooser. Opens a view to select a palette 
+        
+        
+The canvas (layer 2) view 
+-------------------------
+
+Same as layer 1, except is stored separately 
+and it shows layer 1 below it with a preset neutral palette.
+
+
+The sprite view 
+---------------
+
+Shows canvas but has only one tile (4:1) area selected.
+
+Layout:
+    - left side becaomes scrollable region for palettes, same size 
+      as the sprite selector for the canvas view 
+      
+    - Middle is 4:1 sprites in the grid layout of the canvas.
+      The center is the sprite currently being worked on.
+      Clicking places changes the pixel of the selected sprite
+      with the selected area
+      
+    - right ride is 5 buttons corresponding to the "empty" color 
+      and the 4 colors of the currently selected palette. They are buttons.
+        
+    - The button has 4 arrow buttons. Clicking changes which palette is 
+      selected for editing on the canvas displayed. This means that 
+      changing sprites to work on requires placing them on the canvas first.
+      

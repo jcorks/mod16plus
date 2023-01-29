@@ -1,14 +1,16 @@
 @:class = import(module:'Matte.Core.Class');
 @:SES = import(module:'SES.Core');
-@:Debug = import(module:'SES.Debug');
-@:Fetcher = import(module:'fetcher');
+
+@:Cartridge = SES.Cartridge;
+@:AsciiRenderer = Cartridge.subCartridge(name:'ascii-renderer');
 
 
 
 
 
-@:TILE_HIGHLIGHT_PALETTE = Fetcher.Palette.newID();
-SES.Palette.set(
+@:TILE_HIGHLIGHT_PALETTE = 0;
+
+Cartridge.Palette.set(
     index : TILE_HIGHLIGHT_PALETTE,
     colors : [
         [0, 0, 0],
@@ -19,17 +21,43 @@ SES.Palette.set(
 );
 
 
+
+@:TILE_HIGHLIGHT = 0;
+Cartridge.Tile.set(
+    index: TILE_HIGHLIGHT,
+    data: [
+        4, 0, 4, 0, 4, 0, 0, 0,
+        0, 4, 0, 4, 0, 4, 0, 0,
+        4, 0, 4, 0, 4, 0, 0, 0,
+        0, 4, 0, 4, 0, 4, 0, 0,
+        4, 0, 4, 0, 4, 0, 0, 0,
+        0, 4, 0, 4, 0, 4, 0, 0,
+        4, 0, 4, 0, 4, 0, 0, 0,
+        0, 4, 0, 4, 0, 4, 0, 0
+    ]
+);
+
+@:DEFAULT_PALETTE_ID = 1;
+Cartridge.Palette.set(
+    index: DEFAULT_PALETTE_ID,
+    colors: [
+        [0.5, 0.5, 0.5],
+        [0.5, 0.5, 0.5],
+        [0.5, 0.5, 0.5],
+        [0.5, 0.5, 0.5]
+    ]
+);
+
 return class(
     name: 'TextArea',
     define:::(this) {
-        @spriteOffset_ = 0;
         @onChange_;
         @onNavHor_;
         @onNavVer_;
         @onEnter_;
         @onNewLine_;
         @onDelLine_;
-        @defaultPalette_ = 0;
+        @defaultPalette_ = [1, 1, 1];
         @shown = true;
 
         @TEXT_AREA_HEIGHT = 10;
@@ -40,7 +68,7 @@ return class(
         @GLYPH_WIDTH  = 6;
         @GLYPH_HEIGHT = 8;
         @completionMode = false;
-        @:REDRAW_OSCILLATOR = Fetcher.Oscillator.newID();
+        //@:REDRAW_OSCILLATOR = 0;
 
         
 
@@ -61,23 +89,10 @@ return class(
         @scrollX = 0;
         @scrollY = 0;
         
+        @refs = [];
         @lastSpriteCount = 0;
 
 
-        @:TILE_HIGHLIGHT = Fetcher.Tile.newID();
-        SES.Tile.set(
-            index: TILE_HIGHLIGHT,
-            data: [
-                4, 0, 4, 0, 4, 0, 4, 0,
-                0, 4, 0, 4, 0, 4, 0, 4,
-                4, 0, 4, 0, 4, 0, 4, 0,
-                0, 4, 0, 4, 0, 4, 0, 4,
-                4, 0, 4, 0, 4, 0, 4, 0,
-                0, 4, 0, 4, 0, 4, 0, 4,
-                4, 0, 4, 0, 4, 0, 4, 0,
-                0, 4, 0, 4, 0, 4, 0, 4
-            ]
-        );
 
 
 
@@ -90,14 +105,14 @@ return class(
 
             
             [0, count]->for(do:::(i) {
-                SES.Sprite.set(
+                Cartridge.Sprite.set(
                     index: spr,
                     tile: TILE_HIGHLIGHT,
                     show:true,
                     layer,
                     x: i * GLYPH_WIDTH +x,
                     y: y,
-                    effect: SES.Sprite.EFFECTS.Color,
+                    effect: Cartridge.Sprite.EFFECTS.Color,
                     palette:TILE_HIGHLIGHT_PALETTE
                 );                    
                 spr += 1;
@@ -107,40 +122,43 @@ return class(
         };
 
 
-        @:drawString::(string, x, y, offset, colors) {
-             
-            @spr = offset;
-            
+        @:drawString::(string, x, y, colors) {
+            @refs = [];         
             @chX = 0;
             @chY = 0;
 
 
             [0, string->length]->for(do:::(i) {
-                SES.Sprite.set(
-                    index: spr,
-                    tile: string->charCodeAt(index:i),
-                    show:true,
-                    layer,
-                    x: chX * GLYPH_WIDTH  + x,
-                    y: chY * GLYPH_HEIGHT + y,
-                    palette: colors[i]
+                refs->push(value:
+                    AsciiRenderer.create(
+                        string: string->charAt(index:i),
+                        x: chX * GLYPH_WIDTH  + x,
+                        y: chY * GLYPH_HEIGHT + y,
+                        layer,
+                        color: colors[i]
+                    )
                 );
-                spr += 1;
                 chX += 1;
             });
-            return spr;
+            return refs;
         };
 
 
 
         @:clearCanvas:: {
-            [spriteOffset_, lastSpriteCount]->for(do:::(i) {
-                SES.Sprite.set(
-                    index:i,
-                    show:false
+            refs->foreach(do:::(i, refset) {
+                refset->foreach(do:::(n, ref) {                
+                    AsciiRenderer.destroy(refs:ref);
+                });
+            });
+            refs = [];
+            [0, lastSpriteCount]->for(do:::(i) {
+                Cartridge.Sprite.set(
+                    index: i,
+                    show: false
                 );
             });
-
+            lastSpriteCount = 0;
         };
 
 
@@ -149,17 +167,17 @@ return class(
         @redrawActive = false;
         @:redrawLines :: {
             when(redrawActive) empty;
-            SES.Oscillator.set(
-                enable:true,
-                index:REDRAW_OSCILLATOR,
-                periodMS:17,
-                onCycle::{
+            //SES.Oscillator.set(
+                //enable:true,
+                //index:REDRAW_OSCILLATOR,
+                //periodMS:17,
+                //onCycle::{
+                    clearCanvas();                    
                     when(!shown) ::<= {
-                        clearCanvas();
                         redrawActive = false;
-                        SES.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
+                        //SES.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
                     };
-                    @spr = spriteOffset_;
+                    @spr = 0;
                     @i = 0;
                     [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
                         @:line = lines[index];
@@ -176,7 +194,7 @@ return class(
 
 
                         if (scrolledColor != empty)
-                            spr = drawString(offset:spr, x:offsetX, y: i*GLYPH_HEIGHT + offsetY, string:scrolledLine, colors:scrolledColor);
+                            refs->push(value:drawString(x:offsetX, y: i*GLYPH_HEIGHT + offsetY, string:scrolledLine, colors:scrolledColor));
                         i+=1;
                     });
                     
@@ -228,36 +246,31 @@ return class(
                                 );
                             
                         });
-                    };
-
-                    [spr, lastSpriteCount]->for(do:::(i) {
-                        SES.Sprite.set(
-                            index:i,
-                            show:false
-                        );
-                    });           
+                    };       
                     
                     // cursor
                     if (inputCallbackID != empty) ::<= {
-                        SES.Sprite.set(
+                        
+                    
+                        Cartridge.Sprite.set(
                             index: spr,
                             tile: 0,
                             show:true,
                             layer,
                             x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
                             y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
-                            effect: SES.Sprite.EFFECTS.Color,
-                            palette:defaultPalette_
+                            effect: Cartridge.Sprite.EFFECTS.Color,
+                            palette:DEFAULT_PALETTE_ID
                         );                    
                         lastSpriteCount = spr+1;
                     } else 
                         lastSpriteCount = spr;
 
                     redrawActive = false;
-                    SES.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
+                    //SES.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
 
-                }
-            );
+            //    }
+            //);
                 
         };
 
@@ -279,10 +292,9 @@ return class(
                     });
                     return text + src;
                 };                   
-
                 colors[line] = [
                     ...colors[line]->subset(from:0, to:at-1),
-                    colors[line],
+                    ...colors[line],
                     ...colors[line]->subset(from:at, to:src->length-1)
                 ];
                 return src->substr(from:0, to:at-1) + text + src->substr(from:at, to:src->length-1);
@@ -623,13 +635,13 @@ return class(
 
     
         
-        this.constructor = ::(spriteOffset, defaultPalette, onChange, onNavVertical, onNavHorizontal, onEnter) {
+        this.constructor = ::(defaultPalette, onChange, onNavVertical, onNavHorizontal, onEnter) {
             onChange_ = onChange;
             onNavVer_ = onNavVertical;
             onNavHor_ = onNavHorizontal;
             onEnter_ = onEnter;
-            spriteOffset_ = spriteOffset;
-            defaultPalette_ = defaultPalette;
+            if (defaultPalette != empty)
+                defaultPalette_ = defaultPalette;
             
             return this;            
         };
@@ -843,7 +855,7 @@ return class(
                                     selectActive = false;
                                     mouseDownMod = true;
                                     mouseDownX = x;
-                                    mouseDownY = y;
+                                    mouseDownY = y;                                    
                                     @:a = this.pixelCoordsToCursor(x, y);        
                                     this.moveCursor(x:a.x, y:a.y);
                                     redrawLines();
@@ -1109,6 +1121,16 @@ return class(
             
             defaultPalette : {
                 set::(value) {
+                    Cartridge.Palette.set(
+                        index:DEFAULT_PALETTE_ID,
+                        colors: [
+                            value,
+                            value,
+                            value,
+                            value
+                        
+                        ]
+                    );
                     defaultPalette_ = value;
                     redrawLines();                    
                 }
@@ -1116,14 +1138,14 @@ return class(
             
             
             
-            setColor ::(paletteID => Number, fromX => Number, fromY => Number, toX => Number, toY => Number) {
+            setColor ::(paletteColor => Number, fromX => Number, fromY => Number, toX => Number, toY => Number) {
                 when(toY < fromY) print(message:'toY'+toY+' fromY'+fromY);
                 when(toY >= colors->keycount || fromY >= colors->keycount) print(message:'toY'+toY+' numColLines'+colors->keycount);
                 when(toY < 0) empty;
                 when(fromY == toY) ::<= {
                     @color = colors[fromY];
                     [fromX, toX+1]->for(do:::(x) {
-                        color[x] = paletteID;
+                        color[x] = paletteColor;
                     });
                 };
                 
@@ -1131,20 +1153,20 @@ return class(
                 when(fromY < toY) ::<= {
                     @color = colors[fromY];
                     [fromX, color->length]->for(do:::(x) {
-                        color[x] = paletteID;
+                        color[x] = paletteColor;
                     });
 
 
                     [fromY, toY]->for(do:::(y) {
                         color = colors[y];
                         [0, color->length]->for(do:::(x) {
-                            color[x] = paletteID;
+                            color[x] = paletteColor;
                         });
                     });
 
                     color = colors[toY];
                     [0, toX+1]->for(do:::(x) {
-                        color[x] = paletteID;
+                        color[x] = paletteColor;
                     });
 
                 };

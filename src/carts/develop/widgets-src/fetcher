@@ -1,0 +1,115 @@
+/*
+    Singleton-based ID transaction system
+    Makes it easy to instance your IDs!
+*/
+
+@:class = import(module:'Matte.Core.Class');
+@:SES = import(module:'SES.Core');
+@:Cartridge = SES.Cartridge;
+
+@:Fetcher = class(
+    name: 'Fetcher',
+    define:::(this) {
+        @count = 0;
+
+        this.constructor = ::(offset) {
+            if (offset != empty)
+                count = offset => Number;
+
+            return this;
+        };
+
+        this.interface = {
+        
+            // Fetches the next free ID
+            newID :: {
+                count += 1;
+                return count;
+            },
+            
+            // Skips the next count IDs. Used 
+            // to simulate claiming groups of IDs 
+            // that are off-limits to other users.
+            claimIDs::(amount) {
+                count += amount;
+            }
+        };
+    }
+);
+
+
+@:FetcherSprite = class(
+    name: 'Fetcher::Sprite',
+    define:::(this) {
+        @count = 0;
+
+        this.constructor = ::(offset) {
+            if (offset != empty)
+                count = offset => Number;
+
+            return this;
+        };
+
+        this.interface = {
+        
+            // Fetches the next free Sprite ID and initializes the sprite
+            newID :: {
+                count += 1;
+                Cartridge.Sprite.set(
+                    index: count,                    
+                    x:-8,
+                    y:-8,
+                    show:false
+                );
+                return count;
+            },
+            
+            // Skips the next count IDs. Used 
+            // to simulate claiming groups of IDs 
+            // that are off-limits to other users.
+            claimIDs::(amount) {
+                [count, count+amount]->for(do:::(i) {
+                    Cartridge.Sprite.set(
+                        index: i,                    
+                        x:-8,
+                        y:-8,
+                        show:false
+                    );
+                
+                });
+                count += amount;
+            }
+        };
+    }
+);
+
+return {
+    // Fetcher for sprite IDs
+    Sprite : FetcherSprite.new(),
+    
+    // Fetcher for background IDs
+    Background : Fetcher.new(),
+    
+    // Fetcher for IDs.
+    Palette : Fetcher.new(),
+    
+    Oscillator : Fetcher.new(),
+    
+    // Fetcher for (sprite) IDs. Only "makes sense" 
+    // up to 0x40000.
+    Tile : Fetcher.new(offset:0),
+    
+    
+    // Convenience function that gives the local tile ID 
+    // that the given background starts at.
+    // Backgrounds are always 16 x 8 tiles.
+    backgroundIDtoTileID::(id) {
+        return 0x40000 + (id * 32*16);
+    },
+
+    backgroundXYtoTileID::(id, x => Number, y => Number) {
+        return 0x40000 + (id * 32*16) + x*32 + y*32;
+    }
+
+
+};

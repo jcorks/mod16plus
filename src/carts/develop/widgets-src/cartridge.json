@@ -1,0 +1,25 @@
+{
+  "sources": [
+    "main",
+    "ui",
+    "ui_canvas",
+    "ui_entry",
+    "ui_flat",
+    "ui_label",
+    "ui_layout",
+    "ui_list",
+    "ui_mousable",
+    "ui_radio_layout",
+    "ui_root",
+    "ui_scrollable",
+    "ui_tile",
+    "ui_spacer",
+    "fetcher"
+  ],
+  
+  "subcartridges" : [
+    "rectangle-renderer",
+    "ascii-renderer",
+    "textarea"
+  ]
+}

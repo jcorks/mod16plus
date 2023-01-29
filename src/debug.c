@@ -175,6 +175,12 @@ static matteArray_t * split_lines(const uint8_t * data, uint32_t size) {
 static void ses_matte_backtrace() {
     uint32_t i;
     uint32_t len = matte_vm_get_stackframe_size(debug.vm);
+   
+   
+
+
+    debug_println("(paused) Backtrace: ", SESDebug_Color__Normal);
+   
     
     if (len < 1) {
         debug_println("<stackframe empty>", SESDebug_Color__Code);
@@ -198,9 +204,9 @@ static void ses_matte_backtrace() {
         
         const matteString_t * filename = matte_vm_get_script_name_by_id(debug.vm, fileid);
         if (filename == NULL) {
-            debug_println("%s????: %d", SESDebug_Color__Code, (i-start == debug.callstackLevel ? "> " : "  "),  lineNumber);        
+            debug_println("%s????: %d", SESDebug_Color__Code, (i-start == debug.callstackLevel ? " ->" : "   "),  lineNumber);        
         } else {
-            debug_println("%s%s: %d", SESDebug_Color__Code, (i-start == debug.callstackLevel ? "> " : "  "), matte_string_get_c_str(filename), lineNumber);
+            debug_println("%s%s: %d", SESDebug_Color__Code, (i-start == debug.callstackLevel ? " ->" : "   "), matte_string_get_c_str(filename), lineNumber);
         }    
         
     }
@@ -209,6 +215,9 @@ static void ses_matte_backtrace() {
 }
 
 static int ses_matte_debug_dump() {
+    ses_matte_backtrace();
+
+    return 1;
     matteVM_t * vm = debug.vm;        
     matteVMStackFrame_t frame = matte_vm_get_stackframe(vm, debug.callstackLevel + (matte_vm_get_stackframe_size(vm) - debug.callstackLimit));
     if (!frame.stub)
@@ -328,20 +337,24 @@ static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t
 
     matte_vm_call(debug.vm, debug.onEnter, matte_array_empty(), matte_array_empty(), NULL);
     
-    debug_println("SES. (debug console)", SESDebug_Color__Normal);
+    debug_println("SES Debugger", SESDebug_Color__Normal);
     debug_println("http://github.com/jcorks/", SESDebug_Color__Normal);
     debug_println("sprite-entertainment-system", SESDebug_Color__Normal);    
     debug_println("", SESDebug_Color__Normal);
+    debug_println("[[enter :? for help]]", SESDebug_Color__Normal);
     
     
     if (matte_string_get_length(debug.promptConsole)) {
+        debug_println("SCRIPT ERROR:", SESDebug_Color__Error);
         debug_println(matte_string_get_c_str(debug.promptConsole), SESDebug_Color__Error);
         matte_string_clear(debug.promptConsole);
+        debug_println("run :bt for a backtrace.", SESDebug_Color__Normal);
+        debug_show_text();
+    } else {
+        ses_matte_backtrace();    
     }
-    
-    ses_matte_backtrace();
-    ses_matte_debug_dump();
-    debug_show_text();
+
+
 
     for(;;) {
         if (debug.requestedExit) break;
@@ -390,7 +403,7 @@ static void ses_debug_unhandled_error(
 
 static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     const char * src = matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, args[0]));
-    debug_println(">%s", 3, src);
+    debug_println("$%s", 3, src);
     uint32_t len = strlen(src);
     char * query = malloc(len+1);
     char * arg = malloc(len+1);
@@ -537,6 +550,22 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
         debug_clear();
 
         ses_matte_debug_dump();            
+    } else if (!strcmp(query, ":?") ||
+        !strcmp(query, ":help")) {
+        
+        debug_println("Commands:", SESDebug_Color__Code);
+        debug_println("", SESDebug_Color__Code);
+        debug_println(" :up       - up callstack",    SESDebug_Color__Code);
+        debug_println(" :down     - down callstack",  SESDebug_Color__Code);
+        debug_println(" :continue - continue exec.",  SESDebug_Color__Code);
+        debug_println(" :backtrace- print callstack", SESDebug_Color__Code);
+        debug_println(" :help     - prints this",     SESDebug_Color__Code);
+        debug_println("", SESDebug_Color__Code);
+        debug_println("Otherwise, runs any expression", SESDebug_Color__Code);
+        debug_println("in the current scope", SESDebug_Color__Code);
+        
+        
+
     } else {
 
 

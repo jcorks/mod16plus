@@ -978,13 +978,13 @@
                         },
                         
                         
-                        import::(source => String) { // for safety, as the native function directly unsafely retrieves string for speed.
+                        "import"::(source => String) { // for safety, as the native function directly unsafely retrieves string for speed.
                             return ses_native__get_source(a:cart, b:source);
-                        },                        
+                        }
                     };
 
 
-                    allcartIDs[ses_native__get_context_cartridge_id()] = out;
+                    allcartIDs[cart] = out;
                     return out;
                 }
             

@@ -1,27 +1,9 @@
 @:class = import(module:'Matte.Core.Class');
-@:Fetcher = import(module:'fetcher');
 @:SES = import(module:'SES.Core');
-@:Debug = import(module:'SES.Debug');
+@:Fetcher = SES.Cartridge.import(source:'fetcher');
 @:EventSystem = import(module:'Matte.Core.EventSystem');
 
-
-@:UI_BG_TILE_ON = Fetcher.Tile.newID();
-SES.Tile.set(
-    index:UI_BG_TILE_ON,
-    data: [
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1    
-    ]
-);
-
-
+@:Rectangle = SES.Cartridge.subCartridge(name:'rectangle-renderer');
 
 
 
@@ -42,8 +24,8 @@ SES.Tile.set(
         @events = EventSystem.new();
         @isRoot = false;
 
-        @:backgroundSpriteID = Fetcher.Sprite.newID();
-        @:backgroundPalette = Fetcher.Palette.newID();
+        @background;
+        @bgColor = [0, 0, 0];
         
         @:isRooted = ::{
             @p = this;
@@ -57,30 +39,20 @@ SES.Tile.set(
         };
 
         @:readjustBackground ::{
-            SES.Sprite.set(index:backgroundSpriteID,   show:false);
+            if (background)
+                Rectangle.destroy(ref:background);
+
             when(!shown) empty;
             when(!enableBackground) empty;
  
-            SES.Sprite.set(
-                index:backgroundSpriteID, 
-                tile: UI_BG_TILE_ON,
-                show:true, 
-                palette:backgroundPalette,
+            background = Rectangle.create(
                 x:x_,
                 y:y_,
-                layer:this.layer,
-                effect: 
-                SES.Sprite.EFFECTS.Color
+                w:width_,
+                h:height_,
+                layer,
+                color:bgColor
             );
-            //print(message: 'bg' + width_ + ', '+ height_);
-            //print(message: 'ps' + x_ + ', '+ y_);
-            SES.Sprite.transform(
-                index:backgroundSpriteID, 
-                scaleX: width_ / 8,
-                scaleY: height_ / 8
-            );
-
-
         };
         
         
@@ -242,18 +214,9 @@ SES.Tile.set(
                 events.emit(event:'onChildCountChange');
             },
 
-            // empty -> no background
             background : {
                 set ::(value) {
-                    SES.Palette.set(
-                        index:backgroundPalette,
-                        colors: [
-                            value,
-                            value,
-                            value,
-                            value
-                        ]
-                    );
+                    bgColor = value;
                     readjustBackground();
                 }
             },

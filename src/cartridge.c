@@ -69,11 +69,18 @@ struct sesCartridge_t {
     
     // THe unique ID of the cart. Increments
     int uniqueID;
+    
+    
+    // The name of this rom
+    matteString_t * name;
+    
+    // the fullname of the rom including the ancestry as prefixes
+    matteString_t * fullname;
 };
 
 static matteArray_t * ALL_CARTRIDGES = NULL;
 
-sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphicsContext_t * graphics) {
+sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphicsContext_t * graphics, const matteString_t * namein, sesCartridge_t * parent) {
     if (!ALL_CARTRIDGES) {
         ALL_CARTRIDGES = matte_array_create(sizeof(sesCartridge_t *));
     }
@@ -87,7 +94,15 @@ sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphic
     cart->uniqueID = matte_array_get_size(ALL_CARTRIDGES);
     cart->sourceValues = calloc(ses_rom_get_bytecode_segment_count(rom), sizeof(matteValue_t));
     cart->sourcesRun = calloc(ses_rom_get_bytecode_segment_count(rom), 1);
-    
+    cart->name = matte_string_clone(namein);   
+    cart->parent = parent;
+    if (parent == NULL) {      
+        cart->fullname = matte_string_clone(namein);
+    } else {
+        cart->fullname = matte_string_create_from_c_str("%s/%s", matte_string_get_c_str(parent->fullname), matte_string_get_c_str(cart->name));            
+
+    }    
+    printf("Registered Cartridge: %s\n", matte_string_get_c_str(cart->fullname));
     
     
     matte_array_push(ALL_CARTRIDGES, cart);
@@ -136,9 +151,8 @@ sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphic
         }
         
         if (subrom) {
-            sesCartridge_t * subcart = ses_cartridge_create(vm, subrom, graphics);
+            sesCartridge_t * subcart = ses_cartridge_create(vm, subrom, graphics, name, cart);
             matte_array_push(cart->children, subcart);
-            subcart->parent = cart;
         }
     }
     matte_string_destroy(name);
@@ -315,13 +329,10 @@ sesCartridge_t * ses_cartridge_push_graphics(sesCartridge_t * cart, sesGraphicsC
 
 
 
-static matteValue_t compile_run_bytes(matteVM_t * vm, const uint8_t * bytes, uint32_t len) {
-    static int SOURCE_ID_POOL = 0;
+static matteValue_t compile_run_bytes(const matteString_t * name, matteVM_t * vm, const uint8_t * bytes, uint32_t len) {
 
     
-    matteString_t * name = matte_string_create_from_c_str("SES_MAIN__CARTRIDGE_SOURCE%d", SOURCE_ID_POOL++);
     uint32_t fileid = matte_vm_get_new_file_id(vm, name);
-    matte_string_destroy(name);
     
     matteArray_t * stubs = matte_bytecode_stubs_from_bytecode(
         matte_vm_get_heap(vm),
@@ -380,6 +391,9 @@ void ses_cartridge_bootup(sesCartridge_t * cart) {
         ses_cartridge_bootup(subcart);
     }
 
+
+    printf("Initializing Cartridge: %s\n", matte_string_get_c_str(cart->fullname));
+
     matte_array_push(ACTIVE_CARTS, cart);
     cart->main = ses_cartridge_get_source(cart, MATTE_VM_STR_CAST(cart->vm, "main"));
     matte_array_set_size(ACTIVE_CARTS, matte_array_get_size(ACTIVE_CARTS)-1);
@@ -410,6 +424,7 @@ matteValue_t ses_cartridge_get_source(sesCartridge_t * cart, const matteString_t
         if (matte_string_test_eq(name, source)) {
             found = 1;
             id = i;
+            break;
         }
     }
     matte_string_destroy(name);
@@ -419,11 +434,18 @@ matteValue_t ses_cartridge_get_source(sesCartridge_t * cart, const matteString_t
     }
     
     if (!cart->sourcesRun[id]) {
+        matteString_t * fname = matte_string_create_from_c_str(
+            "%s/%s",
+            matte_string_get_c_str(cart->fullname),
+            matte_string_get_c_str(source)
+        );
         cart->sourceValues[id] = compile_run_bytes(
+            fname,
             cart->vm,
             bytes,
             byteLen
         );   
+        matte_string_destroy(fname);
         // for safety
         matte_value_object_push_lock(matte_vm_get_heap(cart->vm), cart->sourceValues[id]);
         cart->sourcesRun[id] = 1;
@@ -438,6 +460,16 @@ sesCartridge_t * ses_cartridge_from_id(uint32_t id) {
     if (id >= matte_array_get_size(ALL_CARTRIDGES)) return NULL;
     return matte_array_at(ALL_CARTRIDGES, sesCartridge_t *, id);
 }
+
+
+const matteString_t * ses_cartridge_get_name(sesCartridge_t * cart) {
+    return cart->name;
+}
+
+const matteString_t * ses_cartridge_get_fullname(sesCartridge_t * cart) {
+    return cart->fullname;
+}
+
 
 
 

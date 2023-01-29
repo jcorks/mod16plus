@@ -1,0 +1,68 @@
+// uses sprites to render rectangles
+@:Cartridge = import(module:'SES.Core').Cartridge;
+
+
+Cartridge.Tile.set(
+    index:0,
+    data: [
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1
+    ]
+);
+
+@pool = [];
+@idPool = 0;
+
+return {
+    create::(x, y, w, h, layer, color) {
+        @id;
+        if (pool->keycount)
+            id = pool->pop
+        else ::<= {
+            id = idPool;
+            idPool += 1;
+        };
+        
+        Cartridge.Palette.set(
+            index:id,
+            colors: [
+                color,
+                color,
+                color,
+                color            
+            ]
+        );
+        
+        Cartridge.Sprite.set(
+            index: id,
+            x, y,
+            show: true,
+            tile:0,
+            layer,
+            palette: id
+        );
+        
+        Cartridge.Sprite.transform(
+            index: id,
+            scaleX: w / 8,
+            scaleY: h / 8
+        );
+    },
+    
+    destroy::(ref) {
+        Cartridge.Sprite.set(
+            index:ref,
+            show: false
+        );
+        
+        pool->push(ref);
+    }
+
+};

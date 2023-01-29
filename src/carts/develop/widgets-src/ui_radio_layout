@@ -1,13 +1,12 @@
 @:class = import(module:'Matte.Core.Class');
-@:UI = import(module:'ui');
-@:TextArea = import(module:'textarea');
-@:Fetcher = import(module:'fetcher');
-@:Debug = import(module:'SES.Debug');
 @:SES = import(module:'SES.Core');
-@:UILabel    = import(module:'ui_label');
-@:UILayout   = import(module:'ui_layout');
-@:UIFlat   = import(module:'ui_flat');
-@:UIMousable   = import(module:'ui_mousable');
+@:Cartridge = SES.Cartridge;
+@:Fetcher = Cartridge.import(source:'fetcher');
+@:UI = Cartridge.import(source:'ui');
+@:UILabel    = Cartridge.import(source:'ui_label');
+@:UILayout   = Cartridge.import(source:'ui_layout');
+@:UIFlat   = Cartridge.import(source:'ui_flat');
+@:UIMousable   = Cartridge.import(source:'ui_mousable');
 
 
 

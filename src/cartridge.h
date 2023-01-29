@@ -17,7 +17,7 @@ typedef struct sesCartridge_t sesCartridge_t;
 
 
 // Creates a cartridge based on a ROM
-sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphicsContext_t *);
+sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphicsContext_t *, const matteString_t * name, sesCartridge_t * parent);
 
 sesROM_t * ses_cartridge_get_rom(const sesCartridge_t *);
 
@@ -40,6 +40,8 @@ matteValue_t ses_cartridge_get_main(sesCartridge_t *);
 
 
 const matteString_t * ses_cartridge_get_name(sesCartridge_t *);
+
+const matteString_t * ses_cartridge_get_fullname(sesCartridge_t *);
 
 
 

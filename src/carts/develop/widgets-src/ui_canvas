@@ -1,20 +1,20 @@
 @:class = import(module:'Matte.Core.Class');
-@:UI = import(module:'ui');
-@:TextArea = import(module:'textarea');
-@:Fetcher = import(module:'fetcher');
 @:SES = import(module:'SES.Core');
-@:Debug = import(module:'SES.Debug');
+@:Cartridge = SES.Cartridge;
+@:Fetcher = Cartridge.import(source:'fetcher');
+@:UI = Cartridge.import(source:'ui');
+
 return class(
     inherits:[UI],
     define:::(this) {
     
         @:sprite = Fetcher.Sprite.newID();
-        @tile;
+        @tile = Fetcher.Tile.newID();
         @pen = 1;
         @onDraw = ::{};
         @needsUpdate = false;
         
-        SES.Sprite.set(
+        Cartridge.Sprite.set(
             index:sprite,
             tile:tile
         );  
@@ -62,11 +62,11 @@ return class(
                         
                         
                         if (tile) ::<= {
-                            @data = SES.Tile.get(index:tile);
+                            @data = Cartridge.Tile.get(index:tile);
                             @:index = (px + py * 8)->floor; 
                             if (data[index] != pen) ::<= {
                                 data[index] = pen;
-                                SES.Tile.set(index:tile, data);
+                                Cartridge.Tile.set(index:tile, data);
                                 needsUpdate = true;
                             };
                         };
@@ -81,12 +81,12 @@ return class(
         
         connectInput();
         @:reposition :: {
-            SES.Sprite.set(
+            Cartridge.Sprite.set(
                 index:sprite,
                 x:this.x + this.width / 2 - size / 2,
                 y:this.y + this.height / 2 - size / 2 
             );
-            SES.Sprite.transform(
+            Cartridge.Sprite.transform(
                 index:sprite,
                 scaleX: size / 8,
                 scaleY: size / 8
@@ -97,7 +97,7 @@ return class(
         this.events.installHooks(
             events:{
                 onShow ::(detail){
-                    SES.Sprite.set(
+                    Cartridge.Sprite.set(
                         index:sprite,
                         show: true
                     );
@@ -105,7 +105,7 @@ return class(
                 },
                 
                 onHide ::(detail){
-                    SES.Sprite.set(
+                    Cartridge.Sprite.set(
                         index:sprite,
                         show: false
                     );
@@ -126,7 +126,7 @@ return class(
                 },
                 
                 onLayerChange::(detail) {
-                    SES.Sprite.set(
+                    Cartridge.Sprite.set(
                         index:sprite,
                         layer: this.layer
                     );
@@ -136,7 +136,7 @@ return class(
         );        
         
         this.constructor = ::() {
-            SES.Sprite.set(
+            Cartridge.Sprite.set(
                 index:sprite,
                 show:true,
                 layer: this.layer
@@ -147,7 +147,7 @@ return class(
         this.interface = {
             palette : {
                 set ::(value => Number) {
-                    SES.Sprite.set(
+                    Cartridge.Sprite.set(
                         index:sprite,
                         palette: value
                     );  
@@ -157,7 +157,7 @@ return class(
             tile : {
                 set ::(value => Number) {
                     tile = value;
-                    SES.Sprite.set(
+                    Cartridge.Sprite.set(
                         index:sprite,
                         tile: value
                     );  
