@@ -2,7 +2,7 @@
 @:SES = import(module:'SES.Core');
 @:Cartridge = SES.Cartridge;
 @:Fetcher = Cartridge.import(source:'fetcher');
-@:TextArea = Cartridge.subCartridge(name:'textarea');
+@:AsciiRenderer = Cartridge.subCartridge(name:'ascii-renderer');
 @:UI = Cartridge.import(source:'ui');
 
 return class(
@@ -11,29 +11,30 @@ return class(
     
         
         @foregroundPalette = [1, 1, 1];
-        @:textarea = TextArea.new();
-        textarea. = {
-            editable : false,
-            heightChars: 1,
-            layer : this.layer + 1
-        };
+        @stringRef;
 
         @text_ = '';
         
-        @:readjust ::{
-            textarea.widthChars = text_->length;        
-            textarea.x = this.x + this.width / 2  - textarea.width  / 2;
-            textarea.y = this.y + this.height / 2 - textarea.height / 2;                        
+        @:readjust ::{            
+            if (stringRef) ::<= {
+                AsciiRenderer.destroy(refs:stringRef);
+            };
+            stringRef = AsciiRenderer.create(
+                x:this.x + this.width / 2  - (text_->length * 6)  / 2,
+                y:this.y + this.height / 2 - (8) / 2,
+                string: text_,
+                layer:this.layer+1,
+                color: foregroundPalette
+            );
+            
+                          
         };
         
         
         this.constructor = ::(text) {
             this.foreground = '#ffffff';
-            textarea.defaultPalette = foregroundPalette;
-            textarea.text = text;
-            text_ = text;
+            this.text = text;
             this.enableBackground = false;
-            readjust();
             return this;
         };
         
@@ -41,24 +42,32 @@ return class(
         this.events.installHooks(
             events:{
                 onShow ::(detail){
-                    textarea.text =  text_;
                     readjust();
                 },
                 
                 onHide ::(detail){
-                    textarea.text = '';
+                    if (stringRef) ::<= {
+                        AsciiRenderer.destroy(refs:stringRef);
+                    };
+                    stringRef = empty;
                 },
                 
                 onResize ::(detail) {
-                    readjust();
+                    if (this.shown) ::<= {
+                        readjust();
+                    };
                 },
                 
                 onMove ::(detail) {
-                    readjust();
+                    if (this.shown) ::<= {
+                        readjust();
+                    };
                 },
                 
                 onLayerChange::(detail) {
-                    textarea.layer = this.layer + 1;
+                    if (this.shown) ::<= {
+                        readjust();
+                    };
                 }
 
             }
@@ -69,7 +78,9 @@ return class(
             foreground : {
                 set ::(value => String) {
                     foregroundPalette = value;
-                    textarea.defaultPalette = foregroundPalette;
+                    if (this.shown) ::<= {
+                        readjust();
+                    };
                 }
             },
             
@@ -79,13 +90,12 @@ return class(
                 set ::(value => String) {
                     text_ = value;
                     if (this.shown) ::<= {
-                        textarea.text = value;
                         readjust();
                     };
                 },
                 
                 get ::(value) {
-                    return textarea.text;
+                    return text_;
                 }
             }
         };

@@ -1,0 +1,24 @@
+{
+  "sources" : [
+    "colorer",
+    "editor",
+    "editor_completion",
+    "editor_completion_visual",
+    "editor_highlight",
+    "fetcher",
+    "hexdisplay",
+    "main",
+    "manager",
+    "painter",
+    "project",
+    "view",
+    "window"
+  ],
+
+  "subcartridges" : [
+    "console",
+    "widgets",
+    "textarea",
+    "rectangle-renderer"
+  ]
+}

@@ -1,26 +1,90 @@
-@:View = import(module:'view');
 @:SES = import(module:'SES.Core');
-@:Debug = import(module:'SES.Debug');
 @:class = import(module:'Matte.Core.Class');
-@:Fetcher = import(module:'fetcher');
-@:highlightLine = import(module:'editor_highlight');
-@:completer = import(module:'editor_completion').new();
-@:completerBox = import(module:'editor_completion_visual');
-@:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
-@:Textarea = import(module:'textarea');
-@:Project = import(module:'project');
-@:UILabel = import(module:'ui_label');
-SES.Palette.set(
-    index: PALETTE__NORMAL_TEXT,
-    colors: [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [0.9, 0.9, 0.9]
+@:Cartridge = SES.Cartridge;
 
-    ]
-);
-@:UI = import(module:'ui');
+@:View = Cartridge.import(source:'view');
+@:Fetcher = Cartridge.import(source:'fetcher');
+@:highlightLine = Cartridge.import(source:'editor_highlight');
+@:completer = Cartridge.import(source:'editor_completion').new();
+@:completerBox = Cartridge.import(source:'editor_completion_visual');
+@:Project = Cartridge.import(source:'project');
+
+@:Textarea = Cartridge.subCartridge(name:'textarea');
+
+@:Widgets = Cartridge.subCartridge(name:'widgets');
+@:UILabel = Widgets.UILabel;
+@:UI = Widgets.UI;
+
+
+
+
+@:PALETTE__NORMAL_TEXT = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0.9, 0.9, 0.9]
+];
+
+
+
+
+
+
+
+@:NEW_TILE_DATA = [
+    4, 4, 4, 4, 4, 4, 4, 4,
+    4, 0, 0, 0, 0, 0, 0, 4,
+    4, 0, 0, 4, 4, 0, 0, 4,
+    4, 0, 4, 4, 4, 4, 0, 4,
+
+    4, 0, 4, 4, 4, 4, 0, 4,
+    4, 0, 0, 4, 4, 0, 0, 4,
+    4, 0, 0, 0, 0, 0, 0, 4,
+    4, 4, 4, 4, 4, 4, 4, 4,
+];
+
+
+
+
+@:SAVE_TILE_DATA = [
+    0, 0, 0, 1, 1, 1, 1, 1,
+    0, 0, 1, 0, 0, 0, 0, 1,
+    0, 1, 0, 0, 0, 0, 0, 1,
+    1, 0, 1, 1, 1, 1, 0, 1,
+
+    1, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 1, 1, 1, 1, 0, 1,
+    1, 0, 1, 0, 0, 1, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+];
+
+
+@:REMOVE_TILE_DATA = [
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 1, 0, 0, 1, 0, 1,
+    1, 0, 0, 1, 1, 0, 0, 1,
+
+    1, 0, 0, 1, 1, 0, 0, 1,
+    1, 0, 1, 0, 0, 1, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+];
+
+
+
+
+@:ICON_TILE_DATA = [
+    0, 1, 1, 1, 1, 0, 1, 0,
+    0, 1, 0, 0, 0, 1, 1, 1,
+    0, 1, 0, 0, 1, 0, 1, 0,
+    0, 1, 0, 1, 1, 1, 0, 0,
+    0, 0, 1, 1, 1, 0, 0, 1,
+    0, 1, 1, 1, 0, 0, 0, 1,
+    1, 0, 1, 0, 0, 0, 0, 1,
+    1, 1, 0, 0, 1, 1, 1, 1,
+];
+
 
 
 
@@ -114,12 +178,9 @@ SES.Palette.set(
             title.move(x:170, y:0);
             this.addChild(child:title, sizeRequest:1);
 
-            @:Window = import(module:'window');
+            @:Window = Cartridge.import(source:'window');
             @lastWord = {};
-            @:textareaid = Fetcher.Sprite.newID();
-            Fetcher.Sprite.claimIDs(amount:400);
             @textarea = Textarea.new(
-              spriteOffset: textareaid,
               defaultPalette : PALETTE__NORMAL_TEXT,  
               onChange::(prevLine, prevText) {
                 highlightLine(
@@ -303,87 +364,17 @@ SES.Palette.set(
         };
         
         
-        @:NEW_TILE_ID = Fetcher.Tile.newID();
-        SES.Tile.set(
-            index:NEW_TILE_ID,
-            data: [
-            4, 4, 4, 4, 4, 4, 4, 4,
-            4, 0, 0, 0, 0, 0, 0, 4,
-            4, 0, 0, 4, 4, 0, 0, 4,
-            4, 0, 4, 4, 4, 4, 0, 4,
-
-            4, 0, 4, 4, 4, 4, 0, 4,
-            4, 0, 0, 4, 4, 0, 0, 4,
-            4, 0, 0, 0, 0, 0, 0, 4,
-            4, 4, 4, 4, 4, 4, 4, 4,
-            ]
-        );
-
-
-
-        @:SAVE_TILE_ID = Fetcher.Tile.newID();
-        SES.Tile.set(
-            index:SAVE_TILE_ID,
-            data: [
-            0, 0, 0, 1, 1, 1, 1, 1,
-            0, 0, 1, 0, 0, 0, 0, 1,
-            0, 1, 0, 0, 0, 0, 0, 1,
-            1, 0, 1, 1, 1, 1, 0, 1,
-
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 1, 1, 1, 1, 0, 1,
-            1, 0, 1, 0, 0, 1, 0, 1,
-            1, 1, 1, 1, 1, 1, 1, 1,
-            ]
-        );
-        
-
-        @:REMOVE_TILE_ID = Fetcher.Tile.newID();
-        SES.Tile.set(
-            index:REMOVE_TILE_ID,
-            data: [
-            1, 1, 1, 1, 1, 1, 1, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 1, 0, 0, 1, 0, 1,
-            1, 0, 0, 1, 1, 0, 0, 1,
-
-            1, 0, 0, 1, 1, 0, 0, 1,
-            1, 0, 1, 0, 0, 1, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 1, 1, 1, 1, 1, 1, 1,
-            ]
-        );
-
-
-
-        @:ICON_TILE_ID = Fetcher.Tile.newID();
-        SES.Tile.set(
-            index:ICON_TILE_ID,
-            data: [
-            0, 1, 1, 1, 1, 0, 1, 0,
-            0, 1, 0, 0, 0, 1, 1, 1,
-            0, 1, 0, 0, 1, 0, 1, 0,
-            0, 1, 0, 1, 1, 1, 0, 0,
-            0, 0, 1, 1, 1, 0, 0, 1,
-            0, 1, 1, 1, 0, 0, 0, 1,
-            1, 0, 1, 0, 0, 0, 0, 1,
-            1, 1, 0, 0, 1, 1, 1, 1,
-            ]
-        );
 
 
 
 
-        @:palette = Fetcher.Palette.newID();
-        SES.Palette.set(
-            index:palette,
-            colors: [
-                [1, 1, 1, 1],
-                [1, 1, 1, 1],
-                [1, 1, 1, 1],
-                [1, 1, 1, 1]
-            ]
-        );
+
+        @:palette = [
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1]
+        ];
         
 
         
@@ -395,16 +386,16 @@ SES.Palette.set(
             // called when clicking the actions.
             menus : {
                 get :: <- [
-                    [palette, NEW_TILE_ID , newFile],
-                    [palette, SAVE_TILE_ID , saveFile],
-                    [palette, REMOVE_TILE_ID, removeFile],                 
-                    [palette, NEW_TILE_ID, switchFile]
+                    [palette, NEW_TILE_DATA , newFile],
+                    [palette, SAVE_TILE_DATA , saveFile],
+                    [palette, REMOVE_TILE_DATA, removeFile],                 
+                    [palette, NEW_TILE_DATA, switchFile]
                 ]
             },
 
             icon : {
                 get :: {
-                    return ICON_TILE_ID;
+                    return ICON_TILE_DATA;
                 }
             },
             

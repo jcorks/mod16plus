@@ -114,6 +114,38 @@ numbers appearing on top. Layers -63 through and including 64 exist for use.
 The default of 0 will place items midway.
 
 
+Vertices (3D)
+--------
+Each cartridge has limited 3D capability via vertices.
+1024 vertices can be displayed per cartridge. There are no 
+ways to load vertices using files, so they have to be generated 
+on-the-fly or in sources as constant data.
+
+Thus, vertices are best used sparringly as flourishes and effects.
+However, with enough sub-cartridges, complex 3D endaevors are 
+possible.
+
+Each vertex has the following data:
+- x position, clamped on -1, 1
+- y position, clamped on -1, 1
+- z position, clamped on -1, 1 (depth buffer bit-depth: 5 (32 values))
+- red color, clamped on 0, 1
+- green color, clamped on 0, 1
+- blue color, clamped on 0, 1
+- u texture coordinate, clamped 
+- v texture coordinate, clamped
+- tile texture (colorized by color and palette)
+- palette texture
+
+
+There exist data pieces that affect vertices as well:
+- Effect (rendering mode): see sprite
+- Transform - 4x4 matrix for all vertices when drawn. I.e. perspective 
+- Primitive - Lines or Triangles, determine how to use vertices
+
+
+
+
 Oscillators
 -----------
 
@@ -145,6 +177,7 @@ Resource limits:
 - Sounds: 128
 - Sources: 64
 - Sub-cartridges: 128
+- Vertices: 1024
 
 Sub-Cartridges
 --------------

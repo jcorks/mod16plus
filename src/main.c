@@ -64,7 +64,6 @@ static void ses_native__print(matteVM_t * vm, const matteString_t * str, void * 
 
 
 int main(int argc, char ** argv) {
-    printf("Sprite Entertainment System\nJohnathan Corkery, 2022\njcorkery@umich.edu\n\n");
     int developRom = 0;;
     if (argc < 3||
             (
@@ -82,6 +81,10 @@ int main(int argc, char ** argv) {
         );
         return 0;
     }
+    // its annoying to get that all the time when packaging 
+    // treat this mode like a compilation mode
+    if (strcmp(argv[1], "package"))
+        printf("Sprite Entertainment System\nJohnathan Corkery, 2022\njcorkery@umich.edu\n\n");
     
     
 
@@ -93,10 +96,8 @@ int main(int argc, char ** argv) {
     if (!strcmp(argv[1], "package")) {    
         return ses_package(argv[2]);
         
-    } else if (!strcmp(argv[1], "develop")) {
-        
-        romBytes = ses_develop_get_rom(&romLength);
     } else {
+        developRom = (!strcmp(argv[1], "develop"));
         romBytes = dump_bytes(argv[2], &romLength);
     }
     
@@ -104,7 +105,6 @@ int main(int argc, char ** argv) {
         printf("The ROM was empty or unreadable. Exiting.\n");
         return 1;
     }
-developRom = 1;
     matte_t * m = matte_create();
     matteVM_t * vm = matte_get_vm(m);
     matte_vm_set_print_callback(vm, ses_native__print, NULL);
@@ -158,6 +158,9 @@ developRom = 1;
         rom
     );
     
+    // enable extra features needed for development 
+    ses_package_bind_natives(vm, developRom || IS_DEBUG);
+
     
     // ALWAYS import the special scripts before 
     // the main (for security purposes)
@@ -167,23 +170,8 @@ developRom = 1;
         matte_heap_new_value(matte_vm_get_heap(vm))
     );    
 
-    if (IS_DEBUG) {
-        /*
-        ses_native_swap_context();
-        matte_vm_import(
-            vm,
-            MATTE_VM_STR_CAST(vm, "SES.Debug"),
-            matte_heap_new_value(matte_vm_get_heap(vm))
-        );    
-        ses_native_swap_context();
-        */
-    }
 
     
-    if (developRom) {
-        // enable extra features needed for development 
-        ses_package_bind_natives(vm);
-    }
     
     
     // begin the loop

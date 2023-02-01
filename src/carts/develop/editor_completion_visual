@@ -1,0 +1,102 @@
+@:SES = import(module:'SES.Core');
+@:class = import(module:'Matte.Core.Class');
+@:Cartridge = SES.Cartridge;
+@:Fetcher = Cartridge.import(source:'fetcher');
+
+
+@:Textarea = Cartridge.subCartridge(name:'textarea');
+@:RectangleRenderer = Cartridge.subCartridge(name:'rectangle-renderer');
+
+@:LAYER = 3;
+
+@:PALETTE_TEXT = [1, 1, 1];
+
+
+
+
+
+
+
+
+
+// setup backgrounds
+@bgRef;
+
+
+@:text = Textarea.new(defaultPalette:PALETTE_TEXT);
+
+
+text. = {
+    editable : false,
+    layer: LAYER+1
+};
+
+
+@current = 0;
+@currentList = [];
+return class(
+    define:::(this) {
+        @widthChars;
+        @heightChars;
+
+        @:rebuildList :: {
+            widthChars = 0;
+            heightChars = 0;
+            @o = '';
+            currentList->foreach(do:::(i, item => String) {
+                if (item != '') ::<= {
+                    o = o + (if(current == i) '> ' else '  ') + item + '\n';
+                    if (item->length > widthChars) 
+                        widthChars = item->length;
+                    heightChars += 1;
+                };
+            });
+            text.text = o;
+            if (bgRef != empty) ::<= {
+                RectangleRenderer.destroy(ref:bgRef);
+                bgRef = empty;
+            };
+            if (text.text != '') ::<= {
+                bgRef = RectangleRenderer.create(
+                    x:text.x,
+                    y:text.y,
+                    w:(widthChars + 2) * 6, // +2 for '> '
+                    h:(heightChars) * 8,
+                    color: '#000000',
+                    layer:LAYER
+                );
+            };
+
+
+        };
+        this.interface = {
+            update ::(x, y, items) {
+                current = 0;
+                currentList = [...items];
+                text.x = x;
+                text.y = y;
+                rebuildList();
+
+
+
+            },
+
+            selectDown ::() {
+                when (current == currentList->keycount-1) empty;
+                current += 1;
+                rebuildList();
+            },
+
+            selectUp ::() {
+                when (current == 0) empty;
+                current -= 1;
+                rebuildList();
+            },
+
+
+            getCurrentSuggestion :: {
+                return currentList[current]; // for now. normally, its the one highlighted.
+            }
+        };
+    }
+).new();

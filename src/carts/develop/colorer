@@ -1,120 +1,114 @@
-@:View = import(module:'view');
 @:SES = import(module:'SES.Core');
-@:Debug = import(module:'SES.Debug');
 @:class = import(module:'Matte.Core.Class');
-@:Fetcher = import(module:'fetcher');
-@:highlightLine = import(module:'editor_highlight');
-@:completer = import(module:'editor_completion').new();
-@:completerBox = import(module:'editor_completion_visual');
-@:PALETTE__NORMAL_TEXT = Fetcher.Palette.newID();
-@:Textarea = import(module:'textarea');
-@:Project = import(module:'project');
-@:UILabel = import(module:'ui_label');
-@:UI = import(module:'ui');
+@:Cartridge = SES.Cartridge;
 
-@:UIFlat = import(module:'ui_flat');
-@:UITile = import(module:'ui_tile');
-@:UIScrollable = import(module:'ui_scrollable');
-@:UIButton = import(module:'ui_mousable');
-@:UIRadioLayout = import(module:'ui_radio_layout');
-@:UILayout = import(module:'ui_layout');
-@:hexDisplay = import(module:'hexdisplay');
+@:View = Cartridge.import(source:'view');
+@:Fetcher = Cartridge.import(source:'fetcher');
+@:Project = Cartridge.import(source:'project');
 
 
+@:Widgets = Cartridge.subCartridge(name:'widgets');
 
-@:ICON_TILE_ID = Fetcher.Tile.newID();
-SES.Tile.set(
-    index:ICON_TILE_ID,
-    data: [
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 0, 0, 0, 1,
-        1, 1, 1, 0, 1, 0, 0, 1,
-        1, 1, 1, 1, 0, 0, 0, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0, 0, 0, 0,
-    ]
-);
+@:UILabel = Widgets.UILabel;
+@:UI = Widgets.UI;
+@:UIFlat = Widgets.UIFlat;
+@:UITile = Widgets.UITile;
+@:UIScrollable = Widgets.UIScrollable;
+@:UIButton = Widgets.UIMousable;
+@:UIRadioLayout = Widgets.UIRadioLayout;
+@:UILayout = Widgets.UILayout;
+@:hexDisplay = Cartridge.import(source:'hexdisplay');
 
 
 
-@:PREVIEW_PALETTE_TILE_ID = Fetcher.Tile.newID();
-SES.Tile.set(
-    index:PREVIEW_PALETTE_TILE_ID,
-    data: [
-        1, 1, 2, 2, 3, 3, 4, 4,
-        1, 1, 2, 2, 3, 3, 4, 4,
-        1, 1, 2, 2, 3, 3, 4, 4,
-        1, 1, 2, 2, 3, 3, 4, 4,
-        1, 1, 2, 2, 3, 3, 4, 4,
-        1, 1, 2, 2, 3, 3, 4, 4,
-        1, 1, 2, 2, 3, 3, 4, 4,
-        1, 1, 2, 2, 3, 3, 4, 4,
-    ]
-);
-
-@:BUTTON_TILE1_ID = Fetcher.Tile.newID();
-SES.Tile.set(
-    index:BUTTON_TILE1_ID,
-    data: [
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1
-    ]
-);
-
-@:BUTTON_TILE2_ID = Fetcher.Tile.newID();
-SES.Tile.set(
-    index:BUTTON_TILE2_ID,
-    data: [
-        2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2,
-    ]
-);
-
-@:BUTTON_TILE3_ID = Fetcher.Tile.newID();
-SES.Tile.set(
-    index:BUTTON_TILE3_ID,
-    data: [
-        3, 3, 3, 3, 3, 3, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3,
-    ]
-);
+@:ICON_TILE_DATA = [
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 0, 0, 0, 1,
+    1, 1, 1, 0, 1, 0, 0, 1,
+    1, 1, 1, 1, 0, 0, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0,
+];
 
 
-@:BUTTON_TILE4_ID = Fetcher.Tile.newID();
-SES.Tile.set(
-    index:BUTTON_TILE4_ID,
-    data: [
-        4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4,
-    ]
-);
 
+@:REMOVE_TILE_DATA = [
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 1, 0, 0, 1, 0, 1,
+    1, 0, 0, 1, 1, 0, 0, 1,
+
+    1, 0, 0, 1, 1, 0, 0, 1,
+    1, 0, 1, 0, 0, 1, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+];
+
+
+@:PREVIEW_PALETTE_TILE_DATA =  [
+    1, 1, 2, 2, 3, 3, 4, 4,
+    1, 1, 2, 2, 3, 3, 4, 4,
+    1, 1, 2, 2, 3, 3, 4, 4,
+    1, 1, 2, 2, 3, 3, 4, 4,
+    1, 1, 2, 2, 3, 3, 4, 4,
+    1, 1, 2, 2, 3, 3, 4, 4,
+    1, 1, 2, 2, 3, 3, 4, 4,
+    1, 1, 2, 2, 3, 3, 4, 4,
+];
+
+@:BUTTON_TILE1_DATA = [
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1
+];
+
+@:BUTTON_TILE2_DATA = [
+    2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2,
+];
+
+@:BUTTON_TILE3_DATA = [
+    3, 3, 3, 3, 3, 3, 3, 3,
+    3, 3, 3, 3, 3, 3, 3, 3,
+    3, 3, 3, 3, 3, 3, 3, 3,
+    3, 3, 3, 3, 3, 3, 3, 3,
+    3, 3, 3, 3, 3, 3, 3, 3,
+    3, 3, 3, 3, 3, 3, 3, 3,
+    3, 3, 3, 3, 3, 3, 3, 3,
+    3, 3, 3, 3, 3, 3, 3, 3,
+];
+
+
+@:BUTTON_TILE4_DATA = [
+    4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4,
+];
+
+@:INACTIVE_PALETTE_DATA = [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0]
+];
 
 
 @:Colorer = class(
@@ -123,42 +117,19 @@ SES.Tile.set(
         
 
 
-        @:palette = Fetcher.Palette.newID();
-        SES.Palette.set(
-            index:palette,
-            colors: [
-                [0.1, 0.1, 0.1, 0.1],
-                [0.3, 0.3, 0.3, 0.3],
-                [0.7, 0.7, 0.7, 0.7],
-                [0.9, 0.9, 0.9, 0.9],
-            ]
-        );
-
-
-        @:inactivePalette = Fetcher.Palette.newID();
-        SES.Palette.set(
-            index:inactivePalette,
-            colors: [
-                [0, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 0, 0]
-            ]
-        );
-
-
-        @:paletteIDslots = [
-            Fetcher.Palette.newID(),
-            Fetcher.Palette.newID(),
-            Fetcher.Palette.newID(),
-            Fetcher.Palette.newID(),
-            Fetcher.Palette.newID(),
-            Fetcher.Palette.newID()
+        @:palette = [
+            [0.1, 0.1, 0.1, 0.1],
+            [0.3, 0.3, 0.3, 0.3],
+            [0.7, 0.7, 0.7, 0.7],
+            [0.9, 0.9, 0.9, 0.9],
         ];
-        
+
+
+
+
         @:makeChoiceItem ::(index) {
             @:label = UILabel.new(text:'');
-            @:icon = UITile.new(palette:paletteIDslots[index], tile:PREVIEW_PALETTE_TILE_ID);
+            @:icon = UITile.new(paletteData:INACTIVE_PALETTE_DATA, tileData:PREVIEW_PALETTE_TILE_DATA);
             @:box = UIFlat.new(children:[
                 [label, 0.8],
                 [icon, 0.2]
@@ -191,8 +162,7 @@ SES.Tile.set(
         );   
         
         // reads a project palette and dumps it into an active palette id
-        @:readIntoPalette::(paletteID, storedPaletteIndex => Number) {
-            @:Project = import(module:'project');
+        @:readPalette::(paletteID, storedPaletteIndex => Number) {
             @:data = Project.openPalette(id:storedPaletteIndex);
             @:dataFormatted = [
                 [data[0], data[1], data[2]],
@@ -200,21 +170,12 @@ SES.Tile.set(
                 [data[6], data[7], data[8]],
                 [data[9], data[10], data[11]]
             ];
-            SES.Palette.set(index:paletteID, colors:dataFormatted);
+            return dataFormatted;
         };
         
-        @:disablePalette::(paletteID) {
-            @:dataFormatted = [
-                [0, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 0, 0]
-            ];
-            SES.Palette.set(index:paletteID, colors:dataFormatted);
-        };        
+
         
         @:resetRadioChoices = :: {
-            @:Project = import(module:'project');
             @paletteData = Project.palettes;
             paletteData->push(value:['Add Palette']);
             @:top = scrollable.currentScrollPosition;
@@ -228,11 +189,12 @@ SES.Tile.set(
                     paletteChoices[i].show();
                     paletteChoices[i].children[0].text = hexDisplay(number:paletteData[index][0]);
 
-                    if (index != paletteData->keycount-1)
-                        readIntoPalette(paletteID:paletteIDslots[i], storedPaletteIndex:paletteData[index][0])
-                    else 
-                        disablePalette(paletteID:paletteIDslots[i]);
-                        
+                    if (index != paletteData->keycount-1) ::<= {
+                        paletteChoices[i].children[1].palette = readPalette(storedPaletteIndex:paletteData[index][0]);
+                    } else ::<= { 
+                        paletteChoices[i].children[1].palette = INACTIVE_PALETTE_DATA;
+
+                    };
                         
                     i+=1;
                     
@@ -249,7 +211,6 @@ SES.Tile.set(
         @chosenPalettesSlot;
         
         choiceRadio.onChoose = ::(choice){
-            @:Project = import(module:'project');
             @paletteData = Project.palettes;
             @:radioChoice = choice;
             choice += scrollable.currentScrollPosition;
@@ -275,10 +236,10 @@ SES.Tile.set(
             // deselect
             when(choice < 0) ::<= {
                 paletteBox.children[0].text = 'No palette';
-                paletteBox.children[1].children[0].palette = inactivePalette;
-                paletteBox.children[2].children[0].palette = inactivePalette;
-                paletteBox.children[3].children[0].palette = inactivePalette;
-                paletteBox.children[4].children[0].palette = inactivePalette;
+                paletteBox.children[1].children[0].palette = INACTIVE_PALETTE_DATA;
+                paletteBox.children[2].children[0].palette = INACTIVE_PALETTE_DATA;
+                paletteBox.children[3].children[0].palette = INACTIVE_PALETTE_DATA;
+                paletteBox.children[4].children[0].palette = INACTIVE_PALETTE_DATA;
             };
             
             
@@ -286,15 +247,15 @@ SES.Tile.set(
             when (choice > paletteData->keycount) ::<= {
                 choiceRadio.choice = -1;
                 paletteBox.children[0].text = 'No palette';
-                paletteBox.children[1].children[0].palette = inactivePalette;
-                paletteBox.children[2].children[0].palette = inactivePalette;
-                paletteBox.children[3].children[0].palette = inactivePalette;
-                paletteBox.children[4].children[0].palette = inactivePalette;
+                paletteBox.children[1].children[0].palette = INACTIVE_PALETTE_DATA;
+                paletteBox.children[2].children[0].palette = INACTIVE_PALETTE_DATA;
+                paletteBox.children[3].children[0].palette = INACTIVE_PALETTE_DATA;
+                paletteBox.children[4].children[0].palette = INACTIVE_PALETTE_DATA;
             };
 
             // select palette 
             paletteBox.children[0].text = 'Palette: '+hexDisplay(number:paletteData[choice][0]);
-            readIntoPalette(paletteID:palette, storedPaletteIndex:paletteData[choice][0]); 
+            @:palette = readPalette(storedPaletteIndex:paletteData[choice][0]); 
             paletteBox.children[1].children[0].palette = palette;
             paletteBox.children[2].children[0].palette = palette;
             paletteBox.children[3].children[0].palette = palette;
@@ -350,7 +311,7 @@ SES.Tile.set(
         };
 
         @:makePaletteChoiceItem ::(index, tile){
-            @:tile = UITile.new(palette:inactivePalette, tile);
+            @:tile = UITile.new(paletteData:INACTIVE_PALETTE_DATA, tileData:tile);
             @:button = UIButton.new(child:tile);
             ::<= {
                 button.onClick = ::{
@@ -372,7 +333,7 @@ SES.Tile.set(
                             fullPalette[index*3 + 1] = g / 255.0;
                             fullPalette[index*3 + 2] = b / 255.0;
                             Project.savePalette(id:entry[0], paletteColors:fullPalette);
-                            readIntoPalette(paletteID:palette, storedPaletteIndex:entry[0]); 
+                            tile.palette = readPalette(storedPaletteIndex:entry[0]); 
 
                             resetRadioChoices();                            
                             Project.save();
@@ -388,10 +349,10 @@ SES.Tile.set(
         @:paletteBox = UILayout.new(
             children: [
                 [UILabel.new(text:'No Palette'), 0.1],
-                [makePaletteChoiceItem(index:0, tile:BUTTON_TILE1_ID), 0.2],
-                [makePaletteChoiceItem(index:1, tile:BUTTON_TILE2_ID), 0.2],
-                [makePaletteChoiceItem(index:2, tile:BUTTON_TILE3_ID), 0.2],
-                [makePaletteChoiceItem(index:3, tile:BUTTON_TILE4_ID), 0.2]
+                [makePaletteChoiceItem(index:0, tile:BUTTON_TILE1_DATA), 0.2],
+                [makePaletteChoiceItem(index:1, tile:BUTTON_TILE2_DATA), 0.2],
+                [makePaletteChoiceItem(index:2, tile:BUTTON_TILE3_DATA), 0.2],
+                [makePaletteChoiceItem(index:3, tile:BUTTON_TILE4_DATA), 0.2]
             ]
         );
 
@@ -427,21 +388,6 @@ SES.Tile.set(
 
 
 
-        @:REMOVE_TILE_ID = Fetcher.Tile.newID();
-        SES.Tile.set(
-            index:REMOVE_TILE_ID,
-            data: [
-            1, 1, 1, 1, 1, 1, 1, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 1, 0, 0, 1, 0, 1,
-            1, 0, 0, 1, 1, 0, 0, 1,
-
-            1, 0, 0, 1, 1, 0, 0, 1,
-            1, 0, 1, 0, 0, 1, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 1, 1, 1, 1, 1, 1, 1,
-            ]
-        );
 
         
         this.interface = {
@@ -452,7 +398,7 @@ SES.Tile.set(
             // called when clicking the actions.
             menus : {
                 get :: <- [
-                    [palette, REMOVE_TILE_ID, ::{
+                    [palette, REMOVE_TILE_DATA, ::{
                         @:Window = import(module:'window'); 
                         @:selected = choiceRadio.choice + scrollable.currentScrollPosition;                   
                         @paletteData = Project.palettes;
@@ -476,7 +422,7 @@ SES.Tile.set(
 
             icon : {
                 get :: {
-                    return ICON_TILE_ID;
+                    return ICON_TILE_DATA;
                 }
             },
           

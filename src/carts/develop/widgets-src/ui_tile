@@ -9,9 +9,11 @@ return class(
     
         @:sprite = Fetcher.Sprite.newID();
         @:tile = Fetcher.Tile.newID();
+        @:paletteID = Fetcher.Palette.newID();
         
         Cartridge.Sprite.set(
             index:sprite,
+            palette: paletteID,
             tile
         );
         
@@ -64,7 +66,7 @@ return class(
                 },
                 
                 onLayerChange::(detail) {
-                    SES.Sprite.set(
+                    Cartridge.Sprite.set(
                         index:sprite,
                         layer: this.layer
                     );
@@ -73,25 +75,55 @@ return class(
             }
         );        
         
-        this.constructor = ::(palette => Number, tileData) {
-            Cartridge.Sprite.set(
-                index:sprite,
-                show:true,
-                layer: this.layer,
-                palette
-            );  
+        this.constructor = ::(paletteData, tileData) {
+            if (paletteData == empty)
+                paletteData = [
+                    [0, 0, 0],
+                    [0, 0, 0],
+                    [0, 0, 0],
+                    [0, 0, 0]
+                ];
+                
+            if (tileData == empty)
+                tileData = [
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                ];                
+
+
+            Cartridge.Tile.set(
+                index:tile,
+                data:tileData
+            );            
+            
+            Cartridge.Palette.set(
+                index:paletteID,
+                colors: paletteData
+            );
             return this;
         };
         
         this.interface = {
             palette : {
-                set ::(value => Number) {
-                    SES.Sprite.set(
-                        index:sprite,
-                        palette: value
+                set ::(value => Object) {
+                    Cartridge.Palette.set(
+                        index:paletteID,
+                        colors: value
                     );  
-
-                }
+                },
+                
+                get :: {
+                    return SES.Palette.get(
+                        index:paletteID
+                    );
+                }                
             },
 
             resizeable : {
@@ -103,9 +135,15 @@ return class(
             
             tile : {
                 set ::(value => Object) {
-                    SES.Tile.set(
+                    Cartridge.Tile.set(
                         index:tile,
                         data: value
+                    );
+                },
+                
+                get :: {
+                    return SES.Tile.get(
+                        index:tile
                     );
                 }
             }

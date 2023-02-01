@@ -5,7 +5,7 @@
 
 @:class = import(module:'Matte.Core.Class');
 @:SES = import(module:'SES.Core');
-
+@:Cartridge = SES.Cartridge;
 
 @:Fetcher = class(
     name: 'Fetcher',
@@ -55,7 +55,7 @@
             // Fetches the next free Sprite ID and initializes the sprite
             newID :: {
                 count += 1;
-                SES.Sprite.set(
+                Cartridge.Sprite.set(
                     index: count,                    
                     x:-8,
                     y:-8,
@@ -69,7 +69,7 @@
             // that are off-limits to other users.
             claimIDs::(amount) {
                 [count, count+amount]->for(do:::(i) {
-                    SES.Sprite.set(
+                    Cartridge.Sprite.set(
                         index: i,                    
                         x:-8,
                         y:-8,
@@ -97,7 +97,7 @@ return {
     
     // Fetcher for (sprite) IDs. Only "makes sense" 
     // up to 0x40000.
-    Tile : Fetcher.new(offset:128),
+    Tile : Fetcher.new(offset:0),
     
     
     // Convenience function that gives the local tile ID 

@@ -1,16 +1,28 @@
-@:Window = import(module:'window');
-@:Debug = import(module:'SES.Debug');
-Window.start();
+@:SES = import(module:'SES.Core');
+@:Cartridge = SES.Cartridge;
+
+
+@:out = {
+    UI:         Cartridge.import(source:'ui'),
+    UILayout:   Cartridge.import(source:'ui_layout'),
+    UIMousable: Cartridge.import(source:'ui_mousable'),
+    UIRoot:     Cartridge.import(source:'ui_root'),
+    UILabel:    Cartridge.import(source:'ui_label'),
+    UIFlat:     Cartridge.import(source:'ui_flat'),
+    UISpacer:   Cartridge.import(source:'ui_spacer'),
+    UIEntry:    Cartridge.import(source:'ui_entry'),
+    UIList:     Cartridge.import(source:'ui_list'),
+    UICanvas:   Cartridge.import(source:'ui_canvas'),
+    UITile:     Cartridge.import(source:'ui_tile'),
+    UIRadioLayout: Cartridge.import(source:'ui_radio_layout'),
+    UIScrollable:Cartridge.import(source:'ui_scrollable')
+};
+
+
+return out;
+
 
 /*
-@:UILayout   = import(module:'ui_layout');
-@:UIMousable = import(module:'ui_mousable');
-@:UIRoot     = import(module:'ui_root');
-@:UILabel    = import(module:'ui_label');
-@:UIFlat     = import(module:'ui_flat');
-@:UISpacer   = import(module:'ui_spacer');
-@:UIEntry    = import(module:'ui_entry');
-@:UIList     = import(module:'ui_list');
 
 @:a = UIRoot.new(
     width: 200,
@@ -180,4 +192,8 @@ a.move(x:30, y:0);
 
 );
 */
+
+
+
+
 

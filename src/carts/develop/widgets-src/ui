@@ -41,7 +41,8 @@
         @:readjustBackground ::{
             if (background)
                 Rectangle.destroy(ref:background);
-
+            background = empty;
+            
             when(!shown) empty;
             when(!enableBackground) empty;
  

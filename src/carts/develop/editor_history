@@ -2,7 +2,7 @@
 
 
 return class(
-    define(this) {
+    define:::(this) {
         @area;
         @history = [];
         this.constructor = ::(textarea) {

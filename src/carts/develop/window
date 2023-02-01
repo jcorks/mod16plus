@@ -1,49 +1,57 @@
 @:SES = import(module:'SES.Core');
-@:Debug = import(module:'SES.Debug');
-@:Fetcher = import(module:'fetcher');
-@:Button = import(module:'button');
-@:Textarea = import(module:'textarea');
 @:class = import(module:'Matte.Core.Class');
+@:Cartridge = SES.Cartridge;
 
-@:UILayout = import(module:'ui_layout');
-@:UIFlat = import(module:'ui_flat');
-@:UIButton = import(module:'ui_mousable');
-@:UILabel = import(module:'ui_label');
-@:UIRoot = import(module:'ui_root');
-@:UIEntry = import(module:'ui_entry');
-@:UITile = import(module:'ui_tile');
-@:UIList = import(module:'ui_list');
-@:UISpacer = import(module:'ui_spacer');
+@:View = Cartridge.import(source:'view');
+@:Fetcher = Cartridge.import(source:'fetcher');
+@:Project = Cartridge.import(source:'project');
 
 
-@:Project = import(module:'project');
+@:Widgets = Cartridge.subCartridge(name:'widgets');
+
+@:UILabel = Widgets.UILabel;
+@:UI = Widgets.UI;
+@:UIFlat = Widgets.UIFlat;
+@:UITile = Widgets.UITile;
+@:UIScrollable = Widgets.UIScrollable;
+@:UIButton = Widgets.UIMousable;
+@:UIRadioLayout = Widgets.UIRadioLayout;
+@:UILayout = Widgets.UILayout;
+@:UIRoot = Widgets.UIRoot;
+@:UIEntry = Widgets.UIEntry;
+@:UIList = Widgets.UIList;
+@:UISpacer = Widgets.UISpacer;
+@:hexDisplay = Cartridge.import(source:'hexdisplay');
 
 
-@:Editor = import(module:'editor');
-@:Colorer = import(module:'colorer');
-@:Painter = import(module:'painter');
-@:Manager = import(module:'manager');
+@:Project = Cartridge.import(source:'project');
+
+
+@:Editor = Cartridge.import(source:'editor');
+@:Colorer = Cartridge.import(source:'colorer');
+@:Painter = Cartridge.import(source:'painter');
+@:Manager = Cartridge.import(source:'manager');
 
 @:LAYER_DIALOG = 40;
 @:LAYER_BASE = -50;
 
 
 @:menuButtons = [
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0)))
+    UIButton.new(child:UITile.new()),
+    UIButton.new(child:UITile.new()),
+    UIButton.new(child:UITile.new()),
+    UIButton.new(child:UITile.new()),
+    UIButton.new(child:UITile.new()),
+    UIButton.new(child:UITile.new()),
 ];
 
 
 @:viewButtons = [
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0))),
-    UIButton.new(child:UITile.new(palette:0, tile:'_'->charCodeAt(index:0)))
+    UIButton.new(child:UITile.new()),
+    UIButton.new(child:UITile.new()),
+    UIButton.new(child:UITile.new()),
+    UIButton.new(child:UITile.new()),
+    UIButton.new(child:UITile.new()),
 ];
 
 // reserve choice buttons
@@ -53,16 +61,12 @@
 
 
 
-@:VIEW_ICON_PALETTE_ID = Fetcher.Palette.newID();
-SES.Palette.set(
-    index:VIEW_ICON_PALETTE_ID,
-    colors: [
-        [0.6, 1, 0.8],
-        [0.6, 1, 0.8],
-        [0.6, 1, 0.8],
-        [0.6, 1, 0.8]
-    ]
-);
+@:VIEW_ICON_PALETTE_DATA = [
+    [0.6, 1, 0.8],
+    [0.6, 1, 0.8],
+    [0.6, 1, 0.8],
+    [0.6, 1, 0.8]
+];
 
 
 menuButtons->foreach(do:::(i, button) <- button.hide());
@@ -326,7 +330,7 @@ return class(
         @:addView ::(view) {
             @:button = viewButtons[views->keycount].children[0];
             button.tile = view.icon;
-            button.palette = VIEW_ICON_PALETTE_ID;
+            button.palette = VIEW_ICON_PALETTE_DATA;
             viewButtons[views->keycount].onClick = ::{
                 selectView(view);
             };
@@ -343,7 +347,7 @@ return class(
                     addView(view:Painter.new());
                     addView(view:Manager.new());
                 };
-                @:Project = import(module:'project');
+                @:Project = Cartridge.import(source:'project');
                 this.question(
                     text: 'Open existing?',
                     onResponse ::(which) {

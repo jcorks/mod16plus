@@ -17,7 +17,7 @@ int ses_package(const char * dir);
 
 // adds the external functions required for 
 // development features.
-void ses_package_bind_natives(matteVM_t * vm);
+void ses_package_bind_natives(matteVM_t * vm, int usePackaging);
 
 
 #endif

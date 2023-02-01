@@ -78,6 +78,7 @@ return class(
         connectInput();
         
         @:redrawScrollbar ::{
+            when (!this.shown) empty;
             when(itemsPerPage_ > itemCount_) ::<= {
                 Cartridge.Sprite.set(
                     index:scrollbar,

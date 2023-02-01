@@ -1,0 +1,184 @@
+@:SES = import(module:'SES.Core');
+@:Cartridge = SES.Cartridge;
+@:Window = Cartridge.import(source:'window');
+Window.start();
+
+/*
+@:UILayout   = import(module:'ui_layout');
+@:UIMousable = import(module:'ui_mousable');
+@:UIRoot     = import(module:'ui_root');
+@:UILabel    = import(module:'ui_label');
+@:UIFlat     = import(module:'ui_flat');
+@:UISpacer   = import(module:'ui_spacer');
+@:UIEntry    = import(module:'ui_entry');
+@:UIList     = import(module:'ui_list');
+
+@:a = UIRoot.new(
+    width: 200,
+    height: 140,
+    layer: 0,
+    view:
+    
+    UIFlat.new(
+        enableBackground: false,
+        children: [
+            [UISpacer.new(), 0.25],
+            [UIList.new(
+                showCount: 4,
+                items: [
+                    UIMousable.new(
+                        child:UIEntry.new(text:'')
+                    ),
+
+                    UIMousable.new(
+                        child:UILabel.new(text:'Second'),
+                        onClick ::{
+                            Debug.breakpoint();
+                        }
+                    ),
+
+                    UIMousable.new(
+                        child:UILabel.new(text:'Ok'),
+                        onClick ::{
+                            a.hide();
+                        }
+                    ),
+
+                    UIMousable.new(
+                        child:UILabel.new(text:'Fourth'),
+                        onClick ::{
+                            Debug.breakpoint();
+                        }
+                    ),
+
+                    UIMousable.new(
+                        child:UILabel.new(text:'Fifth'),
+                        onClick ::{
+                            Debug.breakpoint();
+                        }
+                    ),
+
+                    UIMousable.new(
+                        child:UILabel.new(text:'Sixth'),
+                        onClick ::{
+                            Debug.breakpoint();
+                        }
+                    )
+
+
+                ]
+
+            ), 0.5],
+        ]
+    )    
+);
+*/
+//Debug.breakpoint();
+
+
+
+
+
+/*
+@:UILayout   = import(module:'ui_layout');
+@:UIMousable = import(module:'ui_mousable');
+@:UIRoot     = import(module:'ui_root');
+@:UILabel    = import(module:'ui_label');
+@:UIFlat     = import(module:'ui_flat');
+@:UISpacer   = import(module:'ui_spacer');
+@:UIEntry    = import(module:'ui_entry');
+@:UIList     = import(module:'ui_list');
+@:UIRadioLayout = import(module:'ui_radio_layout');
+
+
+@:a = UIRoot.new(
+    width: 200,
+    height: 140,
+    layer: 0,
+    view:
+    
+    UIRadioLayout.new(
+        choices : [
+            UILabel.new(text:'Apple'),
+            UILabel.new(text:'Orange'),
+            UILabel.new(text:'Lemon'),
+            UILabel.new(text:'Lime')
+        ]
+    )
+);
+
+a.move(x:30, y:0);
+*/
+
+
+
+
+
+
+
+/*
+@:UILayout   = import(module:'ui_layout');
+@:UIMousable = import(module:'ui_mousable');
+@:UIRoot     = import(module:'ui_root');
+@:UILabel    = import(module:'ui_label');
+@:UIFlat     = import(module:'ui_flat');
+@:UISpacer   = import(module:'ui_spacer');
+@:UIEntry    = import(module:'ui_entry');
+@:UIList     = import(module:'ui_list');
+@:UIRadioLayout = import(module:'ui_radio_layout');
+@:UIScrollable = import(module:'ui_scrollable');
+
+
+@:list = [
+    'Apple',
+    'banana',
+    'something',
+    'another',
+    'aa',
+    '2',
+    '213213',
+    '32343feda'
+];
+
+@:items = [
+    UILabel.new(text:''),
+    UILabel.new(text:''),
+    UILabel.new(text:''),
+    UILabel.new(text:'')
+];
+@currentChoice = -1;
+
+
+@:radio = UIRadioLayout.new(
+    onChoose ::(choice) {
+        currentChoice = scrollable.currentScrollPosition + choice;
+    },
+    choices: items
+);
+
+@:scrollable = UIScrollable.new(
+    itemsPerPage: 4,
+    itemCount: 1000,
+    onScroll::(itemTop, itemsPerPage, itemCount) {
+        
+        items[0].text = list[itemTop % list->keycount];
+        items[1].text = list[(itemTop+1) % list->keycount];
+        items[2].text = list[(itemTop+2) % list->keycount];
+        items[3].text = list[(itemTop+3) % list->keycount];
+
+        radio.choice = currentChoice - itemTop;
+
+    },
+    child : radio
+);
+
+@:a = UIRoot.new(
+    width: 200,
+    height: 140,
+    layer: 0,
+    view: scrollable
+    
+
+);
+*/
+

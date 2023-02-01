@@ -1138,7 +1138,7 @@ return class(
             
             
             
-            setColor ::(paletteColor => Number, fromX => Number, fromY => Number, toX => Number, toY => Number) {
+            setColor ::(paletteColor => Object, fromX => Number, fromY => Number, toX => Number, toY => Number) {
                 when(toY < fromY) print(message:'toY'+toY+' fromY'+fromY);
                 when(toY >= colors->keycount || fromY >= colors->keycount) print(message:'toY'+toY+' numColLines'+colors->keycount);
                 when(toY < 0) empty;

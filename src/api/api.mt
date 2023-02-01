@@ -32,6 +32,12 @@
 @:ses_native__debug_context_bind = getExternalFunction(name:"ses_native__debug_context_bind");
 
 
+@:package_native__is_packaging_allowed  = getExternalFunction(name:"package_native__is_packaging_allowed");
+@:package_native__save_source  = getExternalFunction(name:"package_native__save_source");
+@:package_native__make_project = getExternalFunction(name:"package_native__make_project");
+@:package_native__open_source  = getExternalFunction(name:"package_native__open_source");
+@:package_native__list_projects= getExternalFunction(name:"package_native__list_projects");
+
 
 
 // preset palettes are loaded from the rom
@@ -905,6 +911,51 @@
 };
 
 
+@:Project = ::<= {
+
+
+    return class(
+        define:::(this) {
+            this.interface = {
+                saveSource ::(
+                    project => String,
+                    name => String,
+                    data => String
+                ) {
+                    when (!package_native__is_packaging_allowed()) empty;
+                    package_native__save_source(a:project, b:name, c:data);
+                },
+                
+                makeProject ::(
+                    name => String
+                ) {                    
+                    when (!package_native__is_packaging_allowed()) empty;
+                    package_native__make_project(a:name);                    
+                },
+                
+                openSource::(
+                    project => String,
+                    name => String
+                ) {
+                    when (!package_native__is_packaging_allowed()) empty;
+                    return package_native__open_source(a:project, b: name);
+                },
+                
+                listProjects::(
+                    
+                ) {
+                    when (!package_native__is_packaging_allowed()) empty;
+                    return package_native__list_projects();
+                
+                }
+                
+                
+                
+            };
+        }
+    ).new();
+};
+
 
 @:SES = class(
     name: 'SES',
@@ -996,6 +1047,7 @@
             Input     : {get ::<- Input},
             RESOLUTION : RESOLUTION,
             Debug     : {get ::<- Debug},
+            Project   : {get ::<- Project},
             
             
 

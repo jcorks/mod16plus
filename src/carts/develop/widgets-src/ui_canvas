@@ -10,13 +10,15 @@ return class(
     
         @:sprite = Fetcher.Sprite.newID();
         @tile = Fetcher.Tile.newID();
+        @paletteID = Fetcher.Palette.newID();
         @pen = 1;
         @onDraw = ::{};
         @needsUpdate = false;
         
         Cartridge.Sprite.set(
             index:sprite,
-            tile:tile
+            tile:tile,
+            palette:paletteID
         );  
         
         
@@ -146,21 +148,26 @@ return class(
         
         this.interface = {
             palette : {
-                set ::(value => Number) {
-                    Cartridge.Sprite.set(
-                        index:sprite,
+                set ::(value => Object) {
+                    Cartridge.Palette.set(
+                        index:paletteID,
                         palette: value
                     );  
                 }
             },
 
             tile : {
-                set ::(value => Number) {
-                    tile = value;
-                    Cartridge.Sprite.set(
-                        index:sprite,
+                set ::(value => Object) {
+                    Cartridge.Tile.set(
+                        index:tile,
                         tile: value
                     );  
+                },
+                
+                get :: {
+                    return Cartridge.Tile.get(
+                        index:tile
+                    );
                 }
             },
 

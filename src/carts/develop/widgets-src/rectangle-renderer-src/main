@@ -1,5 +1,6 @@
 // uses sprites to render rectangles
-@:Cartridge = import(module:'SES.Core').Cartridge;
+@:SES = import(module:'SES.Core');
+@:Cartridge = SES.Cartridge;
 
 
 Cartridge.Tile.set(
@@ -23,12 +24,14 @@ Cartridge.Tile.set(
 return {
     create::(x, y, w, h, layer, color) {
         @id;
-        if (pool->keycount)
-            id = pool->pop
-        else ::<= {
+        if (pool->keycount) ::<= {
+            id = pool->pop;
+        } else ::<= {
             id = idPool;
             idPool += 1;
         };
+        
+
         
         Cartridge.Palette.set(
             index:id,
@@ -54,6 +57,7 @@ return {
             scaleX: w / 8,
             scaleY: h / 8
         );
+        return id;
     },
     
     destroy::(ref) {
@@ -62,7 +66,7 @@ return {
             show: false
         );
         
-        pool->push(ref);
+        pool->push(value:ref);
     }
 
 };

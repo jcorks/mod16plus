@@ -1,0 +1,90 @@
+@:SES = import(module:'SES.Core');
+@:class = import(module:'Matte.Core.Class');
+@:Cartridge = SES.Cartridge;
+
+@:View = Cartridge.import(source:'view');
+@:Fetcher = Cartridge.import(source:'fetcher');
+@:Project = Cartridge.import(source:'project');
+
+
+@:Widgets = Cartridge.subCartridge(name:'widgets');
+
+@:UILabel = Widgets.UILabel;
+@:UI = Widgets.UI;
+@:UIFlat = Widgets.UIFlat;
+@:UITile = Widgets.UITile;
+@:UIScrollable = Widgets.UIScrollable;
+@:UIButton = Widgets.UIMousable;
+@:UIRadioLayout = Widgets.UIRadioLayout;
+@:UILayout = Widgets.UILayout;
+@:UIRoot = Widgets.UIRoot;
+@:UIEntry = Widgets.UIEntry;
+@:UIList = Widgets.UIList;
+@:UISpacer = Widgets.UISpacer;
+@:hexDisplay = Cartridge.import(source:'hexdisplay');
+
+
+@:Project = Cartridge.import(source:'project');
+
+
+@:Editor = Cartridge.import(source:'editor');
+@:Colorer = Cartridge.import(source:'colorer');
+@:Painter = Cartridge.import(source:'painter');
+
+
+
+@:Painter = class(
+    inherits : [UI],
+    define:::(this) {
+        
+
+        @:ICON_TILE_DATA = [
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 1, 1, 1, 1, 1, 1, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 1, 1, 1, 1, 1, 1, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 1, 1, 1, 1, 1, 1, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+
+        
+        @:tile = Fetcher.Tile.newID();
+
+
+                
+        this.events.installHooks(events: {
+        });
+
+
+
+        
+        this.interface = {
+            // All the menus within the 
+            // view. Should be an array of 
+            // arrays, where each inner array 
+            // is a string for the menu and a function
+            // called when clicking the actions.
+            menus : {
+                get :: <- [
+                ]
+            },
+
+            icon : {
+                get :: {
+                    return ICON_TILE_DATA;
+                }
+            }
+          
+        };
+        
+
+        
+    }
+    
+);
+
+
+
+return Painter;

@@ -120,6 +120,18 @@
 #endif
 
 
+static int USES_PACKAGING = 0;
+
+static matteValue_t package_native__is_packaging_allowed(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteValue_t out = matte_heap_new_value(heap);
+    matte_value_into_boolean(heap, &out, USES_PACKAGING);
+    return out;
+
+}
+
+
+
 static matteValue_t package_native__save_source (matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     matteString_t * fullpath = build_path(
@@ -207,7 +219,9 @@ static matteValue_t package_native__list_projects(matteVM_t * vm, matteValue_t f
     return out;
 }
 
-void ses_package_bind_natives(matteVM_t * vm) {
+void ses_package_bind_natives(matteVM_t * vm, int usesPackaging) {
+    USES_PACKAGING = usesPackaging;
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__is_packaging_allowed"), 0, package_native__is_packaging_allowed, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__save_source"), 3, package_native__save_source, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__make_project"), 2, package_native__make_project, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__open_source"), 2, package_native__open_source, NULL);
@@ -387,7 +401,7 @@ int ses_package(const char * dir) {
     
     
     matteValue_t json = ses_package_get_json(m, dir);
-    if (json.binID == 0) return 0;
+    if (json.binID == 0) return 1;
     int out = 0;
     // for each source, dump
     uint32_t len;
@@ -678,6 +692,6 @@ int ses_package(const char * dir) {
     matte_array_destroy(subcartridgeNames);
     matte_array_destroy(subcartridgeROMSizes);
     matte_array_destroy(subcartridgeROMSegments);
-    return out;
+    return !out;
 }
 
