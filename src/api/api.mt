@@ -805,6 +805,70 @@
 };
 
 
+@:Vertices = ::<= {
+    @:SHAPE = {
+        TRIANGLE: 0,
+        LINE: 0
+    };
+    return class(
+        name: 'SES.Vertices',
+        define:::(this) {
+            @cartID_;
+            this.constructor = ::(cartID) {
+                cartID_ = cartID;
+                return this;
+            };
+            this.interface = {
+                count : {
+                    set ::(value){
+                        ses_native__vertices_set_count(a:cartID_, b:value=>Number);
+                    }
+                },
+                
+                shape : {
+                    set ::(value) {
+                        ses_native__vertices_set_shape(a:cartID_, b:value=>Number);
+                    }
+                },
+                
+                transform : {
+                    set ::(value => Object) {
+                        ses_native__vertices_set_transform(a:cartID_, b:value);
+                    }
+                },
+                
+                effect : {
+                    set ::(value => Number) {
+                        ses_native__vertices_set_effect(a:cartID_, b:value);
+                    }
+                }
+                
+                
+                //
+                /*
+                    [x, y, z, r, g, b, u, v, tileID, paletteID]
+                */
+                set ::(
+                    index => Number,
+                    data => Object
+                ) {
+                    when(data->keycount != 10)
+                        error(detail:'Vertex expects array in format: [x, y, z, r, g, b, u , v, tileID, paletteID] for all vertices');
+
+                    ses_native__vertices_set(a:cartID_, b:index, c:data);
+                                    
+                },
+                
+                
+                get ::(index => Number) {
+                    return ses_native__vertices_get(a:cartID_, b:index);
+                }
+            
+            };
+        }
+    );
+};
+
 
 @:Oscillator = ::<= {
     @:ATTRIBS = {
@@ -1023,6 +1087,7 @@
                         Background: Background.new(cartID:cart),
                         Audio     : AudioStore.new(cartID:cart),
                         Oscillator: Oscillator.new(cartID:cart),
+                        Vertices  : Vertices.new(cartID:cart);
                         
                         subCartridge::(name => String) {
                             return ses_native__get_sub_cartridge_main(a:cart, b:name);

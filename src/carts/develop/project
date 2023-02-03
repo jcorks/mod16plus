@@ -139,8 +139,6 @@ return class(
                 when(id >= 0x80000)
                     error(detail:'Number too high!');
 
-                when(id < 128)
-                    error(detail:'Error: Minimum 128!');
             
                 // check if exists.
                 tiles->foreach(do:::(index, value) {

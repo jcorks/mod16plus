@@ -120,7 +120,7 @@ return class(
                 },
                 
                 get :: {
-                    return SES.Palette.get(
+                    return Cartridge.Palette.get(
                         index:paletteID
                     );
                 }                
@@ -142,7 +142,7 @@ return class(
                 },
                 
                 get :: {
-                    return SES.Tile.get(
+                    return Cartridge.Tile.get(
                         index:tile
                     );
                 }

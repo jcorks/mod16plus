@@ -1398,10 +1398,11 @@ Cart.Tile.set(
 
 
 @count = 0;
+@paletteCount = 0;
 @free = [];
 
 @countPalettes = 0;
-@:freePalettes = [];
+@freePalettes = [];
 
 @:GLYPH_HEIGHT = 8;
 @:GLYPH_WIDTH = 6;
@@ -1412,16 +1413,18 @@ return {
         if (layer == empty) layer = 0;
         @refs = {
             sprites : [],
-            palette : if (freePalettes->keycount) 
-                            freePalettes->pop
-                      else ::<= {
-                            count += 1;
-                            return count - 1;
-                      } 
+            palettes : [
+                if (freePalettes->keycount) 
+                        freePalettes->pop
+                  else ::<= {
+                        paletteCount += 1;
+                        return paletteCount - 1;
+                  } 
+            ]
         };
         
         Cart.Palette.set(
-            index:refs.palette,
+            index:refs.palettes[0],
             colors: [
                 color,
                 color,
@@ -1445,13 +1448,43 @@ return {
                 show:true,
                 x: chX * GLYPH_WIDTH  + x,
                 y: chY * GLYPH_HEIGHT + y,
-                palette: refs.palette,
+                palette: refs.palettes[0],
                 layer
             );
             chX += 1;
             refs.sprites->push(value:spr);
         });
         return refs;
+    },
+    
+    recolor ::(refs, color, from, to) {
+        @p = if (freePalettes->keycount) 
+            freePalettes->pop
+        else ::<= {
+            paletteCount += 1;
+            return paletteCount - 1;
+        };
+
+        Cart.Palette.set(
+            index:refs.p,
+            colors: [
+                color,
+                color,
+                color,
+                color
+            ]
+        );
+
+        [from, to]->for(do:::(i) {
+            Cart.Sprite.set(
+                index: refs.sprites[i],
+                palette: p
+            );            
+        });
+    
+         
+        refs.palettes->push(value:p);
+        
     },
     
     
@@ -1462,7 +1495,13 @@ return {
                 show:false
             );
         });
-        free = [...free, ...refs.sprites];
-        freePalettes->push(value:refs.palette);
+        
+        refs.sprites->foreach(do:::(i, v) {
+            free->push(value:v);
+        });
+
+        refs.palettes->foreach(do:::(i, v) {
+            freePalettes->push(value:v);
+        });
     }
 };

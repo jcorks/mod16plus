@@ -47,6 +47,7 @@ Cartridge.Palette.set(
         [0.5, 0.5, 0.5]
     ]
 );
+@OSC_POOL = 0;
 
 return class(
     name: 'TextArea',
@@ -68,8 +69,8 @@ return class(
         @GLYPH_WIDTH  = 6;
         @GLYPH_HEIGHT = 8;
         @completionMode = false;
-        //@:REDRAW_OSCILLATOR = 0;
-
+        @:REDRAW_OSCILLATOR = OSC_POOL;
+        OSC_POOL+=1;
         
 
 
@@ -167,15 +168,16 @@ return class(
         @redrawActive = false;
         @:redrawLines :: {
             when(redrawActive) empty;
-            //SES.Oscillator.set(
-                //enable:true,
-                //index:REDRAW_OSCILLATOR,
-                //periodMS:17,
-                //onCycle::{
+            Cartridge.Oscillator.set(
+                enable:true,
+                index:REDRAW_OSCILLATOR,
+                periodMS:17,
+                onCycle::{
+                    print(message:"update frame");
                     clearCanvas();                    
                     when(!shown) ::<= {
                         redrawActive = false;
-                        //SES.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
+                        Cartridge.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
                     };
                     @spr = 0;
                     @i = 0;
@@ -267,10 +269,10 @@ return class(
                         lastSpriteCount = spr;
 
                     redrawActive = false;
-                    //SES.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
+                    Cartridge.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
 
-            //    }
-            //);
+                }
+            );
                 
         };
 

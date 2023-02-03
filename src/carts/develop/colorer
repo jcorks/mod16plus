@@ -114,6 +114,7 @@
 @:Colorer = class(
     inherits : [UI],
     define:::(this) {
+        @:Window = Cartridge.import(source:'window');
         
 
 
@@ -187,12 +188,14 @@
             [::] {
                 [top, paletteData->keycount]->for(do:::(index) {
                     paletteChoices[i].show();
-                    paletteChoices[i].children[0].text = hexDisplay(number:paletteData[index][0]);
 
                     if (index != paletteData->keycount-1) ::<= {
+                        paletteChoices[i].children[0].text = hexDisplay(number:paletteData[index][0]);
                         paletteChoices[i].children[1].palette = readPalette(storedPaletteIndex:paletteData[index][0]);
                     } else ::<= { 
                         paletteChoices[i].children[1].palette = INACTIVE_PALETTE_DATA;
+                        paletteChoices[i].children[0].text = 'Add Palette';
+
 
                     };
                         
@@ -217,7 +220,6 @@
             chosenPalettesSlot = choice;
             // add new palette!
             when (choice == paletteData->keycount) ::<= {
-                @:Window = import(module:'window');
                 Window.entryDialog(text:'Palette ID:', onEntry::(text) {
                     [::] {
                         Project.newPalette(id:Number.parse(string:text));
@@ -315,7 +317,6 @@
             @:button = UIButton.new(child:tile);
             ::<= {
                 button.onClick = ::{
-                    @:Window = import(module:'window');
                     Window.entryDialog(
                         text: 'Hex RGB:',
                         onEntry ::(text){
@@ -399,7 +400,6 @@
             menus : {
                 get :: <- [
                     [palette, REMOVE_TILE_DATA, ::{
-                        @:Window = import(module:'window'); 
                         @:selected = choiceRadio.choice + scrollable.currentScrollPosition;                   
                         @paletteData = Project.palettes;
                         @:selectedPalette = paletteData[selected];                        

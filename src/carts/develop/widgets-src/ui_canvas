@@ -151,7 +151,7 @@ return class(
                 set ::(value => Object) {
                     Cartridge.Palette.set(
                         index:paletteID,
-                        palette: value
+                        colors: value
                     );  
                 }
             },

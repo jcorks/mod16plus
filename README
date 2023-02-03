@@ -122,7 +122,7 @@ ways to load vertices using files, so they have to be generated
 on-the-fly or in sources as constant data.
 
 Thus, vertices are best used sparringly as flourishes and effects.
-However, with enough sub-cartridges, complex 3D endaevors are 
+However, with enough clever code, complex 3D endaevors are 
 possible.
 
 Each vertex has the following data:

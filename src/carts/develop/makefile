@@ -18,3 +18,4 @@ clean:
 	rm -f ./console
 	rm -f ./rectangle-renderer
 	rm -f ./textarea
+	rm -f ./widgets

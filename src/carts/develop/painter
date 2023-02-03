@@ -112,6 +112,7 @@
     define:::(this) {
         
 
+        @:Window = Cartridge.import(source:'window');
         
         
 
@@ -153,7 +154,6 @@
             ];
 
             @:readIntoPalette::(storedPaletteIndex => Number) {
-                @:Project = import(module:'project');
                 @:data = Project.openPalette(id:storedPaletteIndex);
                 @:dataFormatted = [
                     [data[0], data[1], data[2]],
@@ -188,7 +188,6 @@
             resetPaletteChoices = ::{
                 when (tileMode) empty;
             
-                @:Project = import(module:'project');
                 @paletteData = Project.palettes;
                 @:top = paletteScrollable.currentScrollPosition;
                 paletteScrollable.setupPage(itemCount:Project.palettes->keycount, itemsPerPage:5);
@@ -259,7 +258,6 @@
             ];
 
             @:readIntoTile::(storedTileIndex => Number) {
-                @:Project = import(module:'project');
                 @:data = Project.openTile(id:storedTileIndex);
                 return data;
             };        
@@ -283,7 +281,6 @@
 
 
                 when (tileChoices[choice].children[0].text == ' Add Tile') ::<= {
-                    @:Window = import(module:'window');
                     Window.entryDialog(text:'Tile ID:', onEntry::(text) {
                         [::] {
                             Project.newTile(id:Number.parse(string:text));
@@ -306,7 +303,6 @@
             resetTileChoices = ::{
                 when (!tileMode) empty;
 
-                @:Project = import(module:'project');
                 @tileData = Project.tiles;
                 @:top = tileScrollable.currentScrollPosition;
                 tileScrollable.setupPage(itemCount:Project.tiles->keycount, itemsPerPage:5);

@@ -177,7 +177,7 @@ sesGraphicsContext_Storage_t * ses_cartridge_get_context_storage(sesCartridge_t 
 
 
 
-
+static int COUNT_ENABLED = 0;
 void ses_cartridge_enable_sprite(sesCartridge_t * cart, uint16_t index, int enabled) {
     if (index >= SES_CARTRIDGE__MAX_SPRITE_COUNT) return;
     
@@ -197,7 +197,8 @@ void ses_cartridge_enable_sprite(sesCartridge_t * cart, uint16_t index, int enab
             spr->next->prev = spr;
         }
         cart->activeSprites = spr;
-        
+        COUNT_ENABLED++;
+        printf("ENABLED:::%d\n", COUNT_ENABLED);
     } else {
         if (spr == cart->activeSprites) {
             if (cart->activeSprites->next)
@@ -211,6 +212,8 @@ void ses_cartridge_enable_sprite(sesCartridge_t * cart, uint16_t index, int enab
                 spr->prev->next = spr->next;
             }
         }
+        COUNT_ENABLED--;
+        printf("DISABLED:::%d\n", COUNT_ENABLED);
     }
 }
 

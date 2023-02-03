@@ -92,6 +92,22 @@ typedef struct {
 
 
 
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+    float r;
+    float g;
+    float b;
+    float u;
+    float v;
+    uint16_t tile;
+    uint16_t palette
+} sesGraphicsContext_Vertex_t;
+
+
+
 typedef struct {
     // The first color, also called the back color.
     // This is represented with the value 1 in tiles.
@@ -179,6 +195,14 @@ const sesGraphicsContext_Palette_t * ses_graphics_context_storage_get_palette(co
 void ses_graphics_context_storage_set_palette(sesGraphicsContext_Storage_t *, uint16_t id, const sesGraphicsContext_Palette_t *);
 
 
+const sesGraphicsContext_Vertex_t * ses_graphics_context_storage_get_vertex(const sesGraphicsContext_Storage_t *, uint16_t);
+
+void ses_graphics_context_storage_set_vertex(sesGraphicsContext_Storage_t *, uint16_t id, const sesGraphicsContext_Vertex_t *); 
+
+
+uint16_t ses_graphics_context_storage_get_vertex_count(const sesGraphicsContext_Storage_t *);
+
+void ses_graphics_context_storage_set_vertex_count(const sesGraphicsContext_Storage_t *);
 
 
 
