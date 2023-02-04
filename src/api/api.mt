@@ -805,7 +805,7 @@
 };
 
 
-@:Vertices = ::<= {
+/*@:Vertices = ::<= {
     @:SHAPE = {
         TRIANGLE: 0,
         LINE: 0
@@ -841,13 +841,13 @@
                     set ::(value => Number) {
                         ses_native__vertices_set_effect(a:cartID_, b:value);
                     }
-                }
+                },
                 
                 
                 //
-                /*
-                    [x, y, z, r, g, b, u, v, tileID, paletteID]
-                */
+                
+                //    [x, y, z, r, g, b, u, v, tileID, paletteID]
+                
                 set ::(
                     index => Number,
                     data => Object
@@ -867,7 +867,7 @@
             };
         }
     );
-};
+};*/
 
 
 @:Oscillator = ::<= {
@@ -1087,7 +1087,7 @@
                         Background: Background.new(cartID:cart),
                         Audio     : AudioStore.new(cartID:cart),
                         Oscillator: Oscillator.new(cartID:cart),
-                        Vertices  : Vertices.new(cartID:cart);
+//                        Vertices  : Vertices.new(cartID:cart),
                         
                         subCartridge::(name => String) {
                             return ses_native__get_sub_cartridge_main(a:cart, b:name);

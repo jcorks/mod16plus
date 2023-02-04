@@ -94,16 +94,29 @@ typedef struct {
 
 
 typedef struct {
+    // X position of the vertex
     float x;
+    // y position of the vertex
     float y;
+    // z position of the vertex
     float z;
+    // red color of the vertex. This is interpolated across primitives
     float r;
+    // green color of the vertex. This is interpolated across primitives
     float g;
+    // blue color of the vertex 
     float b;
+    // X coordinate of the tile texture
     float u;
+    // Y coordinate of the tile texture
     float v;
+
+    int textured;
+
+    // the tile to use as a texture. 
     uint16_t tile;
-    uint16_t palette
+
+    uint16_t palette;
 } sesGraphicsContext_Vertex_t;
 
 
