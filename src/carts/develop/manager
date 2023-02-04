@@ -1,6 +1,6 @@
-@:SES = import(module:'SES.Core');
+@:Mod16 = import(module:'Mod16Plus.Core');
 @:class = import(module:'Matte.Core.Class');
-@:Cartridge = SES.Cartridge;
+@:Cartridge = Mod16.Cartridge;
 
 @:View = Cartridge.import(source:'view');
 @:Fetcher = Cartridge.import(source:'fetcher');

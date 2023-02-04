@@ -26,7 +26,7 @@
         
         BASE_DIR = malloc(1024 + 128);
         getcwd(BASE_DIR, 1024);
-        strcat(BASE_DIR, "/SES_projects");
+        strcat(BASE_DIR, "/MOD16_projects");
         mkdir(BASE_DIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }   
     
@@ -73,7 +73,7 @@
         
         BASE_DIR = malloc(1024, 128);
         _getcwd(BASE_DIR, 1024);
-        strcat(BASE_DIR, "\\SES_projects");
+        strcat(BASE_DIR, "\\MOD16_projects");
         CreateDirectoryA(matte_string_get_c_str(BASE_DIR), NULL);
     }   
 
@@ -120,12 +120,12 @@
 #endif
 
 
-static int USES_PACKAGING = 0;
+static int UMOD16_PACKAGING = 0;
 
 static matteValue_t package_native__is_packaging_allowed(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     matteValue_t out = matte_heap_new_value(heap);
-    matte_value_into_boolean(heap, &out, USES_PACKAGING);
+    matte_value_into_boolean(heap, &out, UMOD16_PACKAGING);
     return out;
 
 }
@@ -219,8 +219,8 @@ static matteValue_t package_native__list_projects(matteVM_t * vm, matteValue_t f
     return out;
 }
 
-void ses_package_bind_natives(matteVM_t * vm, int usesPackaging) {
-    USES_PACKAGING = usesPackaging;
+void mod16_package_bind_natives(matteVM_t * vm, int umod16Packaging) {
+    UMOD16_PACKAGING = umod16Packaging;
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__is_packaging_allowed"), 0, package_native__is_packaging_allowed, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__save_source"), 3, package_native__save_source, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__make_project"), 2, package_native__make_project, NULL);
@@ -267,7 +267,7 @@ static matteArray_t * package_split(const char * dir, const char * sub) {
 }
 
 static const matteString_t * currentCompiled = NULL;
-static void ses_package__compile_error(
+static void mod16_package__compile_error(
     const matteString_t * str,
     uint32_t line, 
     uint32_t ch,
@@ -304,7 +304,7 @@ static int is_string_empty(const matteString_t * line) {
 
 // runs the core json parser on the package.json within dir.
 // returns empty on failure.
-matteValue_t ses_package_get_json(matte_t * m, const char * dir) {
+matteValue_t mod16_package_get_json(matte_t * m, const char * dir) {
     matteVM_t * vm = matte_get_vm(m);
     matteHeap_t * heap = matte_vm_get_heap(vm);
     
@@ -374,7 +374,7 @@ matteValue_t ses_package_get_json(matte_t * m, const char * dir) {
 }
 
 
-void ses_package_debug_callback(
+void mod16_package_debug_callback(
     matteVM_t * vm, 
     matteVMDebugEvent_t event, 
     uint32_t file, 
@@ -391,16 +391,16 @@ void ses_package_debug_callback(
 }
 
 
-int ses_package(const char * dir) {
+int mod16_package(const char * dir) {
     matte_t * m = matte_create();
     matteVM_t * vm = matte_get_vm(m);
     matteHeap_t * heap = matte_vm_get_heap(vm);
     
     
-    matte_vm_set_debug_callback(vm, ses_package_debug_callback, NULL);
+    matte_vm_set_debug_callback(vm, mod16_package_debug_callback, NULL);
     
     
-    matteValue_t json = ses_package_get_json(m, dir);
+    matteValue_t json = mod16_package_get_json(m, dir);
     if (json.binID == 0) return 1;
     int out = 0;
     // for each source, dump
@@ -411,11 +411,11 @@ int ses_package(const char * dir) {
     matteArray_t * waveforms = matte_array_create(sizeof(uint8_t*));     
     
     matteArray_t * tileIDs = matte_array_create(sizeof(uint32_t));
-    matteArray_t * tiles = matte_array_create(sizeof(uint8_t)*64); // uint8_t *, see ses_rom_get_tile
+    matteArray_t * tiles = matte_array_create(sizeof(uint8_t)*64); // uint8_t *, see mod16_rom_get_tile
 
 
     matteArray_t * paletteIDs = matte_array_create(sizeof(uint32_t));
-    matteArray_t * palettes = matte_array_create(sizeof(float)*12); // uint8_t *, see ses_rom_get_palette
+    matteArray_t * palettes = matte_array_create(sizeof(float)*12); // uint8_t *, see mod16_rom_get_palette
     
     
     matteArray_t * bytecodeSegmentNames = matte_array_create(sizeof(matteString_t*));
@@ -609,7 +609,7 @@ int ses_package(const char * dir) {
                 bytes,
                 byteLen,
                 &segmentLength,
-                ses_package__compile_error, 
+                mod16_package__compile_error, 
                 NULL
             );
             currentCompiled = NULL;
@@ -651,15 +651,15 @@ int ses_package(const char * dir) {
         }
     }    
     
-    sesROM_t *romV = ses_rom_create(
+    mod16ROM_t *romV = mod16_rom_create(
         waveformSizes, // uint32_t
         waveforms, // uint8_t *     
 
         tileIDs,        
-        tiles, // uint8_t, see ses_rom_get_tile
+        tiles, // uint8_t, see mod16_rom_get_tile
 
         paletteIDs, 
-        palettes, // float, see ses_rom_get_palette
+        palettes, // float, see mod16_rom_get_palette
         
         
         bytecodeSegmentNames, // matteString_t *
@@ -673,9 +673,9 @@ int ses_package(const char * dir) {
         
     );
 
-    matteArray_t * romBytes = ses_rom_pack(romV);
+    matteArray_t * romBytes = mod16_rom_pack(romV);
     
-    matteString_t * outname = matte_string_create_from_c_str("%s/%s", dir, "rom.ses");    
+    matteString_t * outname = matte_string_create_from_c_str("%s/%s", dir, "rom.mod16");    
 
     out = dump_file(matte_string_get_c_str(outname), matte_array_get_data(romBytes), matte_array_get_size(romBytes));
     

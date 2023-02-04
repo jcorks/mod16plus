@@ -43,16 +43,16 @@ typedef struct {
     // flag for when the debug context is not started by a Debug.breakpoint();
     int noFakeRoot;
     
-} SESDebug;
+} MOD16Debug;
 
 
-static SESDebug debug = {};
+static MOD16Debug debug = {};
 
 typedef enum {
-    SESDebug_Color__Normal,
-    SESDebug_Color__Code,
-    SESDebug_Color__Error,
-} SESDebug_Color;
+    MOD16Debug_Color__Normal,
+    MOD16Debug_Color__Code,
+    MOD16Debug_Color__Error,
+} MOD16Debug_Color;
 
 // prints to the debug console once active.
 static void debug_println(const char * format, int colorHint, ...) {
@@ -110,8 +110,8 @@ static void debug_clear() {
 }
 
 
-static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static void ses_matte_debug_event(
+static matteValue_t mod16_native__debug_context_enter(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static void mod16_matte_debug_event(
     matteVM_t * vm, 
     matteVMDebugEvent_t event, 
     uint32_t file, 
@@ -127,7 +127,7 @@ static void ses_matte_debug_event(
         
             matte_string_set(debug.promptConsole, matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), matte_value_as_string(matte_vm_get_heap(vm), value)));       
             debug.noFakeRoot = 1;
-            ses_native__debug_context_enter(debug.vm, matte_heap_new_value(debug.heap), NULL, NULL);
+            mod16_native__debug_context_enter(debug.vm, matte_heap_new_value(debug.heap), NULL, NULL);
         }
 
     }
@@ -135,7 +135,7 @@ static void ses_matte_debug_event(
 }
 
 
-static void ses_matte_query__error(
+static void mod16_matte_query__error(
     matteVM_t * vm, 
     matteVMDebugEvent_t event, 
     uint32_t file, 
@@ -145,7 +145,7 @@ static void ses_matte_query__error(
 ) {
     if (event == MATTE_VM_DEBUG_EVENT__ERROR_RAISED) {
         if (value.binID == MATTE_VALUE_TYPE_STRING) {
-            debug_println("Error: %s", SESDebug_Color__Error, matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, value)));
+            debug_println("Error: %s", MOD16Debug_Color__Error, matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, value)));
         }
         debug_show_text();
 
@@ -172,18 +172,18 @@ static matteArray_t * split_lines(const uint8_t * data, uint32_t size) {
 
 
 
-static void ses_matte_backtrace() {
+static void mod16_matte_backtrace() {
     uint32_t i;
     uint32_t len = matte_vm_get_stackframe_size(debug.vm);
    
    
 
 
-    debug_println("(paused) Backtrace: ", SESDebug_Color__Normal);
+    debug_println("(paused) Backtrace: ", MOD16Debug_Color__Normal);
    
     
     if (len < 1) {
-        debug_println("<stackframe empty>", SESDebug_Color__Code);
+        debug_println("<stackframe empty>", MOD16Debug_Color__Code);
         return;
     }
     
@@ -204,9 +204,9 @@ static void ses_matte_backtrace() {
         
         const matteString_t * filename = matte_vm_get_script_name_by_id(debug.vm, fileid);
         if (filename == NULL) {
-            debug_println("%s????: %d", SESDebug_Color__Code, (i-start == debug.callstackLevel ? " ->" : "   "),  lineNumber);        
+            debug_println("%s????: %d", MOD16Debug_Color__Code, (i-start == debug.callstackLevel ? " ->" : "   "),  lineNumber);        
         } else {
-            debug_println("%s%s: %d", SESDebug_Color__Code, (i-start == debug.callstackLevel ? " ->" : "   "), matte_string_get_c_str(filename), lineNumber);
+            debug_println("%s%s: %d", MOD16Debug_Color__Code, (i-start == debug.callstackLevel ? " ->" : "   "), matte_string_get_c_str(filename), lineNumber);
         }    
         
     }
@@ -214,8 +214,8 @@ static void ses_matte_backtrace() {
 
 }
 
-static int ses_matte_debug_dump() {
-    ses_matte_backtrace();
+static int mod16_matte_debug_dump() {
+    mod16_matte_backtrace();
 
     return 1;
     matteVM_t * vm = debug.vm;        
@@ -252,7 +252,7 @@ static int ses_matte_debug_dump() {
     if (frame.pc-1 >= 0 && frame.pc-1 < numinst)
         line = inst[frame.pc-1].lineNumber;
 
-    debug_println("<file %s, line %d>", SESDebug_Color__Code, 
+    debug_println("<file %s, line %d>", MOD16Debug_Color__Code, 
         matte_string_get_c_str(name),
         line
     );
@@ -264,12 +264,12 @@ static int ses_matte_debug_dump() {
     if (localLines) {
         for(i = ((int)line) - PRINT_AREA_LINES/2; i < ((int)line) + PRINT_AREA_LINES/2 + 1; ++i) {
             if (i < 0 || i >= matte_array_get_size(localLines)) {
-                debug_println("  ---- | \n", SESDebug_Color__Code);
+                debug_println("  ---- | \n", MOD16Debug_Color__Code);
             } else {
                 if (i == line-1) {
                     debug_println("->%4d | %s", 3, i+1, matte_string_get_c_str(matte_array_at(localLines, matteString_t *, i)));
                 } else {
-                    debug_println("  %4d | %s", SESDebug_Color__Code, i+1, matte_string_get_c_str(matte_array_at(localLines, matteString_t *, i)));
+                    debug_println("  %4d | %s", MOD16Debug_Color__Code, i+1, matte_string_get_c_str(matte_array_at(localLines, matteString_t *, i)));
                 }
             }
         }
@@ -278,9 +278,9 @@ static int ses_matte_debug_dump() {
     return 1;   
     
   L_FAIL:
-    debug_println("<File not found>", SESDebug_Color__Error);
-    debug_println("", SESDebug_Color__Error);
-    ses_matte_backtrace();
+    debug_println("<File not found>", MOD16Debug_Color__Error);
+    debug_println("", MOD16Debug_Color__Error);
+    mod16_matte_backtrace();
     debug_show_text();
   
 }
@@ -292,7 +292,7 @@ static int ses_matte_debug_dump() {
 
 
 
-static matteValue_t ses_native__debug_context_bind(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData){
+static matteValue_t mod16_native__debug_context_bind(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData){
     debug.onPrint  = args[0];
     debug.onClear  = args[1];
     debug.onEnter  = args[2];
@@ -312,20 +312,20 @@ static matteValue_t ses_native__debug_context_bind(matteVM_t * vm, matteValue_t 
 
 
 
-static void ses_native_debug_context_leave() {
+static void mod16_native_debug_context_leave() {
     debug.active = 0;
     
 
     
     matte_vm_call(debug.vm, debug.onLeave, matte_array_empty(), matte_array_empty(), NULL);
 
-    ses_native_swap_context();
+    mod16_native_swap_context();
 
 }
 
-static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData){
+static matteValue_t mod16_native__debug_context_enter(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData){
     debug.active = 1;
-    ses_native_swap_context();
+    mod16_native_swap_context();
     debug.requestedExit = 0;
     
     debug.callstackLevel = 0;
@@ -337,35 +337,35 @@ static matteValue_t ses_native__debug_context_enter(matteVM_t * vm, matteValue_t
 
     matte_vm_call(debug.vm, debug.onEnter, matte_array_empty(), matte_array_empty(), NULL);
     
-    debug_println("SES Debugger", SESDebug_Color__Normal);
-    debug_println("http://github.com/jcorks/", SESDebug_Color__Normal);
-    debug_println("sprite-entertainment-system", SESDebug_Color__Normal);    
-    debug_println("", SESDebug_Color__Normal);
-    debug_println("[[enter :? for help]]", SESDebug_Color__Normal);
+    debug_println("MOD16 Debugger", MOD16Debug_Color__Normal);
+    debug_println("http://github.com/jcorks/", MOD16Debug_Color__Normal);
+    debug_println("sprite-entertainment-system", MOD16Debug_Color__Normal);    
+    debug_println("", MOD16Debug_Color__Normal);
+    debug_println("[[enter :? for help]]", MOD16Debug_Color__Normal);
     
     
     if (matte_string_get_length(debug.promptConsole)) {
-        debug_println("SCRIPT ERROR:", SESDebug_Color__Error);
-        debug_println(matte_string_get_c_str(debug.promptConsole), SESDebug_Color__Error);
+        debug_println("SCRIPT ERROR:", MOD16Debug_Color__Error);
+        debug_println(matte_string_get_c_str(debug.promptConsole), MOD16Debug_Color__Error);
         matte_string_clear(debug.promptConsole);
-        debug_println("run :bt for a backtrace.", SESDebug_Color__Normal);
+        debug_println("run :bt for a backtrace.", MOD16Debug_Color__Normal);
         debug_show_text();
     } else {
-        ses_matte_backtrace();    
+        mod16_matte_backtrace();    
     }
 
 
 
     for(;;) {
         if (debug.requestedExit) break;
-        debug.requestedExit |= !ses_native_update(debug.matte);    
+        debug.requestedExit |= !mod16_native_update(debug.matte);    
 
     }
-    ses_native_debug_context_leave();
+    mod16_native_debug_context_leave();
 
 }
 
-static void ses_debug_unhandled_error(
+static void mod16_debug_unhandled_error(
     matteVM_t * vm, 
     uint32_t file, 
     int lineNumber, 
@@ -380,7 +380,7 @@ static void ses_debug_unhandled_error(
             
             debug_println(
                 "Unhandled error: %s\n", 
-                SESDebug_Color__Error, 
+                MOD16Debug_Color__Error, 
                 matte_string_get_c_str(matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), s))
             );
             fflush(stdout);
@@ -390,7 +390,7 @@ static void ses_debug_unhandled_error(
         
         debug_println(
             "Unhandled error (%s, line %d)\n",
-            SESDebug_Color__Error,  
+            MOD16Debug_Color__Error,  
             matte_string_get_c_str(matte_vm_get_script_name_by_id(vm, file)), 
             lineNumber
         );
@@ -401,7 +401,7 @@ static void ses_debug_unhandled_error(
 
 }
 
-static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+static matteValue_t mod16_native__debug_context_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     const char * src = matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, args[0]));
     debug_println("$%s", 3, src);
     uint32_t len = strlen(src);
@@ -436,21 +436,21 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
         debug.requestedExit = 1;
         
     } else if (!strcmp(query, ":palette")) {
-        sesVector_t data[4];    
+        mod16Vector_t data[4];    
         int i = atoi(arg);
-        if (ses_native_get_palette_info(
+        if (mod16_native_get_palette_info(
             i,
             data        
         )) {
-            debug_println("Palette %d", SESDebug_Color__Code, i);
-            debug_println("[1] back      -> %g %g %g", SESDebug_Color__Code, data[0].x, data[0].y, data[0].z);
-            debug_println("[2] mid-back  -> %g %g %g", SESDebug_Color__Code, data[1].x, data[1].y, data[1].z);
-            debug_println("[3] mid-front -> %g %g %g", SESDebug_Color__Code, data[2].x, data[2].y, data[2].z);
-            debug_println("[4] front     -> %g %g %g", SESDebug_Color__Code, data[3].x, data[3].y, data[3].z);
+            debug_println("Palette %d", MOD16Debug_Color__Code, i);
+            debug_println("[1] back      -> %g %g %g", MOD16Debug_Color__Code, data[0].x, data[0].y, data[0].z);
+            debug_println("[2] mid-back  -> %g %g %g", MOD16Debug_Color__Code, data[1].x, data[1].y, data[1].z);
+            debug_println("[3] mid-front -> %g %g %g", MOD16Debug_Color__Code, data[2].x, data[2].y, data[2].z);
+            debug_println("[4] front     -> %g %g %g", MOD16Debug_Color__Code, data[3].x, data[3].y, data[3].z);
         } else {
             debug_println(
                 "No such palette.",
-                SESDebug_Color__Error         
+                MOD16Debug_Color__Error         
             );
         
         }        
@@ -459,24 +459,24 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
     } else if (!strcmp(query, ":tile")) {
         uint8_t data[64];    
         int i = atoi(arg);
-        if (ses_native_get_tile_info(
+        if (mod16_native_get_tile_info(
             i,
             data        
         )) {
-            debug_println("Tile %d", SESDebug_Color__Code, i);
-            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[0+0], data[0+1], data[0+2], data[0+3], data[0+4], data[0+5], data[0+6], data[0+7]);
-            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[8+0], data[8+1], data[8+2], data[8+3], data[8+4], data[8+5], data[8+6], data[8+7]);
-            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[16+0], data[16+1], data[16+2], data[16+3], data[16+4], data[16+5], data[16+6], data[16+7]);
-            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[24+0], data[24+1], data[24+2], data[24+3], data[24+4], data[24+5], data[24+6], data[24+7]);
+            debug_println("Tile %d", MOD16Debug_Color__Code, i);
+            debug_println("%d%d%d%d%d%d%d%d", MOD16Debug_Color__Code, data[0+0], data[0+1], data[0+2], data[0+3], data[0+4], data[0+5], data[0+6], data[0+7]);
+            debug_println("%d%d%d%d%d%d%d%d", MOD16Debug_Color__Code, data[8+0], data[8+1], data[8+2], data[8+3], data[8+4], data[8+5], data[8+6], data[8+7]);
+            debug_println("%d%d%d%d%d%d%d%d", MOD16Debug_Color__Code, data[16+0], data[16+1], data[16+2], data[16+3], data[16+4], data[16+5], data[16+6], data[16+7]);
+            debug_println("%d%d%d%d%d%d%d%d", MOD16Debug_Color__Code, data[24+0], data[24+1], data[24+2], data[24+3], data[24+4], data[24+5], data[24+6], data[24+7]);
 
-            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[32+0], data[32+1], data[32+2], data[32+3], data[32+4], data[32+5], data[32+6], data[32+7]);
-            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[40+0], data[40+1], data[40+2], data[40+3], data[40+4], data[40+5], data[40+6], data[40+7]);
-            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[48+0], data[48+1], data[48+2], data[48+3], data[48+4], data[48+5], data[48+6], data[48+7]);
-            debug_println("%d%d%d%d%d%d%d%d", SESDebug_Color__Code, data[56+0], data[56+1], data[56+2], data[56+3], data[56+4], data[56+5], data[56+6], data[56+7]);
+            debug_println("%d%d%d%d%d%d%d%d", MOD16Debug_Color__Code, data[32+0], data[32+1], data[32+2], data[32+3], data[32+4], data[32+5], data[32+6], data[32+7]);
+            debug_println("%d%d%d%d%d%d%d%d", MOD16Debug_Color__Code, data[40+0], data[40+1], data[40+2], data[40+3], data[40+4], data[40+5], data[40+6], data[40+7]);
+            debug_println("%d%d%d%d%d%d%d%d", MOD16Debug_Color__Code, data[48+0], data[48+1], data[48+2], data[48+3], data[48+4], data[48+5], data[48+6], data[48+7]);
+            debug_println("%d%d%d%d%d%d%d%d", MOD16Debug_Color__Code, data[56+0], data[56+1], data[56+2], data[56+3], data[56+4], data[56+5], data[56+6], data[56+7]);
         } else {
             debug_println(
                 "No such tile.",
-                SESDebug_Color__Error         
+                MOD16Debug_Color__Error         
             );
         
         }        
@@ -490,7 +490,7 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
         uint32_t palette, tile;        
         
         int i = atoi(arg);
-        if (ses_native_get_sprite_info(
+        if (mod16_native_get_sprite_info(
             i,
             &x, &y, &rotation,
             &scaleX, &scaleY,
@@ -503,25 +503,25 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
             &tile       
         
         )) {
-            debug_println("Sprite    %d", SESDebug_Color__Code, i);
-            debug_println("enabled : %s", SESDebug_Color__Code, enabled ? "true" : "false");
-            debug_println("x       : %g", SESDebug_Color__Code, x);
-            debug_println("y       : %g", SESDebug_Color__Code, y);
-            debug_println("layer   : %d", SESDebug_Color__Code, layer);
-            debug_println("effect  : %d", SESDebug_Color__Code, effect);
-            debug_println("palette : %d", SESDebug_Color__Code, palette);
-            debug_println("tile    : %d", SESDebug_Color__Code, tile);
-            debug_println("_________", SESDebug_Color__Code);
+            debug_println("Sprite    %d", MOD16Debug_Color__Code, i);
+            debug_println("enabled : %s", MOD16Debug_Color__Code, enabled ? "true" : "false");
+            debug_println("x       : %g", MOD16Debug_Color__Code, x);
+            debug_println("y       : %g", MOD16Debug_Color__Code, y);
+            debug_println("layer   : %d", MOD16Debug_Color__Code, layer);
+            debug_println("effect  : %d", MOD16Debug_Color__Code, effect);
+            debug_println("palette : %d", MOD16Debug_Color__Code, palette);
+            debug_println("tile    : %d", MOD16Debug_Color__Code, tile);
+            debug_println("_________", MOD16Debug_Color__Code);
 
-            debug_println("rotation: %g", SESDebug_Color__Code, rotation);
-            debug_println("scaleX  : %g", SESDebug_Color__Code, scaleX);
-            debug_println("scaleY  : %g", SESDebug_Color__Code, scaleY);
-            debug_println("centerX : %g", SESDebug_Color__Code, centerX);
-            debug_println("centerY : %g", SESDebug_Color__Code, centerY);
+            debug_println("rotation: %g", MOD16Debug_Color__Code, rotation);
+            debug_println("scaleX  : %g", MOD16Debug_Color__Code, scaleX);
+            debug_println("scaleY  : %g", MOD16Debug_Color__Code, scaleY);
+            debug_println("centerX : %g", MOD16Debug_Color__Code, centerX);
+            debug_println("centerY : %g", MOD16Debug_Color__Code, centerY);
         } else {
             debug_println(
                 "No such sprite.",
-                SESDebug_Color__Error         
+                MOD16Debug_Color__Error         
             );
         
         }
@@ -530,7 +530,7 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
     } else if (!strcmp(query, ":bt") ||
         !strcmp(query, ":backtrace")) {
         
-        ses_matte_backtrace();
+        mod16_matte_backtrace();
 
     // up the callstack
     } else if (!strcmp(query, ":up") ||
@@ -540,7 +540,7 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
         if (debug.callstackLevel >= debug.callstackLimit)
             debug.callstackLevel = debug.callstackLimit-1;
         debug_clear();
-        ses_matte_debug_dump();            
+        mod16_matte_debug_dump();            
 
     // down the callstack
     } else if (!strcmp(query, ":down") ||
@@ -549,20 +549,20 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
             debug.callstackLevel -= 1;
         debug_clear();
 
-        ses_matte_debug_dump();            
+        mod16_matte_debug_dump();            
     } else if (!strcmp(query, ":?") ||
         !strcmp(query, ":help")) {
         
-        debug_println("Commands:", SESDebug_Color__Code);
-        debug_println("", SESDebug_Color__Code);
-        debug_println(" :up       - up callstack",    SESDebug_Color__Code);
-        debug_println(" :down     - down callstack",  SESDebug_Color__Code);
-        debug_println(" :continue - continue exec.",  SESDebug_Color__Code);
-        debug_println(" :backtrace- print callstack", SESDebug_Color__Code);
-        debug_println(" :help     - prints this",     SESDebug_Color__Code);
-        debug_println("", SESDebug_Color__Code);
-        debug_println("Otherwise, runs any expression", SESDebug_Color__Code);
-        debug_println("in the current scope", SESDebug_Color__Code);
+        debug_println("Commands:", MOD16Debug_Color__Code);
+        debug_println("", MOD16Debug_Color__Code);
+        debug_println(" :up       - up callstack",    MOD16Debug_Color__Code);
+        debug_println(" :down     - down callstack",  MOD16Debug_Color__Code);
+        debug_println(" :continue - continue exec.",  MOD16Debug_Color__Code);
+        debug_println(" :backtrace- print callstack", MOD16Debug_Color__Code);
+        debug_println(" :help     - prints this",     MOD16Debug_Color__Code);
+        debug_println("", MOD16Debug_Color__Code);
+        debug_println("Otherwise, runs any expression", MOD16Debug_Color__Code);
+        debug_println("in the current scope", MOD16Debug_Color__Code);
         
         
 
@@ -577,7 +577,7 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
             debug.vm,
             src,
             debug.callstackLevel + (matte_vm_get_stackframe_size(debug.vm) - debug.callstackLimit),
-            ses_matte_query__error,
+            mod16_matte_query__error,
             NULL
         );   
         
@@ -589,18 +589,18 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
             int len = matte_string_get_length(content);
             for(i = 0; i < len; ++i) {
                 if (matte_string_get_char(content, i) == '\n') { 
-                    debug_println("%s", SESDebug_Color__Code, matte_string_get_c_str(working));
+                    debug_println("%s", MOD16Debug_Color__Code, matte_string_get_c_str(working));
                     matte_string_clear(working);
                 } else {
                     matte_string_append_char(working, matte_string_get_char(content, i));
                 }
             }
             if (matte_string_get_length(working))
-                debug_println("%s", SESDebug_Color__Code, matte_string_get_c_str(working));
+                debug_println("%s", MOD16Debug_Color__Code, matte_string_get_c_str(working));
             matte_string_destroy(working);
             
         } else {
-            debug_println("  (invalid value)", SESDebug_Color__Error);
+            debug_println("  (invalid value)", MOD16Debug_Color__Error);
         }
     }
     debug_show_text();
@@ -614,7 +614,7 @@ static matteValue_t ses_native__debug_context_query(matteVM_t * vm, matteValue_t
 
 
 
-static matteValue_t ses_native__debug_context_is_allowed(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+static matteValue_t mod16_native__debug_context_is_allowed(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     matteValue_t out = matte_heap_new_value(heap);
     
@@ -625,7 +625,7 @@ static matteValue_t ses_native__debug_context_is_allowed(matteVM_t * vm, matteVa
 
 
 
-void ses_debug_init(matte_t * m, int enabled, const char * romPath) {
+void mod16_debug_init(matte_t * m, int enabled, const char * romPath) {
     matteVM_t * vm = matte_get_vm(m);
 
     debug.enabled = enabled;   
@@ -652,14 +652,14 @@ void ses_debug_init(matte_t * m, int enabled, const char * romPath) {
     
     
     if (debug.enabled) {
-        matte_vm_set_unhandled_callback(vm, ses_debug_unhandled_error, NULL);
-        matte_vm_set_debug_callback(vm, ses_matte_debug_event, NULL);
+        matte_vm_set_unhandled_callback(vm, mod16_debug_unhandled_error, NULL);
+        matte_vm_set_debug_callback(vm, mod16_matte_debug_event, NULL);
     }
     
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_bind"),       5, ses_native__debug_context_bind, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_is_allowed"), 0, ses_native__debug_context_is_allowed, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_enter"),      0, ses_native__debug_context_enter, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__debug_context_query"),      1, ses_native__debug_context_query, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__debug_context_bind"),       5, mod16_native__debug_context_bind, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__debug_context_is_allowed"), 0, mod16_native__debug_context_is_allowed, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__debug_context_enter"),      0, mod16_native__debug_context_enter, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__debug_context_query"),      1, mod16_native__debug_context_query, NULL);
         
 }
 

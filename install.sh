@@ -1,2 +1,2 @@
 #!/bin/sh
-cp ./ses ~/.local/bin/
+cp ./mod16plus ~/.local/bin/

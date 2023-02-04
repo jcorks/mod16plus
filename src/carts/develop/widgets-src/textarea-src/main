@@ -1,7 +1,7 @@
 @:class = import(module:'Matte.Core.Class');
-@:SES = import(module:'SES.Core');
+@:Mod16 = import(module:'Mod16Plus.Core');
 
-@:Cartridge = SES.Cartridge;
+@:Cartridge = Mod16.Cartridge;
 @:AsciiRenderer = Cartridge.subCartridge(name:'ascii-renderer');
 
 
@@ -428,13 +428,13 @@ return class(
 
         @:keyboardCallback = ::(event, text, key) {
             
-            when(event == SES.Input.EVENTS.KEY_DOWN) ::<= {
+            when(event == Mod16.Input.EVENTS.KEY_DOWN) ::<= {
                 @preserveSelect = false;
                 if (selectActive) ::<= {
                     match(key) {
-                      (SES.Input.KEYS.LCTRL, SES.Input.KEYS.RCTRL): preserveSelect = true,
-                      (SES.Input.KEYS.LSHIFT, SES.Input.KEYS.RSHIFT): preserveSelect = true,
-                      (SES.Input.KEYS.DOWN, SES.Input.KEYS.UP, SES.Input.KEYS.LEFT, SES.Input.KEYS.RIGHT):::<= {
+                      (Mod16.Input.KEYS.LCTRL, Mod16.Input.KEYS.RCTRL): preserveSelect = true,
+                      (Mod16.Input.KEYS.LSHIFT, Mod16.Input.KEYS.RSHIFT): preserveSelect = true,
+                      (Mod16.Input.KEYS.DOWN, Mod16.Input.KEYS.UP, Mod16.Input.KEYS.LEFT, Mod16.Input.KEYS.RIGHT):::<= {
                           if (shiftMod)
                             preserveSelect = true;
                       },
@@ -484,13 +484,13 @@ return class(
 
 
                 match(key) {
-                  (SES.Input.KEYS.TAB):::<= {
+                  (Mod16.Input.KEYS.TAB):::<= {
                     @:line = lines[cursorY];
                     insertText(text:'  ');                                            
                     redrawLines();
                   },
 
-                  (SES.Input.KEYS.BACKSPACE):::<= {
+                  (Mod16.Input.KEYS.BACKSPACE):::<= {
                     // already deleted.
                     when(selectActive) empty;
 
@@ -505,7 +505,7 @@ return class(
 
                   },
                   
-                  (SES.Input.KEYS.UP):::<= {
+                  (Mod16.Input.KEYS.UP):::<= {
                     if (onNavVer_ != empty) onNavVer_(dir:1);
                     when (completionMode) empty;
                     if (shiftMod && !selectActive) ::<= {
@@ -519,7 +519,7 @@ return class(
                     
                   },
                   
-                  (SES.Input.KEYS.DOWN):::<= {
+                  (Mod16.Input.KEYS.DOWN):::<= {
                     if (onNavVer_ != empty) onNavVer_(dir:-1);
                     when (completionMode) empty;
                     if (shiftMod && !selectActive) ::<= {
@@ -532,7 +532,7 @@ return class(
                     movedDown();
                   },
 
-                  (SES.Input.KEYS.LEFT):::<= {
+                  (Mod16.Input.KEYS.LEFT):::<= {
                     if (onNavHor_ != empty) onNavHor_();
                     if (shiftMod && !selectActive) ::<= {
                         preserveSelect = true;
@@ -544,7 +544,7 @@ return class(
                     movedLeft();             
                    },
                   
-                  (SES.Input.KEYS.RIGHT):::<= {
+                  (Mod16.Input.KEYS.RIGHT):::<= {
                     if (onNavHor_ != empty) onNavHor_();
                     if (shiftMod && !selectActive) ::<= {
                         preserveSelect = true;
@@ -557,16 +557,16 @@ return class(
 
                   },
 
-                  (SES.Input.KEYS.V):::<= {
+                  (Mod16.Input.KEYS.V):::<= {
                     
                     if (ctrlMod) ::<= {
-                        this.addText(text:SES.clipboard);
+                        this.addText(text:Mod16.clipboard);
                     };
                   },    
 
-                  (SES.Input.KEYS.C):::<= {                    
+                  (Mod16.Input.KEYS.C):::<= {                    
                     if (ctrlMod) ::<= {
-                        SES.clipboard = this.getSelectedText();
+                        Mod16.clipboard = this.getSelectedText();
                         // deselect to telegraph successful copy
                         preserveSelect = false;
                     };
@@ -574,7 +574,7 @@ return class(
 
                   
                   
-                  (SES.Input.KEYS.RETURN):::<= {
+                  (Mod16.Input.KEYS.RETURN):::<= {
                     when(completionMode) if (onEnter_) onEnter_();;
                     if (onEnter_) onEnter_();
                     when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
@@ -809,32 +809,32 @@ return class(
                     when(value == true) ::<= {
                         when(inputCallbackID != empty) empty;
                         
-                        ctrlCallbackID = SES.Input.addCallback(
-                            device:SES.Input.DEVICES.KEYBOARD,
+                        ctrlCallbackID = Mod16.Input.addCallback(
+                            device:Mod16.Input.DEVICES.KEYBOARD,
                             callback:::(event, text, key) {
-                                if(event == SES.Input.EVENTS.KEY_DOWN && key == SES.Input.KEYS.LCTRL) ctrlMod = true;
-                                if(event == SES.Input.EVENTS.KEY_UP   && key == SES.Input.KEYS.LCTRL) ctrlMod = false;
-                                if(event == SES.Input.EVENTS.KEY_DOWN && key == SES.Input.KEYS.LSHIFT) shiftMod = true;
-                                if(event == SES.Input.EVENTS.KEY_UP   && key == SES.Input.KEYS.LSHIFT) shiftMod = false;
-                                if(event == SES.Input.EVENTS.KEY_DOWN && key == SES.Input.KEYS.RSHIFT) shiftMod = true;
-                                if(event == SES.Input.EVENTS.KEY_UP   && key == SES.Input.KEYS.RSHIFT) shiftMod = false;
+                                if(event == Mod16.Input.EVENTS.KEY_DOWN && key == Mod16.Input.KEYS.LCTRL) ctrlMod = true;
+                                if(event == Mod16.Input.EVENTS.KEY_UP   && key == Mod16.Input.KEYS.LCTRL) ctrlMod = false;
+                                if(event == Mod16.Input.EVENTS.KEY_DOWN && key == Mod16.Input.KEYS.LSHIFT) shiftMod = true;
+                                if(event == Mod16.Input.EVENTS.KEY_UP   && key == Mod16.Input.KEYS.LSHIFT) shiftMod = false;
+                                if(event == Mod16.Input.EVENTS.KEY_DOWN && key == Mod16.Input.KEYS.RSHIFT) shiftMod = true;
+                                if(event == Mod16.Input.EVENTS.KEY_UP   && key == Mod16.Input.KEYS.RSHIFT) shiftMod = false;
                             }
                         );
-                        inputCallbackID = SES.Input.addCallback(
-                            device:SES.Input.DEVICES.KEYBOARD,
+                        inputCallbackID = Mod16.Input.addCallback(
+                            device:Mod16.Input.DEVICES.KEYBOARD,
                             callback:keyboardCallback
                         );            
-                        pointerCallbackID = SES.Input.addCallback(
-                            device:SES.Input.DEVICES.POINTER0,
+                        pointerCallbackID = Mod16.Input.addCallback(
+                            device:Mod16.Input.DEVICES.POINTER0,
                             callback:::(event, x, y, button) {
                                 
                                 match(event) {
-                                  (SES.Input.EVENTS.POINTER_BUTTON_UP): ::<= {
+                                  (Mod16.Input.EVENTS.POINTER_BUTTON_UP): ::<= {
                                     mouseDownMod = false;
                                   },
 
                                   
-                                  (SES.Input.EVENTS.POINTER_MOTION): ::<= {
+                                  (Mod16.Input.EVENTS.POINTER_MOTION): ::<= {
                                     when(mouseDownMod == false) empty;
                                     @:p = this.pixelCoordsToCursor(x, y);
                                     if (p.x != cursorX || p.y != cursorY) ::<= {
@@ -853,7 +853,7 @@ return class(
                                   },
                                     
 
-                                  (SES.Input.EVENTS.POINTER_BUTTON_DOWN): ::<= {
+                                  (Mod16.Input.EVENTS.POINTER_BUTTON_DOWN): ::<= {
                                     selectActive = false;
                                     mouseDownMod = true;
                                     mouseDownX = x;
@@ -871,9 +871,9 @@ return class(
                     };
                     
                     when(inputCallbackID == empty) empty;
-                    SES.Input.removeCallback(id:inputCallbackID, device:SES.Input.DEVICES.KEYBOARD);
-                    SES.Input.removeCallback(id:pointerCallbackID, device:SES.Input.DEVICES.POINTER0);
-                    SES.Input.removeCallback(id:ctrlCallbackID, device:SES.Input.DEVICES.KEYBOARD);
+                    Mod16.Input.removeCallback(id:inputCallbackID, device:Mod16.Input.DEVICES.KEYBOARD);
+                    Mod16.Input.removeCallback(id:pointerCallbackID, device:Mod16.Input.DEVICES.POINTER0);
+                    Mod16.Input.removeCallback(id:ctrlCallbackID, device:Mod16.Input.DEVICES.KEYBOARD);
                     inputCallbackID = empty;
                     redrawLines();
                 },
@@ -890,13 +890,13 @@ return class(
                         @lastX = 0;
                         @lastY = 0;
                         @ripple = false;
-                        scrollCallbackID = SES.Input.addCallback(
-                            device:SES.Input.DEVICES.POINTER0,
+                        scrollCallbackID = Mod16.Input.addCallback(
+                            device:Mod16.Input.DEVICES.POINTER0,
                             callback:::(event, x, y, button) {
-                                if (event == SES.Input.EVENTS.POINTER_BUTTON_DOWN) holdMod = true;
-                                if (event == SES.Input.EVENTS.POINTER_BUTTON_UP  ) holdMod = false;
+                                if (event == Mod16.Input.EVENTS.POINTER_BUTTON_DOWN) holdMod = true;
+                                if (event == Mod16.Input.EVENTS.POINTER_BUTTON_UP  ) holdMod = false;
 
-                                if (event == SES.Input.EVENTS.POINTER_MOTION) ::<= {
+                                if (event == Mod16.Input.EVENTS.POINTER_MOTION) ::<= {
                                     if (holdMod && ctrlMod) ::<= {
                                         if (ripple) ::<= {
                                             this.setScroll(
@@ -911,7 +911,7 @@ return class(
                                     lastY = y;
                                 };
 
-                                if (event == SES.Input.EVENTS.POINTER_SCROLL) ::<= {
+                                if (event == Mod16.Input.EVENTS.POINTER_SCROLL) ::<= {
                                     this.scrollX -= x;
                                     this.scrollY -= y;                                                
                                 };    
@@ -923,7 +923,7 @@ return class(
                     };
 
                     when(scrollCallbackID == empty) empty;
-                    SES.Input.removeCallback(id:scrollCallbackID, device:SES.Input.DEVICES.POINTER0);
+                    Mod16.Input.removeCallback(id:scrollCallbackID, device:Mod16.Input.DEVICES.POINTER0);
                     scrollCallbackID = empty;
                     
 

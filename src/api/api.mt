@@ -2,34 +2,34 @@
 
 
 
-@:ses_native__get_context_cartridge_id = getExternalFunction(name:"ses_native__get_context_cartridge_id");
-@:ses_native__has_boot_context = getExternalFunction(name:"ses_native__has_boot_context");
-@:ses_native__get_source = getExternalFunction(name:"ses_native__get_source");
-@:ses_native__get_sub_cartridge_main = getExternalFunction(name:"ses_native__get_sub_cartridge_main");
+@:mod16_native__get_context_cartridge_id = getExternalFunction(name:"mod16_native__get_context_cartridge_id");
+@:mod16_native__has_boot_context = getExternalFunction(name:"mod16_native__has_boot_context");
+@:mod16_native__get_source = getExternalFunction(name:"mod16_native__get_source");
+@:mod16_native__get_sub_cartridge_main = getExternalFunction(name:"mod16_native__get_sub_cartridge_main");
 
 
-@:ses_native__sprite_attrib = getExternalFunction(name:"ses_native__sprite_attrib");
-@:ses_native__palette_attrib = getExternalFunction(name:"ses_native__palette_attrib");
-@:ses_native__tile_attrib = getExternalFunction(name:"ses_native__tile_attrib");
-@:ses_native__audio_attrib = getExternalFunction(name:"ses_native__audio_attrib");
-@:ses_native__bg_attrib = getExternalFunction(name:"ses_native__bg_attrib");
-@:ses_native__oscillator_attrib = getExternalFunction(name:"ses_native__oscillator_attrib");
+@:mod16_native__sprite_attrib = getExternalFunction(name:"mod16_native__sprite_attrib");
+@:mod16_native__palette_attrib = getExternalFunction(name:"mod16_native__palette_attrib");
+@:mod16_native__tile_attrib = getExternalFunction(name:"mod16_native__tile_attrib");
+@:mod16_native__audio_attrib = getExternalFunction(name:"mod16_native__audio_attrib");
+@:mod16_native__bg_attrib = getExternalFunction(name:"mod16_native__bg_attrib");
+@:mod16_native__oscillator_attrib = getExternalFunction(name:"mod16_native__oscillator_attrib");
 // query functions are necessary because they are (can be) pre-populated by the ROM.
-@:ses_native__palette_query = getExternalFunction(name:"ses_native__palette_query");
-@:ses_native__tile_query = getExternalFunction(name:"ses_native__tile_query");
+@:mod16_native__palette_query = getExternalFunction(name:"mod16_native__palette_query");
+@:mod16_native__tile_query = getExternalFunction(name:"mod16_native__tile_query");
 
 
 
 
-@:ses_native__input_attrib = getExternalFunction(name:"ses_native__input_attrib");
-@:ses_native__engine_attrib = getExternalFunction(name:"ses_native__engine_attrib");
+@:mod16_native__input_attrib = getExternalFunction(name:"mod16_native__input_attrib");
+@:mod16_native__engine_attrib = getExternalFunction(name:"mod16_native__engine_attrib");
 
 
 
-@:ses_native__debug_context_is_allowed = getExternalFunction(name:"ses_native__debug_context_is_allowed");
-@:ses_native__debug_context_enter = getExternalFunction(name:"ses_native__debug_context_enter");
-@:ses_native__debug_context_query = getExternalFunction(name:"ses_native__debug_context_query");
-@:ses_native__debug_context_bind = getExternalFunction(name:"ses_native__debug_context_bind");
+@:mod16_native__debug_context_is_allowed = getExternalFunction(name:"mod16_native__debug_context_is_allowed");
+@:mod16_native__debug_context_enter = getExternalFunction(name:"mod16_native__debug_context_enter");
+@:mod16_native__debug_context_query = getExternalFunction(name:"mod16_native__debug_context_query");
+@:mod16_native__debug_context_bind = getExternalFunction(name:"mod16_native__debug_context_bind");
 
 
 @:package_native__is_packaging_allowed  = getExternalFunction(name:"package_native__is_packaging_allowed");
@@ -91,7 +91,7 @@
     };
 
     return class(
-        name: 'SES.Palette',
+        name: 'MOD16.Palette',
         
         
         define:::(this) {
@@ -115,10 +115,10 @@
                     @colorMidFront = parseColor(input:colors[2]);
                     @colorFront    = parseColor(input:colors[3]);
 
-                    ses_native__palette_attrib(a:cartID_, b:index, c:COLORS.BACK,     d:colorBack[0],     e:colorBack[1],     f:colorBack[2]);
-                    ses_native__palette_attrib(a:cartID_, b:index, c:COLORS.MIDBACK,  d:colorMidBack[0],  e:colorMidBack[1],  f:colorMidBack[2]);
-                    ses_native__palette_attrib(a:cartID_, b:index, c:COLORS.MIDFRONT, d:colorMidFront[0], e:colorMidFront[1], f:colorMidFront[2]);
-                    ses_native__palette_attrib(a:cartID_, b:index, c:COLORS.FRONT,    d:colorFront[0],    e:colorFront[1],    f:colorFront[2]);
+                    mod16_native__palette_attrib(a:cartID_, b:index, c:COLORS.BACK,     d:colorBack[0],     e:colorBack[1],     f:colorBack[2]);
+                    mod16_native__palette_attrib(a:cartID_, b:index, c:COLORS.MIDBACK,  d:colorMidBack[0],  e:colorMidBack[1],  f:colorMidBack[2]);
+                    mod16_native__palette_attrib(a:cartID_, b:index, c:COLORS.MIDFRONT, d:colorMidFront[0], e:colorMidFront[1], f:colorMidFront[2]);
+                    mod16_native__palette_attrib(a:cartID_, b:index, c:COLORS.FRONT,    d:colorFront[0],    e:colorFront[1],    f:colorFront[2]);
                         
                 },
                 
@@ -128,27 +128,27 @@
                 ) {
                     return [
                         [
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.BACK, d:0),
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.BACK, d:1),
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.BACK, d:2)
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.BACK, d:0),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.BACK, d:1),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.BACK, d:2)
                         ],
                         
                         [
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDBACK, d:0),
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDBACK, d:1),
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDBACK, d:2)
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.MIDBACK, d:0),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.MIDBACK, d:1),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.MIDBACK, d:2)
                         ],
                         
                         [
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDFRONT, d:0),
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDFRONT, d:1),
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.MIDFRONT, d:2)
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.MIDFRONT, d:0),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.MIDFRONT, d:1),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.MIDFRONT, d:2)
                         ],
                     
                         [
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:0),
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:1),
-                            ses_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:2)
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:0),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:1),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:2)
                         ]
                     ];
                 }
@@ -166,7 +166,7 @@
     };
 
     return class(
-        name: 'SES.Tile',
+        name: 'MOD16.Tile',
         
         define:::(this) {
             @cartID_;
@@ -181,7 +181,7 @@
             
                 // data is a plain array of numbers, 0 - 4
                 set ::(index => Number, data => Object) {                    
-                    ses_native__tile_attrib(
+                    mod16_native__tile_attrib(
                         a:cartID_, 
                         b:index,
                         c:ATTRIBS.SET,
@@ -191,11 +191,11 @@
                 
                 
                 get ::(index => Number) {
-                    return ses_native__tile_query(a:cartID_, b:index);
+                    return mod16_native__tile_query(a:cartID_, b:index);
                 },
                 
                 copy ::(to => Number, from => Number) {
-                    ses_native__tile_attrib(a:cartID_, b:from, c:ATTRIBS.COPY, d:to);
+                    mod16_native__tile_attrib(a:cartID_, b:from, c:ATTRIBS.COPY, d:to);
                 }
 
             };
@@ -495,7 +495,7 @@
 
 
     return class(
-        name: 'SES.Input',
+        name: 'MOD16.Input',
         
         
         
@@ -532,12 +532,12 @@
                     callback => Function
                 ){
                     if (device < 0 || device > DEVICES.GAMEPAD3) error(detail:'Unrecognized device');
-                    return ses_native__input_attrib(a:ACTIONS.ADD, b:device, c:callback); 
+                    return mod16_native__input_attrib(a:ACTIONS.ADD, b:device, c:callback); 
                 },
                 
                 
                 removeCallback ::(id => Number, device => Number) {
-                    ses_native__input_attrib(a:ACTIONS.REMOVE, b:device, c:id);
+                    mod16_native__input_attrib(a:ACTIONS.REMOVE, b:device, c:id);
                 }
             };
         }
@@ -556,7 +556,7 @@
 
 
     return class(
-        name: 'SES.Audio',
+        name: 'MOD16.Audio',
         define:::(this) {
             this.interface = {
                 
@@ -564,7 +564,7 @@
                 halt::(
                     channel => Number
                 ) {
-                    ses_native__audio_attrib(a:ACTIONS.HALT, b:channel);
+                    mod16_native__audio_attrib(a:ACTIONS.HALT, b:channel);
                 },
                 
                 // sets the volume for a channel
@@ -572,7 +572,7 @@
                     channel => Number,
                     amount => Number
                 ) {
-                    ses_native__audio_attrib(a:ACTIONS.VOLUME, b:channel, c:amount);
+                    mod16_native__audio_attrib(a:ACTIONS.VOLUME, b:channel, c:amount);
                 },
                 
                 // sets the panning for the channel
@@ -580,7 +580,7 @@
                     channel => Number,
                     amount => Number   
                 ) {
-                    ses_native__audio_attrib(a:ACTIONS.PANNING, b:channel, c:amount);
+                    mod16_native__audio_attrib(a:ACTIONS.PANNING, b:channel, c:amount);
                 }
             };
         }
@@ -588,7 +588,7 @@
 };
 
 @:AudioStore = class(
-    name: 'SES.Audio',
+    name: 'MOD16.Audio',
     define:::(this) {
         @cartID_;
         this.constructor = ::(cartID) {
@@ -605,7 +605,7 @@
                 loop    => Boolean
                 
             ) {
-                ses_native__audio_attrib(a:cartID_, b:Audio.ACTIONS.PLAY, c:sample, d:channel, e:loop);
+                mod16_native__audio_attrib(a:cartID_, b:Audio.ACTIONS.PLAY, c:sample, d:channel, e:loop);
             }
         };
     }
@@ -650,7 +650,7 @@
     };
     
     return class(
-        name: 'SES.Background',
+        name: 'MOD16.Background',
         statics : {
             WIDTH_TILES:32,
             HEIGHT_TILES:16
@@ -673,23 +673,23 @@
                     palette
                 ) {
                     if (show != empty) 
-                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.ENABLE, d:if((show => Boolean) == true) 1 else 0);
+                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.ENABLE, d:if((show => Boolean) == true) 1 else 0);
  
                     if (x != empty)
-                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.POSITIONX, d:x=>Number);
+                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.POSITIONX, d:x=>Number);
 
                     if (y != empty)
-                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.POSITIONY, d:y=>Number);
+                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.POSITIONY, d:y=>Number);
 
 
                     if (layer != empty)
-                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.LAYER, d:layer=>Number);            
+                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.LAYER, d:layer=>Number);            
 
                     if (effect != empty)                        
-                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.EFFECT, d:effect=>Number);                        
+                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.EFFECT, d:effect=>Number);                        
 
                     if (palette != empty)
-                        ses_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.PALETTE, d:palette=>Number);
+                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.PALETTE, d:palette=>Number);
 
                 },
                 
@@ -742,7 +742,7 @@
 
     
     return class(
-        name: 'SES.Sprite',
+        name: 'MOD16.Sprite',
         define:::(this) {
             @cartID_;
             this.constructor = ::(cartID) {
@@ -770,7 +770,7 @@
                     if (effect != empty) commands   = [...commands, ATTRIBS.EFFECT, effect=>Number];                        
                     if (palette != empty) commands  = [...commands, ATTRIBS.PALETTE, palette=>Number];
 
-                    ses_native__sprite_attrib(a:cartID_, b:index, c:commands);
+                    mod16_native__sprite_attrib(a:cartID_, b:index, c:commands);
 
                 },
                 
@@ -791,7 +791,7 @@
                     if (centerX != empty) commands  = [...commands, ATTRIBS.CENTERX, centerX=>Number];
                     if (centerY != empty) commands  = [...commands, ATTRIBS.CENTERY, centerY=>Number];
 
-                    ses_native__sprite_attrib(a:cartID_, b:index, c:commands);
+                    mod16_native__sprite_attrib(a:cartID_, b:index, c:commands);
                 
                 },
              
@@ -811,7 +811,7 @@
         LINE: 0
     };
     return class(
-        name: 'SES.Vertices',
+        name: 'MOD16.Vertices',
         define:::(this) {
             @cartID_;
             this.constructor = ::(cartID) {
@@ -821,25 +821,25 @@
             this.interface = {
                 count : {
                     set ::(value){
-                        ses_native__vertices_set_count(a:cartID_, b:value=>Number);
+                        mod16_native__vertices_set_count(a:cartID_, b:value=>Number);
                     }
                 },
                 
                 shape : {
                     set ::(value) {
-                        ses_native__vertices_set_shape(a:cartID_, b:value=>Number);
+                        mod16_native__vertices_set_shape(a:cartID_, b:value=>Number);
                     }
                 },
                 
                 transform : {
                     set ::(value => Object) {
-                        ses_native__vertices_set_transform(a:cartID_, b:value);
+                        mod16_native__vertices_set_transform(a:cartID_, b:value);
                     }
                 },
                 
                 effect : {
                     set ::(value => Number) {
-                        ses_native__vertices_set_effect(a:cartID_, b:value);
+                        mod16_native__vertices_set_effect(a:cartID_, b:value);
                     }
                 },
                 
@@ -855,13 +855,13 @@
                     when(data->keycount != 10)
                         error(detail:'Vertex expects array in format: [x, y, z, r, g, b, u , v, tileID, paletteID] for all vertices');
 
-                    ses_native__vertices_set(a:cartID_, b:index, c:data);
+                    mod16_native__vertices_set(a:cartID_, b:index, c:data);
                                     
                 },
                 
                 
                 get ::(index => Number) {
-                    return ses_native__vertices_get(a:cartID_, b:index);
+                    return mod16_native__vertices_get(a:cartID_, b:index);
                 }
             
             };
@@ -879,7 +879,7 @@
     };
     
     return class(
-        name: 'SES.Oscillator',
+        name: 'MOD16.Oscillator',
         define:::(this) {
             @cartID_;
             this.constructor = ::(cartID) {
@@ -899,13 +899,13 @@
                     if (periodMS != empty) commands   = [...commands, ATTRIBS.PERIODMS, periodMS=>Number];
                     if (onCycle != empty) commands = [...commands, ATTRIBS.ONCYCLE, onCycle=>Function];
 
-                    ses_native__oscillator_attrib(a:cartID_, b:index, c:commands);
+                    mod16_native__oscillator_attrib(a:cartID_, b:index, c:commands);
                                     
                 },
                 
                 
                 get ::(index => Number) {
-                    return ses_native__oscillator_attrib(a:cartID_, b:index, c:[ATTRIBS.GET, 0]);
+                    return mod16_native__oscillator_attrib(a:cartID_, b:index, c:[ATTRIBS.GET, 0]);
                 }
             
             };
@@ -937,8 +937,8 @@
                     onDebugEnter  => Function,
                     onDebugLeave  => Function
                 ) {
-                    when(!ses_native__debug_context_is_allowed()) empty;                    
-                    ses_native__debug_context_bind(
+                    when(!mod16_native__debug_context_is_allowed()) empty;                    
+                    mod16_native__debug_context_bind(
                         a:onDebugPrint, 
                         b:onDebugClear, 
                         d:onDebugCommit, 
@@ -958,14 +958,14 @@
                 },
                 
                 enter::() {
-                    when(!ses_native__debug_context_is_allowed()) empty;                    
-                    ses_native__debug_context_enter();
+                    when(!mod16_native__debug_context_is_allowed()) empty;                    
+                    mod16_native__debug_context_enter();
                 
                 },
                 
                 query::(expression => String) {
-                    when(!ses_native__debug_context_is_allowed()) empty;                    
-                    ses_native__debug_context_query(a:expression);
+                    when(!mod16_native__debug_context_is_allowed()) empty;                    
+                    mod16_native__debug_context_query(a:expression);
                 
                 }
             
@@ -1021,8 +1021,8 @@
 };
 
 
-@:SES = class(
-    name: 'SES',
+@:MOD16 = class(
+    name: 'MOD16',
     
     define:::(this) {
         @:ATTRIBS = {
@@ -1058,9 +1058,9 @@
         
         
 
-        ses_native__engine_attrib(a:ATTRIBS.UPDATERATE, b:updateRate);
-        ses_native__engine_attrib(a:ATTRIBS.UPDATEFUNC, b:update);
-        ses_native__engine_attrib(a:ATTRIBS.RESOLUTION, b:resolution);
+        mod16_native__engine_attrib(a:ATTRIBS.UPDATERATE, b:updateRate);
+        mod16_native__engine_attrib(a:ATTRIBS.UPDATEFUNC, b:update);
+        mod16_native__engine_attrib(a:ATTRIBS.RESOLUTION, b:resolution);
     
         @:allcartIDs = {};
     
@@ -1072,10 +1072,10 @@
                     // Cartridges should be querried and cached on startup and not 
                     // during calls to the update function. This simplifies the 
                     // environment design greatly.
-                    when (!ses_native__has_boot_context()) error(detail:
-                        "SES.Cartridge can only be accessed on cartridge boot. Please access and store at the start of your scripts and not during frame updates."
+                    when (!mod16_native__has_boot_context()) error(detail:
+                        "MOD16.Cartridge can only be accessed on cartridge boot. Please access and store at the start of your scripts and not during frame updates."
                     );
-                    @:cart = ses_native__get_context_cartridge_id();
+                    @:cart = mod16_native__get_context_cartridge_id();
                     
                     @out = allcartIDs[cart];
                     when(out != empty) out;
@@ -1090,12 +1090,12 @@
 //                        Vertices  : Vertices.new(cartID:cart),
                         
                         subCartridge::(name => String) {
-                            return ses_native__get_sub_cartridge_main(a:cart, b:name);
+                            return mod16_native__get_sub_cartridge_main(a:cart, b:name);
                         },
                         
                         
                         "import"::(source => String) { // for safety, as the native function directly unsafely retrieves string for speed.
-                            return ses_native__get_source(a:cart, b:source);
+                            return mod16_native__get_source(a:cart, b:source);
                         }
                     };
 
@@ -1144,8 +1144,8 @@
             
             
             clipboard : {
-                get ::<- ses_native__engine_attrib(a:ATTRIBS.CLIPBOARDGET),
-                set ::(value => String) <- ses_native__engine_attrib(a:ATTRIBS.CLIPBOARDSET, b:value)
+                get ::<- mod16_native__engine_attrib(a:ATTRIBS.CLIPBOARDGET),
+                set ::(value => String) <- mod16_native__engine_attrib(a:ATTRIBS.CLIPBOARDSET, b:value)
             },
 
             
@@ -1156,7 +1156,7 @@
             updateRate : {
                 set ::(value => Number) {
                     updateRate = value;
-                    ses_native__engine_attrib(a:ATTRIBS.UPDATERATE, b:updateRate);                    
+                    mod16_native__engine_attrib(a:ATTRIBS.UPDATERATE, b:updateRate);                    
                 },
                 
                 get ::<- updateRate
@@ -1176,4 +1176,4 @@
 
 
 
-return SES;
+return MOD16;

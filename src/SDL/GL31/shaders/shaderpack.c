@@ -32,18 +32,18 @@ int main(int argc, char ** argv) {
     
     uint32_t NAME_COUNT = 4;
     char * NAMES_IN[] = {
-        "ses_sdl__renderer_gl31__sprite_vtx.glsl",    
-        "ses_sdl__renderer_gl31__sprite_frag.glsl",    
-        "ses_sdl__renderer_gl31__screen_vtx.glsl",    
-        "ses_sdl__renderer_gl31__screen_frag.glsl",    
+        "mod16_sdl__renderer_gl31__sprite_vtx.glsl",    
+        "mod16_sdl__renderer_gl31__sprite_frag.glsl",    
+        "mod16_sdl__renderer_gl31__screen_vtx.glsl",    
+        "mod16_sdl__renderer_gl31__screen_frag.glsl",    
     
     };
     
     char * NAMES_OUT[] = {
-        "ses_sdl__renderer_gl31__sprite_vtx_data",    
-        "ses_sdl__renderer_gl31__sprite_frag_data",    
-        "ses_sdl__renderer_gl31__screen_vtx_data",    
-        "ses_sdl__renderer_gl31__screen_frag_data",    
+        "mod16_sdl__renderer_gl31__sprite_vtx_data",    
+        "mod16_sdl__renderer_gl31__sprite_frag_data",    
+        "mod16_sdl__renderer_gl31__screen_vtx_data",    
+        "mod16_sdl__renderer_gl31__screen_frag_data",    
     
     };
     uint32_t i;

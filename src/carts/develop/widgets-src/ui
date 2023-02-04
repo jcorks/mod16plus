@@ -1,9 +1,9 @@
 @:class = import(module:'Matte.Core.Class');
-@:SES = import(module:'SES.Core');
-@:Fetcher = SES.Cartridge.import(source:'fetcher');
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:Fetcher = Mod16.Cartridge.import(source:'fetcher');
 @:EventSystem = import(module:'Matte.Core.EventSystem');
 
-@:Rectangle = SES.Cartridge.subCartridge(name:'rectangle-renderer');
+@:Rectangle = Mod16.Cartridge.subCartridge(name:'rectangle-renderer');
 
 
 

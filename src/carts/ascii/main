@@ -1,5 +1,5 @@
-@:SES = import(module:'SES.Core');
-@:Cart = SES.Cartridge;
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:Cart = Mod16.Cartridge;
 
 
 // Sets ascii tiles 

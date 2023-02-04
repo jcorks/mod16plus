@@ -1,5 +1,5 @@
-#ifndef H_SES__LINEAR_ALGEBRA__INCLUDED
-#define H_SES__LINEAR_ALGEBRA__INCLUDED
+#ifndef H_MOD16__LINEAR_ALGEBRA__INCLUDED
+#define H_MOD16__LINEAR_ALGEBRA__INCLUDED
 
 
 
@@ -9,13 +9,13 @@ typedef struct {
     float x;
     float y;
     float z;
-} sesVector_t;
+} mod16Vector_t;
 
 
 /// A generic, row-major matrix 
 ///
-typedef struct sesMatrix_t sesMatrix_t;
-struct sesMatrix_t {
+typedef struct mod16Matrix_t mod16Matrix_t;
+struct mod16Matrix_t {
     /// Data for the matrix, elements are laid out 
     /// linearly in memory, starting with the topleft,
     /// then laying out rows.
@@ -24,67 +24,67 @@ struct sesMatrix_t {
 
 /// Sets the matrix to the identity matrix, removing all transformations.
 ///
-void ses_matrix_set_identity(
+void mod16_matrix_set_identity(
     /// Matrix to modify.
-    sesMatrix_t * m
+    mod16Matrix_t * m
 );
 
 /// Convenience function that transforms the 
 /// given point and returns its result.
 ///
-sesVector_t ses_matrix_transform(
+mod16Vector_t mod16_matrix_transform(
     /// The matrix to use as source.
-    const sesMatrix_t * m, 
+    const mod16Matrix_t * m, 
 
     /// The point to transform.
-    const sesVector_t * point
+    const mod16Vector_t * point
 );
 
 
 
 
-/// Transposes the matrix.
+/// Transpomod16 the matrix.
 ///
-void ses_matrix_transpose(
+void mod16_matrix_transpose(
     /// The matrix to modify.
-    sesMatrix_t * m
+    mod16Matrix_t * m
 );
 
 /// Inverts the matrix.
 ///
-void ses_matrix_invert(
+void mod16_matrix_invert(
     /// The matrix to modify.
-    sesMatrix_t * m
+    mod16Matrix_t * m
 );
 
 /// Reverse the majority of the matrix.
 ///
-void ses_matrix_reverse_majority(
+void mod16_matrix_reverse_majority(
     /// The matrix to modify.
-    sesMatrix_t * m
+    mod16Matrix_t * m
 );
 
 /// Returns the internal representation of the TransformMatrix.
 ///
-#define ses_matrix_ptr(__M__) ((float*)__M__.data)
+#define mod16_matrix_ptr(__M__) ((float*)__M__.data)
 
 
 /// Multiplies 2 matrices.
 ///
-sesMatrix_t ses_matrix_multiply(
+mod16Matrix_t mod16_matrix_multiply(
     /// The first operand of the multiplication.
-    const sesMatrix_t * a, 
+    const mod16Matrix_t * a, 
 
     /// The second operand of the multiplication.
-    const sesMatrix_t * b
+    const mod16Matrix_t * b
 );
 
 
 /// Rotates the matrix about the Euler angles psi, theta, and phi.
 ///
-void ses_matrix_rotate_by_angles(
+void mod16_matrix_rotate_by_angles(
     /// The transform matrix to modify.
-    sesMatrix_t * m,  
+    mod16Matrix_t * m,  
 
     /// The psi (x) rotation angle.
     float x, 
@@ -96,11 +96,11 @@ void ses_matrix_rotate_by_angles(
     float z
 );
 
-/// Expresses a translation by x, y, and z
+/// Expresmod16 a translation by x, y, and z
 ///
-void ses_matrix_translate(
+void mod16_matrix_translate(
     /// The transform matrix to modify.
-    sesMatrix_t * m,  
+    mod16Matrix_t * m,  
 
     /// The x displacement.
     float x, 
@@ -112,11 +112,11 @@ void ses_matrix_translate(
     float z
 );
 
-/// Expresses a scaling in the x, y, and z directions.
+/// Expresmod16 a scaling in the x, y, and z directions.
 ///
-void ses_matrix_scale(
+void mod16_matrix_scale(
     /// The transform matrix to modify.
-    sesMatrix_t * m,  
+    mod16Matrix_t * m,  
 
     /// The x scale modifier.
     float x, 

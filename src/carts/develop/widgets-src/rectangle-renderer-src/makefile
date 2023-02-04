@@ -1,5 +1,5 @@
 all:
-	ses package ./
+	mod16plus package ./
 
 clean:
-	rm -f ./rom.ses
+	rm -f ./rom.mod16

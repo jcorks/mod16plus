@@ -1,6 +1,6 @@
 @:class = import(module:'Matte.Core.Class');
-@:SES = import(module:'SES.Core');
-@:Cartridge = SES.Cartridge;
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:Cartridge = Mod16.Cartridge;
 @:Fetcher = Cartridge.import(source:'fetcher');
 @:UI = Cartridge.import(source:'ui');
 
@@ -60,11 +60,11 @@ return class(
 
         @inputid;
         @:connectInput = ::{   
-            inputid = SES.Input.addCallback(
-                device: SES.Input.DEVICES.POINTER0,
+            inputid = Mod16.Input.addCallback(
+                device: Mod16.Input.DEVICES.POINTER0,
                 callback ::(event, x, y, button) {
                     match(event) {                    
-                      (SES.Input.EVENTS.POINTER_SCROLL): ::<= {
+                      (Mod16.Input.EVENTS.POINTER_SCROLL): ::<= {
                         itemTop += y;
                         if (itemTop > itemCount_ - itemsPerPage_) itemTop = itemCount_ - itemsPerPage_;
                         if (itemTop < 0) itemTop = 0;
@@ -145,7 +145,7 @@ return class(
                 onMove ::(detail)<- recenterChild(),
                 onResize ::(detail)<- recenterChild(),
                 onHide ::(detail) {
-                    SES.Input.removeCallback(device:SES.Input.DEVICES.POINTER0, id:inputid);
+                    Mod16.Input.removeCallback(device:Mod16.Input.DEVICES.POINTER0, id:inputid);
                     inputid = -1;
                     Cartridge.Sprite.set(
                         index:scrollbar,

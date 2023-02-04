@@ -5,4 +5,4 @@ all:
 	cd ./src/SDL/GL31/shaders && gcc *.c -o shaderpack
 	cd ./src/api/ && ./apipack 
 	cd ./src/SDL/GL31/shaders && ./shaderpack
-	gcc -g ./src/*.c ./src/SDL/*.c ./src/matte/src/*.c ./src/matte/src/rom/native.c ./src/SDL/GL31/*.c ./src/SDL/GL31/glad/src/*.c -o ses -lm -lSDL2 -lGL -ldl
+	gcc -g ./src/*.c ./src/SDL/*.c ./src/matte/src/*.c ./src/matte/src/rom/native.c ./src/SDL/GL31/*.c ./src/SDL/GL31/glad/src/*.c -o mod16plus -lm -lSDL2 -lGL -ldl

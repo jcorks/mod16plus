@@ -1,5 +1,5 @@
-@:SES = import(module:'SES.Core');
-@:Fetcher = SES.Cartridge.import(source:'fetcher');
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:Fetcher = Mod16.Cartridge.import(source:'fetcher');
 
 
 @:PALETTE__NORMAL_TEXT = [0.9, 0.9, 0.9];

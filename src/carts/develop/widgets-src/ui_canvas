@@ -1,6 +1,6 @@
 @:class = import(module:'Matte.Core.Class');
-@:SES = import(module:'SES.Core');
-@:Cartridge = SES.Cartridge;
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:Cartridge = Mod16.Cartridge;
 @:Fetcher = Cartridge.import(source:'fetcher');
 @:UI = Cartridge.import(source:'ui');
 
@@ -32,17 +32,17 @@ return class(
         @down = false;
         @:connectInput = ::{ 
             when(inputid != empty) empty;  
-            inputid = SES.Input.addCallback(
-                device: SES.Input.DEVICES.POINTER0,
+            inputid = Mod16.Input.addCallback(
+                device: Mod16.Input.DEVICES.POINTER0,
                 callback ::(event, x, y, button) {
                 
                     
                 
                     match(event) {                    
-                      (SES.Input.EVENTS.POINTER_BUTTON_DOWN):::<= {
+                      (Mod16.Input.EVENTS.POINTER_BUTTON_DOWN):::<= {
                         down = true;
                       },
-                      (SES.Input.EVENTS.POINTER_BUTTON_UP):::<= {
+                      (Mod16.Input.EVENTS.POINTER_BUTTON_UP):::<= {
                         down = false;
                         if (needsUpdate) onDraw();
                         needsUpdate = false;
@@ -112,7 +112,7 @@ return class(
                         show: false
                     );
                     if (inputid != empty) ::<= {
-                        SES.Input.removeCallback(device:SES.Input.DEVICES.POINTER0, id:inputid);
+                        Mod16.Input.removeCallback(device:Mod16.Input.DEVICES.POINTER0, id:inputid);
                         inputid = empty;
                     };
                     down = false;

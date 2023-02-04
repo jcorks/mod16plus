@@ -1,5 +1,5 @@
-@:SES = import(module:'SES.Core');
-@:Cartridge = SES.Cartridge;
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:Cartridge = Mod16.Cartridge;
 @:Window = Cartridge.import(source:'window');
 
 

@@ -12,79 +12,79 @@ typedef struct {
     // FullBackground_t
     matteArray_t * bgs;
 
-} sesGraphicsLayer_t;
+} mod16GraphicsLayer_t;
 
 
 
-struct sesGraphicsContext_t {
+struct mod16GraphicsContext_t {
     // SDL GLES context
-    sesSDLGL_t * gl;
+    mod16SDLGL_t * gl;
     
-    sesGraphicsLayer_t layer[SES_GRAPHICS_CONTEXT__LAYER_COUNT];
+    mod16GraphicsLayer_t layer[MOD16_GRAPHICS_CONTEXT__LAYER_COUNT];
 
 };
 
 
 
 typedef struct {
-    sesGraphicsContext_Sprite_t data;
-    sesGraphicsContext_Storage_t * src;
+    mod16GraphicsContext_Sprite_t data;
+    mod16GraphicsContext_Storage_t * src;
 } FullSprite_t;
 
 typedef struct {
-    sesGraphicsContext_Background_t data;
-    sesGraphicsContext_Storage_t * src;
+    mod16GraphicsContext_Background_t data;
+    mod16GraphicsContext_Storage_t * src;
 } FullBackground_t;
 
 
 
-struct sesGraphicsContext_Storage_t {
-    sesGraphicsContext_t * ctx;
+struct mod16GraphicsContext_Storage_t {
+    mod16GraphicsContext_t * ctx;
     int spriteTexture;
-    int bgTexture[SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT];
+    int bgTexture[MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT];
     
-    sesGraphicsContext_Tile_t tiles[SES_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT];
-    sesGraphicsContext_Palette_t palettes[SES_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT];
+    mod16GraphicsContext_Tile_t tiles[MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT];
+    mod16GraphicsContext_Palette_t palettes[MOD16_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT];
 };
 
 
 
-sesGraphicsContext_t * ses_graphics_context_create(sesWindow_t * window) {
-    sesGraphicsContext_t * out = calloc(1, sizeof(sesGraphicsContext_t));
-    out->gl = ses_sdl_gl_create(window);
+mod16GraphicsContext_t * mod16_graphics_context_create(mod16Window_t * window) {
+    mod16GraphicsContext_t * out = calloc(1, sizeof(mod16GraphicsContext_t));
+    out->gl = mod16_sdl_gl_create(window);
     int i;
     
-    for(i = 0; i < SES_GRAPHICS_CONTEXT__LAYER_COUNT; ++i) {
+    for(i = 0; i < MOD16_GRAPHICS_CONTEXT__LAYER_COUNT; ++i) {
         out->layer[i].sprites = matte_array_create(sizeof(FullSprite_t));
         out->layer[i].bgs = matte_array_create(sizeof(FullBackground_t));
     }
     return out;
 }
 
-void ses_graphics_context_get_render_size(sesGraphicsContext_t * ctx, int * w, int * h) {
-    *w = ses_sdl_gl_get_render_width(ctx->gl);    
-    *h = ses_sdl_gl_get_render_height(ctx->gl);    
+void mod16_graphics_context_get_render_size(mod16GraphicsContext_t * ctx, int * w, int * h) {
+    *w = mod16_sdl_gl_get_render_width(ctx->gl);    
+    *h = mod16_sdl_gl_get_render_height(ctx->gl);    
 }
 
 
 
-sesGraphicsContext_Storage_t * ses_graphics_context_create_storage(sesGraphicsContext_t * ctx) {
-    sesGraphicsContext_Storage_t * str = calloc(1, sizeof(sesGraphicsContext_Storage_t));
+mod16GraphicsContext_Storage_t * mod16_graphics_context_create_storage(mod16GraphicsContext_t * ctx) {
+    mod16GraphicsContext_Storage_t * str = calloc(1, sizeof(mod16GraphicsContext_Storage_t));
     str->ctx = ctx;
     return str;
 }
 
 
-void ses_graphics_context_add_sprite(sesGraphicsContext_t * ctx, sesGraphicsContext_Sprite_t * spr, sesGraphicsContext_Storage_t * storage) {
-    sesGraphicsLayer_t * layer = &ctx->layer[spr->layer-(SES_GRAPHICS_CONTEXT__LAYER_MIN)];
+void mod16_graphics_context_add_sprite(mod16GraphicsContext_t * ctx, mod16GraphicsContext_Sprite_t * spr, mod16GraphicsContext_Storage_t * storage) {
+    mod16GraphicsLayer_t * layer = &ctx->layer[spr->layer-(MOD16_GRAPHICS_CONTEXT__LAYER_MIN)];
     FullSprite_t full  = {};
     full.data = *spr;
     full.src = storage;
     matte_array_push(layer->sprites, full); 
 }
 
-void ses_graphics_context_add_background(sesGraphicsContext_t * ctx, sesGraphicsContext_Background_t * bg, sesGraphicsContext_Storage_t * storage) {
-    sesGraphicsLayer_t * layer = &ctx->layer[bg->layer-(SES_GRAPHICS_CONTEXT__LAYER_MIN)];
+void mod16_graphics_context_add_background(mod16GraphicsContext_t * ctx, mod16GraphicsContext_Background_t * bg, mod16GraphicsContext_Storage_t * storage) {
+    mod16GraphicsLayer_t * layer = &ctx->layer[bg->layer-(MOD16_GRAPHICS_CONTEXT__LAYER_MIN)];
     FullBackground_t full  = {};
     full.data = *bg;
     full.src = storage;
@@ -93,24 +93,24 @@ void ses_graphics_context_add_background(sesGraphicsContext_t * ctx, sesGraphics
 }
 
 
-void ses_graphics_context_render(sesGraphicsContext_t * ctx) {
-    ses_sdl_gl_render_begin(ctx->gl);
+void mod16_graphics_context_render(mod16GraphicsContext_t * ctx) {
+    mod16_sdl_gl_render_begin(ctx->gl);
     
     int i, n;
     // draw each layer in order
-    for(i = 0; i < SES_GRAPHICS_CONTEXT__LAYER_COUNT; ++i) {
-        sesGraphicsLayer_t * layer = ctx->layer+i;
+    for(i = 0; i < MOD16_GRAPHICS_CONTEXT__LAYER_COUNT; ++i) {
+        mod16GraphicsLayer_t * layer = ctx->layer+i;
     
         // start with backgrounds
         uint32_t lenBackgrounds = matte_array_get_size(layer->bgs);
         if (lenBackgrounds) { 
             for(n = 0; n < lenBackgrounds; ++n) {        
                 FullBackground_t * bg = &matte_array_at(layer->bgs, FullBackground_t, n);            
-                if (bg->data.id >= SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT) continue;
-                const sesGraphicsContext_Palette_t * p = ses_graphics_context_storage_get_palette(bg->src, bg->data.palette);
+                if (bg->data.id >= MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT) continue;
+                const mod16GraphicsContext_Palette_t * p = mod16_graphics_context_storage_get_palette(bg->src, bg->data.palette);
                 if (!p) continue;                
                 
-                ses_sdl_gl_render_background(
+                mod16_sdl_gl_render_background(
                     ctx->gl,
                     bg->data.x, bg->data.y,
                     bg->data.effect,
@@ -131,17 +131,17 @@ void ses_graphics_context_render(sesGraphicsContext_t * ctx) {
         // then do sprites
         uint32_t len = matte_array_get_size(layer->sprites);
         if (!len) {
-            if (lenBackgrounds) ses_sdl_gl_render_finish_layer(ctx->gl);
+            if (lenBackgrounds) mod16_sdl_gl_render_finish_layer(ctx->gl);
             continue;
         }
         for(n = 0; n < len; ++n) {        
             FullSprite_t * iter = &matte_array_at(layer->sprites, FullSprite_t, n);
-            if (iter->data.tile >= SES_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) continue;
-            const sesGraphicsContext_Palette_t * p = ses_graphics_context_storage_get_palette(iter->src, iter->data.palette);
+            if (iter->data.tile >= MOD16_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) continue;
+            const mod16GraphicsContext_Palette_t * p = mod16_graphics_context_storage_get_palette(iter->src, iter->data.palette);
             if (!p) continue;                
 
             
-            ses_sdl_gl_render_sprite(
+            mod16_sdl_gl_render_sprite(
                 ctx->gl,
                 iter->data.x, iter->data.y,
                 iter->data.scaleX, iter->data.scaleY,
@@ -158,55 +158,55 @@ void ses_graphics_context_render(sesGraphicsContext_t * ctx) {
                 iter->data.tile
             );
         }
-        ses_sdl_gl_render_finish_layer(ctx->gl);
+        mod16_sdl_gl_render_finish_layer(ctx->gl);
         matte_array_set_size(layer->sprites, 0);
     }
 
     // commit to framebuffer 0    
-    ses_sdl_gl_render_end(ctx->gl);    
+    mod16_sdl_gl_render_end(ctx->gl);    
     
 }
 
 
 
 
-const sesGraphicsContext_Tile_t * ses_graphics_context_storage_get_tile(
-    sesGraphicsContext_Storage_t * storage, 
+const mod16GraphicsContext_Tile_t * mod16_graphics_context_storage_get_tile(
+    mod16GraphicsContext_Storage_t * storage, 
     uint16_t index
 ) {
-    static sesGraphicsContext_Tile_t errorT = {};
-    if (index >= SES_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT) 
+    static mod16GraphicsContext_Tile_t errorT = {};
+    if (index >= MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT) 
         return &errorT;
 
     return &storage->tiles[index];
 }
 
-void ses_graphics_context_storage_set_tile(sesGraphicsContext_Storage_t * storage, uint16_t id, const sesGraphicsContext_Tile_t * data) {
-    if (id >= SES_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT) 
+void mod16_graphics_context_storage_set_tile(mod16GraphicsContext_Storage_t * storage, uint16_t id, const mod16GraphicsContext_Tile_t * data) {
+    if (id >= MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT) 
         return;
         
     storage->tiles[id] = *data;
 
     if (storage->spriteTexture == 0) {
-        storage->spriteTexture = ses_sdl_gl_new_sprite_texture(storage->ctx->gl);
+        storage->spriteTexture = mod16_sdl_gl_new_sprite_texture(storage->ctx->gl);
     }
     
     
-    if (id < SES_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) {
-        ses_sdl_gl_set_sprite_tile(
+    if (id < MOD16_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) {
+        mod16_sdl_gl_set_sprite_tile(
             storage->ctx->gl, 
             storage->spriteTexture, 
             id,
             data    
         );
     } else {
-        int backgroundID = (id - SES_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) / (SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES * SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES);
-        if (backgroundID >= SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT) return;
-        int localID = (id - SES_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) % (SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES * SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES);
-        int x = localID % SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES;
-        int y = localID / SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES;
+        int backgroundID = (id - MOD16_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) / (MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES * MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES);
+        if (backgroundID >= MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT) return;
+        int localID = (id - MOD16_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) % (MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES * MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES);
+        int x = localID % MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES;
+        int y = localID / MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES;
         
-        ses_sdl_gl_set_background_tile(
+        mod16_sdl_gl_set_background_tile(
             storage->ctx->gl,
             storage->bgTexture[backgroundID],
             x,
@@ -221,18 +221,18 @@ void ses_graphics_context_storage_set_tile(sesGraphicsContext_Storage_t * storag
 
 // Gets a stored palette These palettes are used when rendering 
 // with a sprite or background referring to this palette index within 
-// the sesGraphicsContext_Storage_t instance.
-const sesGraphicsContext_Palette_t * ses_graphics_context_storage_get_palette(const sesGraphicsContext_Storage_t * storage, uint16_t id) {
-    static sesGraphicsContext_Palette_t errorP = {};
-    if (id >= SES_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT) 
+// the mod16GraphicsContext_Storage_t instance.
+const mod16GraphicsContext_Palette_t * mod16_graphics_context_storage_get_palette(const mod16GraphicsContext_Storage_t * storage, uint16_t id) {
+    static mod16GraphicsContext_Palette_t errorP = {};
+    if (id >= MOD16_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT) 
         return &errorP;
 
     return &storage->palettes[id];
 
 }
 
-void ses_graphics_context_storage_set_palette(sesGraphicsContext_Storage_t * storage, uint16_t id, const sesGraphicsContext_Palette_t * p) {
-    if (id >= SES_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT) 
+void mod16_graphics_context_storage_set_palette(mod16GraphicsContext_Storage_t * storage, uint16_t id, const mod16GraphicsContext_Palette_t * p) {
+    if (id >= MOD16_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT) 
         return;
 
     storage->palettes[id] = *p;

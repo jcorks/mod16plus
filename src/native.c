@@ -15,20 +15,20 @@
 
 
 typedef enum {
-    SES_DEVICE__KEYBOARD,
+    MOD16_DEVICE__KEYBOARD,
     
-    SES_DEVICE__POINTER0,
-    SES_DEVICE__POINTER1,
-    SES_DEVICE__POINTER2,
-    SES_DEVICE__POINTER3,
+    MOD16_DEVICE__POINTER0,
+    MOD16_DEVICE__POINTER1,
+    MOD16_DEVICE__POINTER2,
+    MOD16_DEVICE__POINTER3,
 
-    SES_DEVICE__GAMEPAD0,
-    SES_DEVICE__GAMEPAD1,
-    SES_DEVICE__GAMEPAD2,
-    SES_DEVICE__GAMEPAD3,
+    MOD16_DEVICE__GAMEPAD0,
+    MOD16_DEVICE__GAMEPAD1,
+    MOD16_DEVICE__GAMEPAD2,
+    MOD16_DEVICE__GAMEPAD3,
 
     
-} SES_DeviceType;
+} MOD16_DeviceType;
 
 
 
@@ -46,7 +46,7 @@ typedef struct {
 
     // uint32_t IDs waiting to be used.
     matteArray_t * dead;
-} SES_InputCallbackSet;
+} MOD16_InputCallbackSet;
 
 
 
@@ -55,13 +55,13 @@ typedef struct {
 
 
 typedef struct {
-    SES_InputCallbackSet inputs[SES_DEVICE__GAMEPAD3+1];
+    MOD16_InputCallbackSet inputs[MOD16_DEVICE__GAMEPAD3+1];
 
     // user function called every frame    
     matteValue_t updateFunc;
 
 
-} sesContext_t;
+} mod16Context_t;
 
 
 
@@ -69,19 +69,19 @@ typedef struct {
 
 typedef struct {
     // native window
-    sesWindow_t * window;
+    mod16Window_t * window;
 
-    sesGraphicsContext_t * graphics;
+    mod16GraphicsContext_t * graphics;
     
     matteVM_t * vm;
 
 
 
-    sesContext_t mainContext;
-    sesContext_t auxContext;
+    mod16Context_t mainContext;
+    mod16Context_t auxContext;
 
     // every cartridge has a 
-    sesCartridge_t * mainCart;
+    mod16Cartridge_t * mainCart;
     
     // whether the main and aux are swapped. Usually for debugging context
     int swapped;
@@ -97,37 +97,37 @@ typedef struct {
     int pointerScrollX;
     int pointerScrollY;    
 
-} sesNative_t;
+} mod16Native_t;
 
-static sesNative_t ses = {};
-
-
-
-static matteValue_t ses_native_get_context_cartridge_id(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static mod16Native_t mod16 = {};
 
 
-static matteValue_t ses_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_native_input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_native_audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
-static matteValue_t ses_native_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
-static matteValue_t ses_native_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t mod16_native_get_context_cartridge_id(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
 
+static matteValue_t mod16_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t mod16_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t mod16_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t mod16_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t mod16_native_input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t mod16_native_audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t mod16_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+
+static matteValue_t mod16_native_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
+static matteValue_t mod16_native_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData);
 
 
 
 
 
 
-static void ses_native_render() {
+
+
+static void mod16_native_render() {
     // re-sort sprites and bgs into layer buckets;
-    ses_cartridge_push_graphics(ses.mainCart, ses.graphics);
-    ses_graphics_context_render(ses.graphics);
+    mod16_cartridge_push_graphics(mod16.mainCart, mod16.graphics);
+    mod16_graphics_context_render(mod16.graphics);
 }
 
 
@@ -136,32 +136,32 @@ static void ses_native_render() {
 
 
 typedef enum {
-    SESNSA_ENABLE,
-    SESNSA_ROTATION,
-    SESNSA_SCALEX,
-    SESNSA_SCALEY,
-    SESNSA_POSITIONX,
-    SESNSA_POSITIONY,
-    SESNSA_CENTERX,
-    SESNSA_CENTERY,
-    SESNSA_LAYER,
-    SESNSA_TILEINDEX,
-    SESNSA_EFFECT,
-    SESNSA_PALETTE,
-} SESNative_SpriteAttribs;
+    MOD16NSA_ENABLE,
+    MOD16NSA_ROTATION,
+    MOD16NSA_SCALEX,
+    MOD16NSA_SCALEY,
+    MOD16NSA_POSITIONX,
+    MOD16NSA_POSITIONY,
+    MOD16NSA_CENTERX,
+    MOD16NSA_CENTERY,
+    MOD16NSA_LAYER,
+    MOD16NSA_TILEINDEX,
+    MOD16NSA_EFFECT,
+    MOD16NSA_PALETTE,
+} MOD16Native_SpriteAttribs;
 
 
 
 
-matteValue_t ses_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
-    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
 
 
     uint32_t id = matte_value_as_number(heap, args[1]);
-    sesGraphicsContext_Sprite_t * spr = ses_cartridge_get_sprite(cart, id);
+    mod16GraphicsContext_Sprite_t * spr = mod16_cartridge_get_sprite(cart, id);
     
     if (!spr) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Sprite accessed beyond limit"));                
@@ -176,53 +176,53 @@ matteValue_t ses_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const mat
         matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[2], i+1);
 
         switch((int)matte_value_as_number(heap, *flag)) {
-          case SESNSA_ENABLE: {
-            ses_cartridge_enable_sprite(cart, id, matte_value_as_number(heap, *value));
+          case MOD16NSA_ENABLE: {
+            mod16_cartridge_enable_sprite(cart, id, matte_value_as_number(heap, *value));
             break;
           }  
-          case SESNSA_ROTATION:
+          case MOD16NSA_ROTATION:
             spr->rotation = matte_value_as_number(heap, *value);
             break;
 
-          case SESNSA_SCALEX:
+          case MOD16NSA_SCALEX:
             spr->scaleX = matte_value_as_number(heap, *value);
             break;
 
-          case SESNSA_SCALEY:
+          case MOD16NSA_SCALEY:
             spr->scaleY = matte_value_as_number(heap, *value);
             break;
 
-          case SESNSA_POSITIONX:
+          case MOD16NSA_POSITIONX:
             spr->x = matte_value_as_number(heap, *value);
             break;
           
-          case SESNSA_POSITIONY:
+          case MOD16NSA_POSITIONY:
             spr->y = matte_value_as_number(heap, *value);
             break;
 
-          case SESNSA_CENTERX:
+          case MOD16NSA_CENTERX:
             spr->centerX = matte_value_as_number(heap, *value);
             break;
 
-          case SESNSA_CENTERY:
+          case MOD16NSA_CENTERY:
             spr->centerY = matte_value_as_number(heap, *value);
             break;
 
-          case SESNSA_LAYER:
+          case MOD16NSA_LAYER:
             spr->layer = matte_value_as_number(heap, *value);
-            if (spr->layer > SES_GRAPHICS_CONTEXT__LAYER_MAX) spr->layer = SES_GRAPHICS_CONTEXT__LAYER_MAX;
-            if (spr->layer < SES_GRAPHICS_CONTEXT__LAYER_MIN) spr->layer = SES_GRAPHICS_CONTEXT__LAYER_MIN;
+            if (spr->layer > MOD16_GRAPHICS_CONTEXT__LAYER_MAX) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MAX;
+            if (spr->layer < MOD16_GRAPHICS_CONTEXT__LAYER_MIN) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MIN;
             break;
 
-          case SESNSA_TILEINDEX:
+          case MOD16NSA_TILEINDEX:
             spr->tile = matte_value_as_number(heap, *value);
             break;
           
-          case SESNSA_EFFECT:
+          case MOD16NSA_EFFECT:
             spr->effect = matte_value_as_number(heap, *value);
             break;
 
-          case SESNSA_PALETTE:
+          case MOD16NSA_PALETTE:
             spr->palette = matte_value_as_number(heap, *value);
             break;
         }
@@ -236,23 +236,23 @@ matteValue_t ses_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const mat
 
 
 typedef enum {
-    SESNOA_ENABLE,
-    SESNOA_PERIODMS,
-    SESNOA_ONCYCLE,
-    SESNOA_GET
-} SESNative_OscillatorAttribs;
+    MOD16NOA_ENABLE,
+    MOD16NOA_PERIODMS,
+    MOD16NOA_ONCYCLE,
+    MOD16NOA_GET
+} MOD16Native_OscillatorAttribs;
 
 
 
-matteValue_t ses_native_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
-    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
 
 
     uint32_t id = matte_value_as_number(heap, args[1]);
-    sesCartridge_Oscillator_t * osc = ses_cartridge_get_oscillator(cart, id);
+    mod16Cartridge_Oscillator_t * osc = mod16_cartridge_get_oscillator(cart, id);
     
     if (!osc) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Oscillator accessed beyond limit"));
@@ -268,16 +268,16 @@ matteValue_t ses_native_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const
         matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[2], i+1);
 
         switch((int)matte_value_as_number(heap, *flag)) {
-          case SESNOA_ENABLE:
-            ses_cartridge_enable_oscillator(cart, id, matte_value_as_boolean(heap, *value), ses_window_get_ticks(ses.window));
+          case MOD16NOA_ENABLE:
+            mod16_cartridge_enable_oscillator(cart, id, matte_value_as_boolean(heap, *value), mod16_window_get_ticks(mod16.window));
             break;
             
-          case SESNOA_PERIODMS:
+          case MOD16NOA_PERIODMS:
             osc->lengthMS = matte_value_as_number(heap, *value);
             osc->endMS = osc->startMS + osc->lengthMS;
             break;
             
-          case SESNOA_ONCYCLE:
+          case MOD16NOA_ONCYCLE:
             if (osc->function.value.id == value->value.id) break;
             if (osc->function.binID) {
                 matte_value_object_pop_lock(heap, osc->function);
@@ -287,8 +287,8 @@ matteValue_t ses_native_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const
             break;            
             
             
-          case SESNOA_GET: {
-            float prog = (osc->endMS - ses_window_get_ticks(ses.window)) / (double)osc->lengthMS;
+          case MOD16NOA_GET: {
+            float prog = (osc->endMS - mod16_window_get_ticks(mod16.window)) / (double)osc->lengthMS;
             double frac = 0.5*(1+sin((prog) * (2*M_PI)));
             matteValue_t fracVal = matte_heap_new_value(heap);
             matte_value_into_number(heap, &fracVal, frac);
@@ -306,16 +306,16 @@ matteValue_t ses_native_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const
 
 
 typedef enum {
-    SESNEA_UPDATERATE,
-    SESNEA_UPDATEFUNC,
-    SESNEA_RESOLUTION,
-    SESNEA_CLIPBOARDGET,
-    SESNEA_CLIPBOARDSET 
-} SESNative_EngineAttribs_t;
+    MOD16NEA_UPDATERATE,
+    MOD16NEA_UPDATEFUNC,
+    MOD16NEA_RESOLUTION,
+    MOD16NEA_CLIPBOARDGET,
+    MOD16NEA_CLIPBOARDSET 
+} MOD16Native_EngineAttribs_t;
 
 
 
-matteValue_t ses_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     printf("ENGINE   ID: %d\n",
         (int)matte_value_as_number(heap, args[0])
@@ -324,29 +324,29 @@ matteValue_t ses_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const mat
     switch((int)matte_value_as_number(heap, args[0])) {
 
       // function to call to update each frame, according to the user.
-      case SESNEA_UPDATEFUNC:
-        matte_value_object_pop_lock(heap, ses.mainContext.updateFunc);
-        ses.mainContext.updateFunc = args[1];
-        matte_value_object_push_lock(heap, ses.mainContext.updateFunc);
+      case MOD16NEA_UPDATEFUNC:
+        matte_value_object_pop_lock(heap, mod16.mainContext.updateFunc);
+        mod16.mainContext.updateFunc = args[1];
+        matte_value_object_push_lock(heap, mod16.mainContext.updateFunc);
         break;
         
-      case SESNEA_UPDATERATE:
-        ses_window_set_frame_update_delay(ses.window, matte_value_as_number(heap, args[1]) * 1000);
+      case MOD16NEA_UPDATERATE:
+        mod16_window_set_frame_update_delay(mod16.window, matte_value_as_number(heap, args[1]) * 1000);
         break;
 
 
-      case SESNEA_CLIPBOARDGET: {
+      case MOD16NEA_CLIPBOARDGET: {
         matteValue_t strOut = matte_heap_new_value(heap);
-        matteString_t * strVal = ses_window_get_clipboard(ses.window);
+        matteString_t * strVal = mod16_window_get_clipboard(mod16.window);
         matte_value_into_string(heap, &strOut, strVal);
         matte_string_destroy(strVal);
 
         return strOut;
       };
 
-      case SESNEA_CLIPBOARDSET: {
+      case MOD16NEA_CLIPBOARDSET: {
         const matteString_t * str = matte_value_string_get_string_unsafe(heap, args[1]);
-        ses_window_set_clipboard(ses.window, str);
+        mod16_window_set_clipboard(mod16.window, str);
       };
 
 
@@ -360,21 +360,21 @@ matteValue_t ses_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const mat
 
 
 typedef enum {
-    SESNPA_BACK,
-    SESNPA_MIDBACK,
-    SESNPA_MIDFRONT,
-    SESNPA_FRONT
-} SESNative_PaletteAttribs_t;
+    MOD16NPA_BACK,
+    MOD16NPA_MIDBACK,
+    MOD16NPA_MIDFRONT,
+    MOD16NPA_FRONT
+} MOD16Native_PaletteAttribs_t;
 
-matteValue_t ses_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
-    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
     
     uint32_t id = matte_value_as_number(heap, args[1]);
-    const sesGraphicsContext_Palette_t * pin = ses_graphics_context_storage_get_palette(
-        ses_cartridge_get_context_storage(
+    const mod16GraphicsContext_Palette_t * pin = mod16_graphics_context_storage_get_palette(
+        mod16_cartridge_get_context_storage(
             cart
         ),
         id
@@ -383,29 +383,29 @@ matteValue_t ses_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const ma
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Palette accessed beyond limit"));
         return matte_heap_new_value(heap);
     }
-    sesGraphicsContext_Palette_t p = *pin;
+    mod16GraphicsContext_Palette_t p = *pin;
 
 
     switch((int)matte_value_as_number(heap, args[2])) {
-      case SESNPA_BACK:
+      case MOD16NPA_BACK:
         p.back.x = matte_value_as_number(heap, args[3]);
         p.back.y = matte_value_as_number(heap, args[4]);
         p.back.z = matte_value_as_number(heap, args[5]);
         break;
 
-      case SESNPA_MIDBACK:
+      case MOD16NPA_MIDBACK:
         p.midBack.x = matte_value_as_number(heap, args[3]);
         p.midBack.y = matte_value_as_number(heap, args[4]);
         p.midBack.z = matte_value_as_number(heap, args[5]);
         break;
 
-      case SESNPA_MIDFRONT:
+      case MOD16NPA_MIDFRONT:
         p.midFront.x = matte_value_as_number(heap, args[3]);
         p.midFront.y = matte_value_as_number(heap, args[4]);
         p.midFront.z = matte_value_as_number(heap, args[5]);
         break;
 
-      case SESNPA_FRONT:
+      case MOD16NPA_FRONT:
         p.front.x = matte_value_as_number(heap, args[3]);
         p.front.y = matte_value_as_number(heap, args[4]);
         p.front.z = matte_value_as_number(heap, args[5]);
@@ -415,8 +415,8 @@ matteValue_t ses_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const ma
     }
     
     
-    ses_graphics_context_storage_set_palette(
-        ses_cartridge_get_context_storage(
+    mod16_graphics_context_storage_set_palette(
+        mod16_cartridge_get_context_storage(
             cart
         ),
         id,
@@ -426,21 +426,21 @@ matteValue_t ses_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const ma
 }
 
 typedef enum {
-    SESNTA_SET,
-    SESNTA_COPY
-} SESNative_TileAttribs_t;
+    MOD16NTA_SET,
+    MOD16NTA_COPY
+} MOD16Native_TileAttribs_t;
 
 
-matteValue_t ses_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
-    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
 
 
     uint32_t id = matte_value_as_number(heap, args[1]);
-    const sesGraphicsContext_Tile_t * tilep = ses_graphics_context_storage_get_tile(
-        ses_cartridge_get_context_storage(
+    const mod16GraphicsContext_Tile_t * tilep = mod16_graphics_context_storage_get_tile(
+        mod16_cartridge_get_context_storage(
             cart
         ),
         id    
@@ -451,14 +451,14 @@ matteValue_t ses_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matte
         return matte_heap_new_value(heap);    
     }
 
-    sesGraphicsContext_Tile_t tile = *tilep;
+    mod16GraphicsContext_Tile_t tile = *tilep;
 
 
     switch((int)matte_value_as_number(heap, args[2])) {
         
-      case SESNTA_SET: {
+      case MOD16NTA_SET: {
         matteValue_t array = args[3];
-        int pixelCount = SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS*SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
+        int pixelCount = MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS*MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
         if (matte_value_object_get_number_key_count(heap, array) != pixelCount) {
             matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Tile data is not the correct number of members."));
             return matte_heap_new_value(heap);    
@@ -471,8 +471,8 @@ matteValue_t ses_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matte
             tile.data[i] = (int)matte_value_as_number(heap, v);
         }
         
-        ses_graphics_context_storage_set_tile(
-            ses_cartridge_get_context_storage(
+        mod16_graphics_context_storage_set_tile(
+            mod16_cartridge_get_context_storage(
                 cart
             ),
             id,
@@ -482,10 +482,10 @@ matteValue_t ses_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matte
         break;
       }
         
-      case SESNTA_COPY: {
+      case MOD16NTA_COPY: {
         uint32_t tid = matte_value_as_number(heap, args[3]);
-        const sesGraphicsContext_Tile_t * tilet = ses_graphics_context_storage_get_tile(
-            ses_cartridge_get_context_storage(
+        const mod16GraphicsContext_Tile_t * tilet = mod16_graphics_context_storage_get_tile(
+            mod16_cartridge_get_context_storage(
                 cart
             ),
             tid    
@@ -495,8 +495,8 @@ matteValue_t ses_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matte
             return matte_heap_new_value(heap);    
         }
         
-        ses_graphics_context_storage_set_tile(
-            ses_cartridge_get_context_storage(
+        mod16_graphics_context_storage_set_tile(
+            mod16_cartridge_get_context_storage(
                 cart
             ),
             tid,
@@ -513,11 +513,11 @@ matteValue_t ses_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matte
 
 
 typedef enum {
-    SESNIA_ADD,
-    SESNIA_REMOVE
-} SESNative_InputAction_t;
+    MOD16NIA_ADD,
+    MOD16NIA_REMOVE
+} MOD16Native_InputAction_t;
 
-matteValue_t ses_native_input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     printf("INPUT    ID: %d, ATTRIB: %d\n",
         (int)matte_value_as_number(heap, args[0]),
@@ -525,8 +525,8 @@ matteValue_t ses_native_input_attrib(matteVM_t * vm, matteValue_t fn, const matt
     );  
 
     switch((int)matte_value_as_number(heap, args[0])) {
-      case SESNIA_ADD: {
-        SES_InputCallbackSet * set = &ses.mainContext.inputs[(int)matte_value_as_number(heap, args[1])];
+      case MOD16NIA_ADD: {
+        MOD16_InputCallbackSet * set = &mod16.mainContext.inputs[(int)matte_value_as_number(heap, args[1])];
 
         matteValue_t out = matte_heap_new_value(heap);
         uint32_t id;
@@ -544,8 +544,8 @@ matteValue_t ses_native_input_attrib(matteVM_t * vm, matteValue_t fn, const matt
       }
       
       
-      case SESNIA_REMOVE: {
-        SES_InputCallbackSet * set = &ses.mainContext.inputs[(int)matte_value_as_number(heap, args[1])];
+      case MOD16NIA_REMOVE: {
+        MOD16_InputCallbackSet * set = &mod16.mainContext.inputs[(int)matte_value_as_number(heap, args[1])];
         uint32_t id = matte_value_as_number(heap, args[2]);      
         
         if (id > matte_array_get_size(set->callbacks) ||
@@ -562,68 +562,68 @@ matteValue_t ses_native_input_attrib(matteVM_t * vm, matteValue_t fn, const matt
 
     return matte_heap_new_value(heap);
 }
-matteValue_t ses_native_audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     return matte_heap_new_value(heap);
 }
 
 
 
-matteValue_t ses_native_get_context_cartridge_id(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_get_context_cartridge_id(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
 
     matteValue_t v = matte_heap_new_value(matte_vm_get_heap(vm));
     matte_value_into_number(
         matte_vm_get_heap(vm), 
         &v, 
-        ses_cartridge_get_id(
-            ses_cartridge_get_active_boot_context()
+        mod16_cartridge_get_id(
+            mod16_cartridge_get_active_boot_context()
         )    
     );
     return v;
 
 }
 
-matteValue_t ses_native_has_boot_context(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_has_boot_context(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
 
     matteValue_t v = matte_heap_new_value(matte_vm_get_heap(vm));
     matte_value_into_boolean(
         matte_vm_get_heap(vm), 
         &v, 
-        ses_cartridge_get_active_boot_context() != NULL
+        mod16_cartridge_get_active_boot_context() != NULL
     );
     return v;
 
 }
 
 
-matteValue_t ses_native_get_source(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_get_source(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     uint32_t id = matte_value_as_number(matte_vm_get_heap(vm), args[0]);
     const matteString_t * name = matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), args[1]);
 
-    sesCartridge_t * cart = ses_cartridge_from_id(id);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(id);
     
     
     matteValue_t out = matte_heap_new_value(matte_vm_get_heap(vm));
     if (!cart) return out;
-    return ses_cartridge_get_source(cart, name);
+    return mod16_cartridge_get_source(cart, name);
 }
 
 
 
 
-matteValue_t ses_native_get_sub_cartridge_main(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_get_sub_cartridge_main(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     uint32_t id = matte_value_as_number(matte_vm_get_heap(vm), args[0]);
     const matteString_t * name = matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), args[1]);
 
-    sesCartridge_t * cart = ses_cartridge_get_subcartridge(
-        ses_cartridge_from_id(id),
+    mod16Cartridge_t * cart = mod16_cartridge_get_subcartridge(
+        mod16_cartridge_from_id(id),
         name
     );
     
     
     matteValue_t out = matte_heap_new_value(matte_vm_get_heap(vm));
     if (!cart) return out;
-    return ses_cartridge_get_main(cart);
+    return mod16_cartridge_get_main(cart);
 }
 
 
@@ -633,16 +633,16 @@ matteValue_t ses_native_get_sub_cartridge_main(matteVM_t * vm, matteValue_t fn, 
 
 
 typedef enum {
-    SESNBA_ENABLE,
-    SESNBA_POSITIONX,
-    SESNBA_POSITIONY,
-    SESNBA_LAYER,
-    SESNBA_EFFECT,
-    SESNBA_PALETTE
+    MOD16NBA_ENABLE,
+    MOD16NBA_POSITIONX,
+    MOD16NBA_POSITIONY,
+    MOD16NBA_LAYER,
+    MOD16NBA_EFFECT,
+    MOD16NBA_PALETTE
 
-} SESNative_BackgroundAttribs_t;
+} MOD16Native_BackgroundAttribs_t;
 
-matteValue_t ses_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     /*
     printf("BG       ID: %d, ATTRIB: %d\n",
@@ -652,11 +652,11 @@ matteValue_t ses_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteVa
     */  
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
-    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
 
 
     uint32_t id = matte_value_as_number(heap, args[1]);
-    sesGraphicsContext_Background_t * bg = ses_cartridge_get_background(cart, id);
+    mod16GraphicsContext_Background_t * bg = mod16_cartridge_get_background(cart, id);
     
     if (!bg) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "BG accessed beyond limit"));                
@@ -665,29 +665,29 @@ matteValue_t ses_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteVa
     
     
     switch((int)matte_value_as_number(heap, args[2])) {
-      case SESNBA_ENABLE:
+      case MOD16NBA_ENABLE:
         bg->enabled = matte_value_as_number(heap, args[3]);
         break;
 
-      case SESNBA_POSITIONX:
+      case MOD16NBA_POSITIONX:
         bg->x = matte_value_as_number(heap, args[3]);
         break;
       
-      case SESNBA_POSITIONY:
+      case MOD16NBA_POSITIONY:
         bg->y = matte_value_as_number(heap, args[3]);
         break;
 
-      case SESNBA_LAYER:
+      case MOD16NBA_LAYER:
         bg->layer = matte_value_as_number(heap, args[3]);
-        if (bg->layer > SES_GRAPHICS_CONTEXT__LAYER_MAX) bg->layer = SES_GRAPHICS_CONTEXT__LAYER_MAX;
-        if (bg->layer < SES_GRAPHICS_CONTEXT__LAYER_MIN) bg->layer = SES_GRAPHICS_CONTEXT__LAYER_MIN;
+        if (bg->layer > MOD16_GRAPHICS_CONTEXT__LAYER_MAX) bg->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MAX;
+        if (bg->layer < MOD16_GRAPHICS_CONTEXT__LAYER_MIN) bg->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MIN;
         break;
       
-      case SESNBA_EFFECT:
+      case MOD16NBA_EFFECT:
         bg->effect = matte_value_as_number(heap, args[3]);
         break;
 
-      case SESNBA_PALETTE:
+      case MOD16NBA_PALETTE:
         bg->palette = matte_value_as_number(heap, args[3]);
         break;
 
@@ -699,18 +699,18 @@ matteValue_t ses_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteVa
 
 
 
-matteValue_t ses_native_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     printf("P.QUERY  ID: %d, ATTRIB: %d\n",
         (int)matte_value_as_number(heap, args[0]),
         (int)matte_value_as_number(heap, args[1])
     );  
     uint32_t cartID = matte_value_as_number(heap, args[0]);
-    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
     
     uint32_t id = matte_value_as_number(heap, args[1]);
-    const sesGraphicsContext_Palette_t * p = ses_graphics_context_storage_get_palette(
-        ses_cartridge_get_context_storage(
+    const mod16GraphicsContext_Palette_t * p = mod16_graphics_context_storage_get_palette(
+        mod16_cartridge_get_context_storage(
             cart
         ),
         id
@@ -720,21 +720,21 @@ matteValue_t ses_native_palette_query(matteVM_t * vm, matteValue_t fn, const mat
         return matte_heap_new_value(heap);
     }   
 
-    const sesVector_t * color;
+    const mod16Vector_t * color;
     switch((int)matte_value_as_number(heap, args[2])) {
-      case SESNPA_BACK:
+      case MOD16NPA_BACK:
         color = &p->back;
         break;
 
-      case SESNPA_MIDBACK:
+      case MOD16NPA_MIDBACK:
         color = &p->midBack;
         break;
 
-      case SESNPA_MIDFRONT:
+      case MOD16NPA_MIDFRONT:
         color = &p->midFront;
         break;
 
-      case SESNPA_FRONT:
+      case MOD16NPA_FRONT:
         color = &p->front;
         break;
 
@@ -754,16 +754,16 @@ matteValue_t ses_native_palette_query(matteVM_t * vm, matteValue_t fn, const mat
     
 
 }
-matteValue_t ses_native_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     matteValue_t out = matte_heap_new_value(heap);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
-    sesCartridge_t * cart = ses_cartridge_from_id(cartID);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
 
     uint32_t id = matte_value_as_number(heap, args[1]);
-    const sesGraphicsContext_Tile_t * tilep = ses_graphics_context_storage_get_tile(
-        ses_cartridge_get_context_storage(
+    const mod16GraphicsContext_Tile_t * tilep = mod16_graphics_context_storage_get_tile(
+        mod16_cartridge_get_context_storage(
             cart
         ),
         id    
@@ -773,7 +773,7 @@ matteValue_t ses_native_tile_query(matteVM_t * vm, matteValue_t fn, const matteV
         return out;    
     
     int i;
-    int count = SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
+    int count = MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
     matteArray_t * arr = matte_array_create(sizeof(matteValue_t));    
     
     for(i = 0; i < count; ++i) {
@@ -791,14 +791,14 @@ matteValue_t ses_native_tile_query(matteVM_t * vm, matteValue_t fn, const matteV
 
 
 
-static sesContext_t context_create() {
-    sesContext_t ctx = {};
+static mod16Context_t context_create() {
+    mod16Context_t ctx = {};
     /*
-    SES_Context ctx = {};
+    MOD16_Context ctx = {};
 
-    ctx.bgs = matte_array_create(sizeof(SES_Background));
-    ctx.palettes = matte_array_create(sizeof(SES_Palette));
-    ctx.sprites = calloc(1, sizeof(SES_Sprite) * SPRITE_COUNT_TOTAL);
+    ctx.bgs = matte_array_create(sizeof(MOD16_Background));
+    ctx.palettes = matte_array_create(sizeof(MOD16_Palette));
+    ctx.sprites = calloc(1, sizeof(MOD16_Sprite) * SPRITE_COUNT_TOTAL);
     int i;
     for(i = 0; i < SPRITE_COUNT_TOTAL; ++i) {
         ctx.sprites[i].scaleX = 1;
@@ -806,7 +806,7 @@ static sesContext_t context_create() {
     }
     */
     int i;
-    for(i = 0; i <= SES_DEVICE__GAMEPAD3; ++i) {
+    for(i = 0; i <= MOD16_DEVICE__GAMEPAD3; ++i) {
         ctx.inputs[i].callbacks = matte_array_create(sizeof(matteValue_t));    
         ctx.inputs[i].dead = matte_array_create(sizeof(uint32_t));
     }
@@ -814,70 +814,70 @@ static sesContext_t context_create() {
 
     /*
     for(i = 0; i < 128; ++i) {
-        SES_GraphicsLayer * layer = &ctx.layers[i];
-        layer->sprites = matte_array_create(sizeof(SES_Sprite *));
-        layer->bgs = matte_array_create(sizeof(SES_Background *));
+        MOD16_GraphicsLayer * layer = &ctx.layers[i];
+        layer->sprites = matte_array_create(sizeof(MOD16_Sprite *));
+        layer->bgs = matte_array_create(sizeof(MOD16_Background *));
     }
     return ctx;
     */
     return ctx;
 }
 
-void ses_native_commit_rom(sesROM_t * rom, matte_t * m) {
+void mod16_native_commit_rom(mod16ROM_t * rom, matte_t * m) {
     matteVM_t * vm = matte_get_vm(m);
-    ses.window = ses_window_create();
-    ses.graphics = ses_window_get_graphics(ses.window);
-    ses.mainCart = ses_cartridge_create(vm, rom, ses.graphics, MATTE_VM_STR_CAST(vm, "ROM"), NULL);
+    mod16.window = mod16_window_create();
+    mod16.graphics = mod16_window_get_graphics(mod16.window);
+    mod16.mainCart = mod16_cartridge_create(vm, rom, mod16.graphics, MATTE_VM_STR_CAST(vm, "ROM"), NULL);
 
     // all 3 modes require activating the core features.
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__get_context_cartridge_id"), 0, ses_native_get_context_cartridge_id, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__has_boot_context"), 0, ses_native_has_boot_context, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__get_source"), 2, ses_native_get_source, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__get_sub_cartridge_main"), 2, ses_native_get_sub_cartridge_main, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__get_context_cartridge_id"), 0, mod16_native_get_context_cartridge_id, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__has_boot_context"), 0, mod16_native_has_boot_context, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__get_source"), 2, mod16_native_get_source, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__get_sub_cartridge_main"), 2, mod16_native_get_sub_cartridge_main, NULL);
 
 
 
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__sprite_attrib"), 3, ses_native_sprite_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__engine_attrib"), 4, ses_native_engine_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_attrib"), 6, ses_native_palette_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_attrib"), 4, ses_native_tile_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__input_attrib"), 4, ses_native_input_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__audio_attrib"), 5, ses_native_audio_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__bg_attrib"), 5, ses_native_bg_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__oscillator_attrib"), 3, ses_native_oscillator_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib"), 3, mod16_native_sprite_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__engine_attrib"), 4, mod16_native_engine_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__palette_attrib"), 6, mod16_native_palette_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__tile_attrib"), 4, mod16_native_tile_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__input_attrib"), 4, mod16_native_input_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__audio_attrib"), 5, mod16_native_audio_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib"), 5, mod16_native_bg_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib"), 3, mod16_native_oscillator_attrib, NULL);
 
 
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__palette_query"), 4, ses_native_palette_query, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "ses_native__tile_query"), 3, ses_native_tile_query, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__palette_query"), 4, mod16_native_palette_query, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__tile_query"), 3, mod16_native_tile_query, NULL);
 
 
-    ses.mainContext = context_create();
-    ses.auxContext = context_create();    
+    mod16.mainContext = context_create();
+    mod16.auxContext = context_create();    
 
    
 }
 
-void ses_native_swap_context() {
-    sesContext_t c = ses.mainContext;
-    ses.mainContext = ses.auxContext;
-    ses.auxContext = c;
-    ses.swapped = !ses.swapped;
+void mod16_native_swap_context() {
+    mod16Context_t c = mod16.mainContext;
+    mod16.mainContext = mod16.auxContext;
+    mod16.auxContext = c;
+    mod16.swapped = !mod16.swapped;
 }
 
 
 static void push_motion_callback() {
-    matteHeap_t * heap = matte_vm_get_heap(ses.vm);
+    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
     uint32_t i;
-    uint32_t len = matte_array_get_size(ses.mainContext.inputs[SES_DEVICE__POINTER0].callbacks);
+    uint32_t len = matte_array_get_size(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks);
     if (len == 0) return;
    
     double xcon, ycon;
     int w, h;
-    ses_window_get_size(ses.window, &w, &h); 
+    mod16_window_get_size(mod16.window, &w, &h); 
     
-    matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "x");
-    matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "y");
-    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "event");
+    matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "x");
+    matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "y");
+    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
     matteValue_t x = matte_heap_new_value(heap);
@@ -894,10 +894,10 @@ static void push_motion_callback() {
     matteValue_t eventVal = matte_heap_new_value(heap);                
     
     int wr, hr;
-    ses_graphics_context_get_render_size(ses.graphics, &wr, &hr);
+    mod16_graphics_context_get_render_size(mod16.graphics, &wr, &hr);
     
-    matte_value_into_number(heap, &xval, (ses.pointerX / (float) w) * wr);
-    matte_value_into_number(heap, &yval, (ses.pointerY / (float) h) * hr);
+    matte_value_into_number(heap, &xval, (mod16.pointerX / (float) w) * wr);
+    matte_value_into_number(heap, &yval, (mod16.pointerY / (float) h) * hr);
     matte_value_into_number(heap, &eventVal, 0);
 
 
@@ -906,28 +906,28 @@ static void push_motion_callback() {
     matteValue_t valsArr[] = {eventVal, xval, yval};                
     
     for(i = 0; i < len; ++i) {
-        matteValue_t val = matte_array_at(ses.mainContext.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
+        matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks, matteValue_t, i);    
         if (val.binID == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 3);
         matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 3);
 
-        matte_vm_call(ses.vm, val, &vals, &names, NULL);
+        matte_vm_call(mod16.vm, val, &vals, &names, NULL);
         
     }
 }
 
 
 static void push_scroll_callback() {
-    matteHeap_t * heap = matte_vm_get_heap(ses.vm);
+    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
     uint32_t i;
-    uint32_t len = matte_array_get_size(ses.mainContext.inputs[SES_DEVICE__POINTER0].callbacks);
+    uint32_t len = matte_array_get_size(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks);
     if (len == 0) return;
 
-    matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "x");
-    matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "y");
-    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "event");
+    matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "x");
+    matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "y");
+    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
     matteValue_t x = matte_heap_new_value(heap);
@@ -946,8 +946,8 @@ static void push_scroll_callback() {
     
     
     
-    matte_value_into_number(heap, &xval, ses.pointerScrollX);
-    matte_value_into_number(heap, &yval, ses.pointerScrollY);
+    matte_value_into_number(heap, &xval, mod16.pointerScrollX);
+    matte_value_into_number(heap, &yval, mod16.pointerScrollY);
     matte_value_into_number(heap, &eventVal, 5); // scroll
 
 
@@ -956,14 +956,14 @@ static void push_scroll_callback() {
     matteValue_t valsArr[] = {eventVal, xval, yval};                
     
     for(i = 0; i < len; ++i) {
-        matteValue_t val = matte_array_at(ses.mainContext.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
+        matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks, matteValue_t, i);    
         if (val.binID == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 3);
         matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 3);
 
-        matte_vm_call(ses.vm, val, &vals, &names, NULL);
+        matte_vm_call(mod16.vm, val, &vals, &names, NULL);
         
     }
 
@@ -973,22 +973,22 @@ static void push_scroll_callback() {
 
 
 
-static void ses_native_update__key_callback(
-    sesWindow_t * window, 
-    sesWindow_Event_t eventID, 
+static void mod16_native_update__key_callback(
+    mod16Window_t * window, 
+    mod16Window_Event_t eventID, 
     void * eventData, 
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(ses.vm);
-    sesWindow_Event_Key_t * evt = eventData;
+    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    mod16Window_Event_Key_t * evt = eventData;
     
     uint32_t i;
-    uint32_t len = matte_array_get_size(ses.mainContext.inputs[SES_DEVICE__KEYBOARD].callbacks);
+    uint32_t len = matte_array_get_size(mod16.mainContext.inputs[MOD16_DEVICE__KEYBOARD].callbacks);
     if (len == 0) return;
     
-    matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "key");
-    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "event");
+    matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "key");
+    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
     matteValue_t text = matte_heap_new_value(heap);
@@ -1014,35 +1014,35 @@ static void ses_native_update__key_callback(
     matteValue_t valsArr[] = {eventVal, textval};                
     
     for(i = 0; i < len; ++i) {
-        matteValue_t val = matte_array_at(ses.mainContext.inputs[SES_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
+        matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
         if (val.binID == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 2);
         matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 2);
 
-        matte_vm_call(ses.vm, val, &vals, &names, NULL);
+        matte_vm_call(mod16.vm, val, &vals, &names, NULL);
         
     }   
 }
 
 
-static void ses_native_update__text_callback(
-    sesWindow_t * window, 
-    sesWindow_Event_t eventID, 
+static void mod16_native_update__text_callback(
+    mod16Window_t * window, 
+    mod16Window_Event_t eventID, 
     void * eventData, 
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(ses.vm);
-    sesWindow_Event_Text_t * evt = eventData;
+    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    mod16Window_Event_Text_t * evt = eventData;
 
     uint32_t i;
-    uint32_t len = matte_array_get_size(ses.mainContext.inputs[SES_DEVICE__KEYBOARD].callbacks);
+    uint32_t len = matte_array_get_size(mod16.mainContext.inputs[MOD16_DEVICE__KEYBOARD].callbacks);
     if (len == 0) return;
     
-    matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "text");
-    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "event");
+    matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "text");
+    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
     matteValue_t text = matte_heap_new_value(heap);
@@ -1068,14 +1068,14 @@ static void ses_native_update__text_callback(
     matteValue_t valsArr[] = {eventVal, textval};                
     
     for(i = 0; i < len; ++i) {
-        matteValue_t val = matte_array_at(ses.mainContext.inputs[SES_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
+        matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
         if (val.binID == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 2);
         matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 2);
 
-        matte_vm_call(ses.vm, val, &vals, &names, NULL);
+        matte_vm_call(mod16.vm, val, &vals, &names, NULL);
         
     }   
 
@@ -1084,24 +1084,24 @@ static void ses_native_update__text_callback(
 
 
 
-static void ses_native_update__pointer_button_callback(
-    sesWindow_t * window, 
-    sesWindow_Event_t eventID, 
+static void mod16_native_update__pointer_button_callback(
+    mod16Window_t * window, 
+    mod16Window_Event_t eventID, 
     void * eventData, 
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(ses.vm);
-    sesWindow_Event_Pointer_t * evt = eventData;
+    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    mod16Window_Event_Pointer_t * evt = eventData;
 
     uint32_t i;
-    uint32_t len = matte_array_get_size(ses.mainContext.inputs[SES_DEVICE__POINTER0].callbacks);
+    uint32_t len = matte_array_get_size(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks);
     if (len == 0) return;
     
-    matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "x");
-    matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "y");
-    matteString_t * buttonStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "button");
-    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(ses.vm, "event");
+    matteString_t * xStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "x");
+    matteString_t * yStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "y");
+    matteString_t * buttonStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "button");
+    matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
     matteValue_t x = matte_heap_new_value(heap);
@@ -1122,11 +1122,11 @@ static void ses_native_update__pointer_button_callback(
     
     double xcon, ycon;
     int w, h;
-    ses_window_get_size(ses.window, &w, &h);
+    mod16_window_get_size(mod16.window, &w, &h);
     
 
     int wr, hr;
-    ses_graphics_context_get_render_size(ses.graphics, &wr, &hr);
+    mod16_graphics_context_get_render_size(mod16.graphics, &wr, &hr);
     
     
     matte_value_into_number(heap, &xval, (evt->x / (float) w) * wr);
@@ -1135,9 +1135,9 @@ static void ses_native_update__pointer_button_callback(
 
     int which;
     switch(evt->button) {
-      case SES_WINDOW_EVENT__POINTER_BUTTON__LEFT:   which = 0; break;
-      case SES_WINDOW_EVENT__POINTER_BUTTON__MIDDLE: which = 1; break;
-      case SES_WINDOW_EVENT__POINTER_BUTTON__RIGHT:  which = 2; break;
+      case MOD16_WINDOW_EVENT__POINTER_BUTTON__LEFT:   which = 0; break;
+      case MOD16_WINDOW_EVENT__POINTER_BUTTON__MIDDLE: which = 1; break;
+      case MOD16_WINDOW_EVENT__POINTER_BUTTON__RIGHT:  which = 2; break;
     }
 
     matte_value_into_number(heap, &buttonval, evt->button);
@@ -1148,66 +1148,66 @@ static void ses_native_update__pointer_button_callback(
     matteValue_t valsArr[] = {eventVal, xval, yval, buttonval};                
     
     for(i = 0; i < len; ++i) {
-        matteValue_t val = matte_array_at(ses.mainContext.inputs[SES_DEVICE__POINTER0].callbacks, matteValue_t, i);    
+        matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks, matteValue_t, i);    
         if (val.binID == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 4);
         matteArray_t vals = MATTE_ARRAY_CAST(valsArr, matteValue_t, 4);
 
-        matte_vm_call(ses.vm, val, &vals, &names, NULL);
+        matte_vm_call(mod16.vm, val, &vals, &names, NULL);
         
     }    
 }
 
 
-static void ses_native_update__pointer_scroll_callback(
-    sesWindow_t * window, 
-    sesWindow_Event_t eventID, 
+static void mod16_native_update__pointer_scroll_callback(
+    mod16Window_t * window, 
+    mod16Window_Event_t eventID, 
     void * eventData, 
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(ses.vm);
-    sesWindow_Event_Pointer_t * evt = eventData;
+    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    mod16Window_Event_Pointer_t * evt = eventData;
 
-    ses.hasPointerScrollEvent = 1;            
-    ses.pointerScrollX = evt->x;
-    ses.pointerScrollY = evt->y;
+    mod16.hasPointerScrollEvent = 1;            
+    mod16.pointerScrollX = evt->x;
+    mod16.pointerScrollY = evt->y;
 }
 
 
 
-static void ses_native_update__pointer_motion_callback(
-    sesWindow_t * window, 
-    sesWindow_Event_t eventID, 
+static void mod16_native_update__pointer_motion_callback(
+    mod16Window_t * window, 
+    mod16Window_Event_t eventID, 
     void * eventData, 
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(ses.vm);
-    sesWindow_Event_Pointer_t * evt = eventData;
+    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    mod16Window_Event_Pointer_t * evt = eventData;
 
-    ses.hasPointerMotionEvent = 1;
-    ses.pointerX = evt->x;
-    ses.pointerY = evt->y;
+    mod16.hasPointerMotionEvent = 1;
+    mod16.pointerX = evt->x;
+    mod16.pointerY = evt->y;
 }
 
 
-static void ses_native_update__frame_render_callback(
-    sesWindow_t * window, 
-    sesWindow_Event_t eventID, 
+static void mod16_native_update__frame_render_callback(
+    mod16Window_t * window, 
+    mod16Window_Event_t eventID, 
     void * eventData, 
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(ses.vm);
-    sesWindow_Event_Pointer_t * evt = eventData;
+    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    mod16Window_Event_Pointer_t * evt = eventData;
 
-    if (ses.mainContext.updateFunc.binID) {
+    if (mod16.mainContext.updateFunc.binID) {
         matte_vm_call(
-            ses.vm,
-            ses.mainContext.updateFunc,
+            mod16.vm,
+            mod16.mainContext.updateFunc,
             matte_array_empty(),
             matte_array_empty(),
             NULL
@@ -1218,59 +1218,59 @@ static void ses_native_update__frame_render_callback(
 
     // only process motion / scroll events on frame render
     // this groups them logically rather than clogging up the even queue.
-    if (ses.hasPointerMotionEvent) {
-        ses.hasPointerMotionEvent = 0;
+    if (mod16.hasPointerMotionEvent) {
+        mod16.hasPointerMotionEvent = 0;
         push_motion_callback();
     }
-    if (ses.hasPointerScrollEvent) {
-        ses.hasPointerScrollEvent = 0;
+    if (mod16.hasPointerScrollEvent) {
+        mod16.hasPointerScrollEvent = 0;
         push_scroll_callback();
     }
 
-    ses_native_render();
+    mod16_native_render();
 
 
 }
 
-int ses_native_update(matte_t * m) {
-    ses.vm = matte_get_vm(m);
-    matteHeap_t * heap = matte_vm_get_heap(ses.vm);
-    ses_window_resolve_events(ses.window);
-    if (!ses.swapped)
-        ses_cartridge_poll_oscillators(ses.mainCart, ses_window_get_ticks(ses.window));
-    ses_window_thread_wait(ses.window, 1);
+int mod16_native_update(matte_t * m) {
+    mod16.vm = matte_get_vm(m);
+    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    mod16_window_resolve_events(mod16.window);
+    if (!mod16.swapped)
+        mod16_cartridge_poll_oscillators(mod16.mainCart, mod16_window_get_ticks(mod16.window));
+    mod16_window_thread_wait(mod16.window, 1);
    
     return 1;
 }
 
 
-int ses_native_main_loop(matte_t * m) {
-    ses_window_set_event_callback(ses.window, SES_WINDOW_EVENT__KEY,            ses_native_update__key_callback, NULL);
-    ses_window_set_event_callback(ses.window, SES_WINDOW_EVENT__TEXT,           ses_native_update__text_callback, NULL);
-    ses_window_set_event_callback(ses.window, SES_WINDOW_EVENT__POINTER_BUTTON, ses_native_update__pointer_button_callback, NULL);
-    ses_window_set_event_callback(ses.window, SES_WINDOW_EVENT__POINTER_SCROLL, ses_native_update__pointer_scroll_callback, NULL);
-    ses_window_set_event_callback(ses.window, SES_WINDOW_EVENT__POINTER_MOTION, ses_native_update__pointer_motion_callback, NULL);
-    ses_window_set_event_callback(ses.window, SES_WINDOW_EVENT__FRAME_RENDER,   ses_native_update__frame_render_callback, NULL);
+int mod16_native_main_loop(matte_t * m) {
+    mod16_window_set_event_callback(mod16.window, MOD16_WINDOW_EVENT__KEY,            mod16_native_update__key_callback, NULL);
+    mod16_window_set_event_callback(mod16.window, MOD16_WINDOW_EVENT__TEXT,           mod16_native_update__text_callback, NULL);
+    mod16_window_set_event_callback(mod16.window, MOD16_WINDOW_EVENT__POINTER_BUTTON, mod16_native_update__pointer_button_callback, NULL);
+    mod16_window_set_event_callback(mod16.window, MOD16_WINDOW_EVENT__POINTER_SCROLL, mod16_native_update__pointer_scroll_callback, NULL);
+    mod16_window_set_event_callback(mod16.window, MOD16_WINDOW_EVENT__POINTER_MOTION, mod16_native_update__pointer_motion_callback, NULL);
+    mod16_window_set_event_callback(mod16.window, MOD16_WINDOW_EVENT__FRAME_RENDER,   mod16_native_update__frame_render_callback, NULL);
 
 
-    ses_cartridge_bootup(ses.mainCart);    
+    mod16_cartridge_bootup(mod16.mainCart);    
 
 
 
-    while(ses_native_update(m)) {}
+    while(mod16_native_update(m)) {}
     return 0;
 }
 
 
 
-int ses_native_get_palette_info(
+int mod16_native_get_palette_info(
     uint32_t index,
-    sesVector_t * data
+    mod16Vector_t * data
 ) {
 
-    const sesGraphicsContext_Palette_t * p = ses_graphics_context_storage_get_palette(
-        ses_cartridge_get_context_storage(
-            ses.mainCart
+    const mod16GraphicsContext_Palette_t * p = mod16_graphics_context_storage_get_palette(
+        mod16_cartridge_get_context_storage(
+            mod16.mainCart
         ),
         index
     );
@@ -1286,27 +1286,27 @@ int ses_native_get_palette_info(
     return 1;
 }
 
-int ses_native_get_tile_info(
+int mod16_native_get_tile_info(
     uint32_t tile,
     uint8_t * data
 ) {
-    const sesGraphicsContext_Tile_t * tilep = ses_graphics_context_storage_get_tile(
-        ses_cartridge_get_context_storage(
-            ses.mainCart
+    const mod16GraphicsContext_Tile_t * tilep = mod16_graphics_context_storage_get_tile(
+        mod16_cartridge_get_context_storage(
+            mod16.mainCart
         ),
         tile
     );
     if (!tilep) {
         return 0;
     }   
-    memcpy(data, tilep->data, SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS);
+    memcpy(data, tilep->data, MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS);
 
     return 1;    
 }
 
 
 
-int ses_native_get_sprite_info(
+int mod16_native_get_sprite_info(
     uint32_t index,
     
     float * x,
@@ -1324,7 +1324,7 @@ int ses_native_get_sprite_info(
     uint32_t * tile    
     
 ) {
-    sesGraphicsContext_Sprite_t * spr = ses_cartridge_get_sprite(ses.mainCart, index);
+    mod16GraphicsContext_Sprite_t * spr = mod16_cartridge_get_sprite(mod16.mainCart, index);
     
     if (!spr) {
         return 0;

@@ -1,6 +1,6 @@
 @:class = import(module:'Matte.Core.Class');
 @:JSON = import(module:'Matte.Core.JSON');
-@:SES = import(module:'SES.Core');
+@:Mod16 = import(module:'Mod16Plus.Core');
 
 @:checkNameAllowed = ::(name) {
     when(name == '') false;
@@ -43,7 +43,7 @@ return class(
             name : {
                 get ::<- directory,
                 set ::(value) {
-                    SES.Project.makeProject(name:value);                    
+                    Mod16.Project.makeProject(name:value);                    
                     directory = value;
                 }
             },
@@ -61,7 +61,7 @@ return class(
                 });
                 
                 palettes->push(value:[id, 'palette_'+id]);
-                SES.Project.saveSource(project:directory, name:'palette_'+id, data: '1 0 1  0 1 0  0 0 1  1 1 1');
+                Mod16.Project.saveSource(project:directory, name:'palette_'+id, data: '1 0 1  0 1 0  0 0 1  1 1 1');
             },
             
             savePalette ::(id => Number, paletteColors => Object) {
@@ -77,7 +77,7 @@ return class(
                 }) error(detail:'No such palette exists');
 
     
-                SES.Project.saveSource(project:directory, name:entry[1], data:
+                Mod16.Project.saveSource(project:directory, name:entry[1], data:
                     '' + 
                     paletteColors[0] + ' ' + paletteColors[1] + ' ' + paletteColors[2] + ' ' +
                     paletteColors[3] + ' ' + paletteColors[4] + ' ' + paletteColors[5] + ' ' +
@@ -99,7 +99,7 @@ return class(
                 }) error(detail:'No such palette exists');
             
                 @:out = [];
-                @:text = SES.Project.openSource(project:directory, name:entry);
+                @:text = Mod16.Project.openSource(project:directory, name:entry);
                 text->split(token:' ')->foreach(
                     do:::(index, token) {
                         when(token == '') empty;
@@ -146,7 +146,7 @@ return class(
                 });
                 
                 tiles->push(value:[id, 'tile_'+id]);
-                SES.Project.saveSource(project:directory, name:'tile_'+id, data: 
+                Mod16.Project.saveSource(project:directory, name:'tile_'+id, data: 
                     String.combine(strings: [
                         '0 0 0 0 0 0 0 0\n',
                         '0 0 0 0 0 0 0 0\n',
@@ -175,7 +175,7 @@ return class(
                 }) error(detail:'No such tile exists');
 
     
-                SES.Project.saveSource(directory, name:entry[1], data:
+                Mod16.Project.saveSource(directory, name:entry[1], data:
                     String.combine(
                         strings: [
                             ' '+data[0],  ' '+ data[1],  ' '+ data[2],  ' '+ data[3],  ' '+ data[4],  ' '+ data[5],  ' '+ data[6],  ' '+ data[7], '\n',
@@ -204,7 +204,7 @@ return class(
                 }) error(detail:'No such tile exists');
             
                 @:out = [];
-                @text = SES.Project.openSource(project:directory, name:entry);
+                @text = Mod16.Project.openSource(project:directory, name:entry);
                 text = text->replace(key:'\n', with: ' ');
                 text->split(token:' ')->foreach(
                     do:::(index, token) {
@@ -248,7 +248,7 @@ return class(
             },
         
             openSource ::(name) {
-                return SES.Project.openSource(project:directory, name);            
+                return Mod16.Project.openSource(project:directory, name);            
             },
             
 
@@ -257,7 +257,7 @@ return class(
                 if (index < 0)
                     error(detail:'No such filename. Internal error');
                 
-                SES.Project.saveSource(directory, name, data); 
+                Mod16.Project.saveSource(directory, name, data); 
             },
 
             removeSource ::(name) {
@@ -265,7 +265,7 @@ return class(
             },
 
             all : {
-                get::<-SES.Project.listProjects()
+                get::<-Mod16.Project.listProjects()
             },
 
         
@@ -293,7 +293,7 @@ return class(
                 // make object for json
                 // save project.json file
 
-                SES.Project.saveSource(project:directory, name:'project.json', data:JSON.encode(object:obj));
+                Mod16.Project.saveSource(project:directory, name:'project.json', data:JSON.encode(object:obj));
                 // package command native function
             },
             

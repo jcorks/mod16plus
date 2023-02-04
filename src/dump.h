@@ -1,5 +1,5 @@
-#ifndef H_SES_DUMP_INCLUDED
-#define H_SES_DUMP_INCLUDED
+#ifndef H_MOD16_DUMP_INCLUDED
+#define H_MOD16_DUMP_INCLUDED
 
 #include <stdint.h>
 

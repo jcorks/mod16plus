@@ -20,16 +20,16 @@
 #include "api/api_rom"
 //#include "debug/debug_rom"
 static int IS_DEBUG = 0;
-static uint8_t * ses_native__import(
+static uint8_t * mod16_native__import(
     matteVM_t * vm,
     const matteString_t * importPath,
     uint32_t * preexistingFileID,
     uint32_t * dataLength,
     void * rom
 ) {
-    // Import is ONLY used for SES.Core
+    // Import is ONLY used for MOD16.Core
     // 
-    if (matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "SES.Core"))) {
+    if (matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "Mod16Plus.Core"))) {
         *dataLength = API_ROM_SIZE;
         *preexistingFileID = matte_vm_get_new_file_id(vm, importPath);
         uint8_t * out = malloc(API_ROM_SIZE);
@@ -40,7 +40,7 @@ static uint8_t * ses_native__import(
         return NULL;
     }
     /*
-    else if (IS_DEBUG && matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "SES.Debug"))) {
+    else if (IS_DEBUG && matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "MOD16.Debug"))) {
         *dataLength = DEBUG_ROM_SIZE;
         *preexistingFileID = matte_vm_get_new_file_id(vm, importPath);
         uint8_t * out = malloc(DEBUG_ROM_SIZE);
@@ -56,7 +56,7 @@ static uint8_t * ses_native__import(
 
 
 
-static void ses_native__print(matteVM_t * vm, const matteString_t * str, void * ud) {
+static void mod16_native__print(matteVM_t * vm, const matteString_t * str, void * ud) {
     printf("%s\n", matte_string_get_c_str(str));
 }
 
@@ -83,7 +83,7 @@ int main(int argc, char ** argv) {
     // its annoying to get that all the time when packaging 
     // treat this mode like a compilation mode
     if (strcmp(argv[1], "package"))
-        printf("Sprite Entertainment System\nJohnathan Corkery, 2022\njcorkery@umich.edu\n\n");
+        printf("Mod16+\nJohnathan Corkery, 2022\njcorkery@umich.edu\n\n");
     
     
 
@@ -93,7 +93,7 @@ int main(int argc, char ** argv) {
     const uint8_t * romBytes = NULL;
     uint32_t romLength = 0;
     if (!strcmp(argv[1], "package")) {    
-        return ses_package(argv[2]);
+        return mod16_package(argv[2]);
         
     } else {
         developRom = (!strcmp(argv[1], "develop"));
@@ -106,11 +106,11 @@ int main(int argc, char ** argv) {
     }
     matte_t * m = matte_create();
     matteVM_t * vm = matte_get_vm(m);
-    matte_vm_set_print_callback(vm, ses_native__print, NULL);
+    matte_vm_set_print_callback(vm, mod16_native__print, NULL);
     
 
     IS_DEBUG = !strcmp(argv[1], "debug");
-    ses_debug_init(m, IS_DEBUG, argv[2]);
+    mod16_debug_init(m, IS_DEBUG, argv[2]);
 
 
 
@@ -119,27 +119,27 @@ int main(int argc, char ** argv) {
 
 
     // dump rom to memory and hook import
-    sesROM_UnpackError_t result = SES_ROM_UNPACK_ERROR__SIZE_MISMATCH;
-    sesROM_t * rom = ses_rom_unpack(romBytes, romLength, &result); 
+    mod16ROM_UnpackError_t result = MOD16_ROM_UNPACK_ERROR__SIZE_MISMATCH;
+    mod16ROM_t * rom = mod16_rom_unpack(romBytes, romLength, &result); 
     if (result != 0) {
         printf("Unpacking ROM resulted in error:\n");
         switch(result) {
-          case SES_ROM_UNPACK_ERROR__TOO_SMALL:
+          case MOD16_ROM_UNPACK_ERROR__TOO_SMALL:
             printf("The ROM is too small to be valid.\n");
             break;
             
-          case SES_ROM_UNPACK_ERROR__BAD_HEADER:
+          case MOD16_ROM_UNPACK_ERROR__BAD_HEADER:
             printf("The header is incorrect. This can happen if the ROM source is corrupted at the start or is not a ROM file.\n");
             break;
           
             
-          case SES_ROM_UNPACK_ERROR__UNSUPPORTED_VERSION:
+          case MOD16_ROM_UNPACK_ERROR__UNSUPPORTED_VERSION:
             printf("The ROM version is unsupported.\n");
             break;
             
             // the ROM data has an invalid size of some kind,
             // likely indicating a corrupted ROM.
-          case SES_ROM_UNPACK_ERROR__SIZE_MISMATCH:
+          case MOD16_ROM_UNPACK_ERROR__SIZE_MISMATCH:
             printf("The ROM has inconsistencies and is unreadable, likely due to corruption.\n");
             
         }
@@ -147,25 +147,25 @@ int main(int argc, char ** argv) {
     }
 
     // tell the implementing backend to process the rom.
-    ses_native_commit_rom(rom, m);
+    mod16_native_commit_rom(rom, m);
     
     
     // next link up import
     matte_vm_set_import(
         vm,
-        ses_native__import,
+        mod16_native__import,
         rom
     );
     
     // enable extra features needed for development 
-    ses_package_bind_natives(vm, developRom || IS_DEBUG);
+    mod16_package_bind_natives(vm, developRom || IS_DEBUG);
 
     
     // ALWAYS import the special scripts before 
     // the main (for security purposes)
     matte_vm_import(
         vm,
-        MATTE_VM_STR_CAST(vm, "SES.Core"),
+        MATTE_VM_STR_CAST(vm, "Mod16Plus.Core"),
         matte_heap_new_value(matte_vm_get_heap(vm))
     );    
 
@@ -174,5 +174,5 @@ int main(int argc, char ** argv) {
     
     
     // begin the loop
-    return ses_native_main_loop(m);
+    return mod16_native_main_loop(m);
 }

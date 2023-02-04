@@ -1,26 +1,26 @@
-#ifndef H_SES_GRAPHICS_CONTEXT__INCLUDED 
-#define H_SES_GRAPHICS_CONTEXT__INCLUDED 
+#ifndef H_MOD16_GRAPHICS_CONTEXT__INCLUDED 
+#define H_MOD16_GRAPHICS_CONTEXT__INCLUDED 
 
 #include "linear.h"
 #include <stdint.h>
 
 // The graphics context manages all lower-level
-// rendering operations within SES. 
+// rendering operations within MOD16. 
 // THe implementaton is environment-specific.
-typedef struct sesGraphicsContext_t sesGraphicsContext_t;
-typedef struct sesGraphicsContext_Storage_t sesGraphicsContext_Storage_t;
-typedef struct sesGraphicsContext_Layer_t sesGraphicsContext_Layer_t;
+typedef struct mod16GraphicsContext_t mod16GraphicsContext_t;
+typedef struct mod16GraphicsContext_Storage_t mod16GraphicsContext_Storage_t;
+typedef struct mod16GraphicsContext_Layer_t mod16GraphicsContext_Layer_t;
 
-#define SES_GRAPHICS_CONTEXT__LAYER_COUNT      128
-#define SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS 8
-#define SES_GRAPHICS_CONTEXT__LAYER_MIN -63
-#define SES_GRAPHICS_CONTEXT__LAYER_MID 0
-#define SES_GRAPHICS_CONTEXT__LAYER_MAX 64
+#define MOD16_GRAPHICS_CONTEXT__LAYER_COUNT      128
+#define MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS 8
+#define MOD16_GRAPHICS_CONTEXT__LAYER_MIN -63
+#define MOD16_GRAPHICS_CONTEXT__LAYER_MID 0
+#define MOD16_GRAPHICS_CONTEXT__LAYER_MAX 64
 
 
 
-typedef struct sesGraphicsContext_Sprite_t sesGraphicsContext_Sprite_t;
-struct sesGraphicsContext_Sprite_t {
+typedef struct mod16GraphicsContext_Sprite_t mod16GraphicsContext_Sprite_t;
+struct mod16GraphicsContext_Sprite_t {
     // x position of the sprite
     float x;
     
@@ -59,10 +59,10 @@ struct sesGraphicsContext_Sprite_t {
     uint16_t tile;
     
     // previous active sprite in linked list
-    sesGraphicsContext_Sprite_t * prev;    
+    mod16GraphicsContext_Sprite_t * prev;    
     
     // next active sprite in linked list
-    sesGraphicsContext_Sprite_t * next;
+    mod16GraphicsContext_Sprite_t * next;
 
 };
 
@@ -88,7 +88,7 @@ typedef struct {
 
 
     uint16_t palette;
-} sesGraphicsContext_Background_t;
+} mod16GraphicsContext_Background_t;
 
 
 
@@ -117,33 +117,33 @@ typedef struct {
     uint16_t tile;
 
     uint16_t palette;
-} sesGraphicsContext_Vertex_t;
+} mod16GraphicsContext_Vertex_t;
 
 
 
 typedef struct {
     // The first color, also called the back color.
     // This is represented with the value 1 in tiles.
-    sesVector_t back;
+    mod16Vector_t back;
 
     // The first color, also called the mid-back color.
     // This is represented with the value 2 in tiles.
-    sesVector_t midBack;
+    mod16Vector_t midBack;
     
     // The first color, also called the mid-front color.
     // This is represented with the value 3 in tiles.    
-    sesVector_t midFront;
+    mod16Vector_t midFront;
     
     // The first color, also called the front color.
     // This is represented with the value 4 in tiles.    
-    sesVector_t front; 
+    mod16Vector_t front; 
 
-} sesGraphicsContext_Palette_t;
+} mod16GraphicsContext_Palette_t;
 
 
 typedef struct {
-    uint8_t data[SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * SES_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS];
-} sesGraphicsContext_Tile_t;
+    uint8_t data[MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS];
+} mod16GraphicsContext_Tile_t;
 
 #include "window.h"
 
@@ -151,13 +151,13 @@ typedef struct {
 
 
 // Creates a new graphics context.
-sesGraphicsContext_t * ses_graphics_context_create(sesWindow_t *);
+mod16GraphicsContext_t * mod16_graphics_context_create(mod16Window_t *);
 
 // Creates a new storage to be used for the graphics context.
-sesGraphicsContext_Storage_t * ses_graphics_context_create_storage(sesGraphicsContext_t *);
+mod16GraphicsContext_Storage_t * mod16_graphics_context_create_storage(mod16GraphicsContext_t *);
 
 // Frees a graphics context.
-void ses_graphics_context_destroy(sesGraphicsContext_t *);
+void mod16_graphics_context_destroy(mod16GraphicsContext_t *);
 
 
 
@@ -165,57 +165,57 @@ void ses_graphics_context_destroy(sesGraphicsContext_t *);
 
 // Queues a sprite for rendering using the tile information
 // and palette information
-void ses_graphics_context_add_sprite(sesGraphicsContext_t *, sesGraphicsContext_Sprite_t *, sesGraphicsContext_Storage_t *);
+void mod16_graphics_context_add_sprite(mod16GraphicsContext_t *, mod16GraphicsContext_Sprite_t *, mod16GraphicsContext_Storage_t *);
 
 // Queues a background for rendering using tile and 
 // palette information.
-void ses_graphics_context_add_background(sesGraphicsContext_t *, sesGraphicsContext_Background_t *, sesGraphicsContext_Storage_t *);
+void mod16_graphics_context_add_background(mod16GraphicsContext_t *, mod16GraphicsContext_Background_t *, mod16GraphicsContext_Storage_t *);
 
 // Renders all queued objects. The queue is then 
 // cleared.
-void ses_graphics_context_render(sesGraphicsContext_t *);
+void mod16_graphics_context_render(mod16GraphicsContext_t *);
 
 // Querries the render size of the graphics context.
-void ses_graphics_context_get_render_size(sesGraphicsContext_t *, int * w, int * h);
+void mod16_graphics_context_get_render_size(mod16GraphicsContext_t *, int * w, int * h);
 
 
 
 
-#define SES_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT         1024
-#define SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES    32
-#define SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES   16
-#define SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT          32
-#define SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_TILE_COUNT     (32*(16 * 32))
-#define SES_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT          (1024 + (32*(16 * 32))) 
-#define SES_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT             512
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT         1024
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES    32
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES   16
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT          32
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_TILE_COUNT     (32*(16 * 32))
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT          (1024 + (32*(16 * 32))) 
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT             512
 
 
 // Reads the contents of a tile. Tiles are from 0 to 
-// SES_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT - 1, where the first 
-// tiles up to SES_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT tiles are 
+// MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT - 1, where the first 
+// tiles up to MOD16_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT tiles are 
 // used exclusively for sprites, and the tiles after are used for 
 // backgrounds. 
-const sesGraphicsContext_Tile_t * ses_graphics_context_storage_get_tile(sesGraphicsContext_Storage_t * storage, uint16_t index);
+const mod16GraphicsContext_Tile_t * mod16_graphics_context_storage_get_tile(mod16GraphicsContext_Storage_t * storage, uint16_t index);
 
-void ses_graphics_context_storage_set_tile(sesGraphicsContext_Storage_t * storage, uint16_t id, const sesGraphicsContext_Tile_t * data);
+void mod16_graphics_context_storage_set_tile(mod16GraphicsContext_Storage_t * storage, uint16_t id, const mod16GraphicsContext_Tile_t * data);
 
 
 // Gets a stored palette These palettes are used when rendering 
 // with a sprite or background referring to this palette index within 
-// the sesGraphicsContext_Storage_t instance.
-const sesGraphicsContext_Palette_t * ses_graphics_context_storage_get_palette(const sesGraphicsContext_Storage_t *, uint16_t id);
+// the mod16GraphicsContext_Storage_t instance.
+const mod16GraphicsContext_Palette_t * mod16_graphics_context_storage_get_palette(const mod16GraphicsContext_Storage_t *, uint16_t id);
 
-void ses_graphics_context_storage_set_palette(sesGraphicsContext_Storage_t *, uint16_t id, const sesGraphicsContext_Palette_t *);
-
-
-const sesGraphicsContext_Vertex_t * ses_graphics_context_storage_get_vertex(const sesGraphicsContext_Storage_t *, uint16_t);
-
-void ses_graphics_context_storage_set_vertex(sesGraphicsContext_Storage_t *, uint16_t id, const sesGraphicsContext_Vertex_t *); 
+void mod16_graphics_context_storage_set_palette(mod16GraphicsContext_Storage_t *, uint16_t id, const mod16GraphicsContext_Palette_t *);
 
 
-uint16_t ses_graphics_context_storage_get_vertex_count(const sesGraphicsContext_Storage_t *);
+const mod16GraphicsContext_Vertex_t * mod16_graphics_context_storage_get_vertex(const mod16GraphicsContext_Storage_t *, uint16_t);
 
-void ses_graphics_context_storage_set_vertex_count(const sesGraphicsContext_Storage_t *);
+void mod16_graphics_context_storage_set_vertex(mod16GraphicsContext_Storage_t *, uint16_t id, const mod16GraphicsContext_Vertex_t *); 
+
+
+uint16_t mod16_graphics_context_storage_get_vertex_count(const mod16GraphicsContext_Storage_t *);
+
+void mod16_graphics_context_storage_set_vertex_count(const mod16GraphicsContext_Storage_t *);
 
 
 

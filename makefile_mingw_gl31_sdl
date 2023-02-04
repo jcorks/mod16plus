@@ -7,4 +7,4 @@ all:
 	cd ./src/api/ && ./apipack 
 	cd ./src/debug/ && ./debugpack 
 	cd ./src/SDL/GL31/shaders && ./shaderpack
-	gcc -g -DSES_BUILD_WINDOWS ./src/*.c ./src/SDL/*.c ./src/develop/*.c ./src/matte/src/*.c ./src/matte/src/rom/native.c ./src/SDL/GL31/*.c ./src/SDL/GL31/glad/src/*.c -o ses -lm -lSDL2 -lopengl32
+	gcc -g -DMOD16_BUILD_WINDOWS ./src/*.c ./src/SDL/*.c ./src/develop/*.c ./src/matte/src/*.c ./src/matte/src/rom/native.c ./src/SDL/GL31/*.c ./src/SDL/GL31/glad/src/*.c -o mod16plus -lm -lSDL2 -lopengl32

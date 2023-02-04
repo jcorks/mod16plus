@@ -1,10 +1,10 @@
 all:
 	cd ../ascii && make
-	cp ../ascii/rom.ses ./ascii-renderer
-	ses package ./
+	cp ../ascii/rom.mod16 ./ascii-renderer
+	mod16plus package ./
 
 clean:
 	cd ../ascii && make clean
 	rm -f ./ascii-renderer
-	rm -f ./rom.ses
+	rm -f ./rom.mod16
 

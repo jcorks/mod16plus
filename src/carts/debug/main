@@ -1,6 +1,6 @@
 @:class = import(module:'Matte.Core.Class');
-@:SES = import(module:'SES.Core');
-@:Cart = SES.Cartridge;
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:Cart = Mod16.Cartridge;
 @:StringRenderer = Cart.subCartridge(name:'ascii-renderer');
 
 
@@ -194,9 +194,9 @@
 
         @:keyboardCallback = ::(event, text, key) {
 
-            when(event == SES.Input.EVENTS.KEY_DOWN) ::<= {
+            when(event == Mod16.Input.EVENTS.KEY_DOWN) ::<= {
                 match(key) {
-                  (SES.Input.KEYS.TAB):::<= {
+                  (Mod16.Input.KEYS.TAB):::<= {
                     lines[cursorY] = insertText(src:lines[cursorY], at:cursorX, text:'  ');
                     cursorX += 2;
                     movedRight();
@@ -206,7 +206,7 @@
                     redrawLines();
                   },
 
-                  (SES.Input.KEYS.BACKSPACE):::<= {
+                  (Mod16.Input.KEYS.BACKSPACE):::<= {
                   
                     // remove "newline"
                     when (lines[cursorY] == '') ::<={
@@ -247,23 +247,23 @@
                     if (onChange_ != empty) onChange_();
                   },
                   
-                  (SES.Input.KEYS.UP):::<= {
+                  (Mod16.Input.KEYS.UP):::<= {
                     cursorY -= 1;
                     movedUp();
                   },
                   
-                  (SES.Input.KEYS.DOWN):::<= {
+                  (Mod16.Input.KEYS.DOWN):::<= {
                     cursorY += 1;
                     movedDown();
 
                   },
 
-                  (SES.Input.KEYS.LEFT):::<= {
+                  (Mod16.Input.KEYS.LEFT):::<= {
                     cursorX -= 1;
                     movedLeft();             
                    },
                   
-                  (SES.Input.KEYS.RIGHT):::<= {
+                  (Mod16.Input.KEYS.RIGHT):::<= {
                     cursorX += 1;
                     movedRight();
 
@@ -271,7 +271,7 @@
 
 
                   
-                  (SES.Input.KEYS.RETURN):::<= {
+                  (Mod16.Input.KEYS.RETURN):::<= {
                     when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
                   
                     // return at end
@@ -455,14 +455,14 @@
                 set::(value => Boolean) {
                     when(value == true) ::<= {
                         when(inputCallbackID != empty) empty;
-                        inputCallbackID = SES.Input.addCallback(
-                            device:SES.Input.DEVICES.KEYBOARD,
+                        inputCallbackID = Mod16.Input.addCallback(
+                            device:Mod16.Input.DEVICES.KEYBOARD,
                             callback:keyboardCallback
                         );            
-                        pointerCallbackID = SES.Input.addCallback(
-                            device:SES.Input.DEVICES.POINTER0,
+                        pointerCallbackID = Mod16.Input.addCallback(
+                            device:Mod16.Input.DEVICES.POINTER0,
                             callback:::(event, x, y, button) {
-                                if (event == SES.Input.EVENTS.POINTER_BUTTON_DOWN) ::<= {
+                                if (event == Mod16.Input.EVENTS.POINTER_BUTTON_DOWN) ::<= {
                                     @:a = this.pixelCoordsToCursor(x, y);        
                                     this.moveCursor(x:a.x, y:a.y);
                                 };
@@ -472,8 +472,8 @@
                     };
                     
                     when(inputCallbackID == empty) empty;
-                    SES.Input.removeCallback(id:inputCallbackID, device:SES.Input.DEVICES.KEYBOARD);
-                    SES.Input.removeCallback(id:pointerCallbackID, device:SES.Input.DEVICES.POINTER0);
+                    Mod16.Input.removeCallback(id:inputCallbackID, device:Mod16.Input.DEVICES.KEYBOARD);
+                    Mod16.Input.removeCallback(id:pointerCallbackID, device:Mod16.Input.DEVICES.POINTER0);
                     inputCallbackID = empty;
                     redrawLines();
                 },
@@ -492,10 +492,10 @@
                         @initialScrollX = 0;
                         @initialScrollY = 0;
                         @ripple = false;
-                        scrollCallbackID = SES.Input.addCallback(
-                            device:SES.Input.DEVICES.POINTER0,
+                        scrollCallbackID = Mod16.Input.addCallback(
+                            device:Mod16.Input.DEVICES.POINTER0,
                             callback:::(event, x, y, button) {
-                                if (event == SES.Input.EVENTS.POINTER_BUTTON_DOWN) ::<= {
+                                if (event == Mod16.Input.EVENTS.POINTER_BUTTON_DOWN) ::<= {
                                     if (holdMod == false) ::<= {
                                         initialX = x;
                                         initialY = y;
@@ -504,9 +504,9 @@
                                     };
                                     holdMod = true;
                                 };
-                                if (event == SES.Input.EVENTS.POINTER_BUTTON_UP  ) holdMod = false;
+                                if (event == Mod16.Input.EVENTS.POINTER_BUTTON_UP  ) holdMod = false;
 
-                                if (event == SES.Input.EVENTS.POINTER_MOTION) ::<= {
+                                if (event == Mod16.Input.EVENTS.POINTER_MOTION) ::<= {
                                     if (holdMod && ctrlMod) ::<= {
                                         if (ripple) ::<= {
                                             this.setScroll(
@@ -519,7 +519,7 @@
                                     
                                 };
 
-                                if (event == SES.Input.EVENTS.POINTER_SCROLL) ::<= {
+                                if (event == Mod16.Input.EVENTS.POINTER_SCROLL) ::<= {
                                     this.setScroll(
                                         x: this.scrollX - x,
                                         y: this.scrollY - y
@@ -529,18 +529,18 @@
                             }
                         );
                         
-                        ctrlCallbackID = SES.Input.addCallback(
-                            device:SES.Input.DEVICES.KEYBOARD,
+                        ctrlCallbackID = Mod16.Input.addCallback(
+                            device:Mod16.Input.DEVICES.KEYBOARD,
                             callback:::(event, text, key) {
-                                when(event == SES.Input.EVENTS.KEY_DOWN && key == SES.Input.KEYS.LCTRL) ctrlMod = true;
-                                when(event == SES.Input.EVENTS.KEY_UP   && key == SES.Input.KEYS.LCTRL) ctrlMod = false;
+                                when(event == Mod16.Input.EVENTS.KEY_DOWN && key == Mod16.Input.KEYS.LCTRL) ctrlMod = true;
+                                when(event == Mod16.Input.EVENTS.KEY_UP   && key == Mod16.Input.KEYS.LCTRL) ctrlMod = false;
                             }
                         );
                     };
 
                     when(scrollCallbackID == empty) empty;
-                    SES.Input.removeCallback(id:scrollCallbackID, device:SES.Input.DEVICES.POINTER0);
-                    SES.Input.removeCallback(id:ctrlCallbackID, device:SES.Input.DEVICES.KEYBOARD);
+                    Mod16.Input.removeCallback(id:scrollCallbackID, device:Mod16.Input.DEVICES.POINTER0);
+                    Mod16.Input.removeCallback(id:ctrlCallbackID, device:Mod16.Input.DEVICES.KEYBOARD);
                     scrollCallbackID = empty;
                     
 
@@ -711,9 +711,9 @@
         
         display.setColor(
             rgbArray:match(colorHint) {
-              (SES.Debug.COLOR_HINT.NORMAL): [0.6, 0.6, 0.6],
-              (SES.Debug.COLOR_HINT.CODE):   [0.87, 0.8, 0.5],
-              (SES.Debug.COLOR_HINT.ERROR):  [1, 0.3, 0.3],
+              (Mod16.Debug.COLOR_HINT.NORMAL): [0.6, 0.6, 0.6],
+              (Mod16.Debug.COLOR_HINT.CODE):   [0.87, 0.8, 0.5],
+              (Mod16.Debug.COLOR_HINT.ERROR):  [1, 0.3, 0.3],
               default: [1, 1, 1]
             }, 
             y:display.getLineCount()-1
@@ -738,24 +738,24 @@
             index: spritebg,
             tile: tilebg,
             show: true,
-            y : (SES.resolutionHeight) / 2 - 3,
+            y : (Mod16.resolutionHeight) / 2 - 3,
             x : 0,
             layer: 63
         );
         
         Cart.Sprite.transform(
             index: spritebg,
-            scaleX: (SES.resolutionWidth / 8)->floor,
-            scaleY:((SES.resolutionHeight + 8) / 8)/2
+            scaleX: (Mod16.resolutionWidth / 8)->floor,
+            scaleY:((Mod16.resolutionHeight + 8) / 8)/2
         );
     
         display = Text.new();
         display. = {
-            widthChars: (SES.resolutionWidth / 6)->floor,
-            heightChars:(((SES.resolutionHeight-3) / 8) / 2)->floor,
+            widthChars: (Mod16.resolutionWidth / 6)->floor,
+            heightChars:(((Mod16.resolutionHeight-3) / 8) / 2)->floor,
             editable : false,
             scrollable : true,
-            y : (SES.resolutionHeight-3) / 2
+            y : (Mod16.resolutionHeight-3) / 2
         };
 
 
@@ -765,27 +765,27 @@
             heightChars: 1,
             editable : false,
             x: 0,
-            y: SES.resolutionHeight - 8,            
+            y: Mod16.resolutionHeight - 8,            
             widthChars: 1,
         };         
 
         entry = Text.new(spriteOffset:4000, defaultPalette:3);
         entry. = {
-            widthChars: (SES.resolutionWidth / 6)->floor - 2,
+            widthChars: (Mod16.resolutionWidth / 6)->floor - 2,
             heightChars: 1,
             editable : true,
             x: 6,
-            y: SES.resolutionHeight - 8               
+            y: Mod16.resolutionHeight - 8               
         };
 
 
 
-        callbackID = SES.Input.addCallback(
-            device: SES.Input.DEVICES.KEYBOARD,
+        callbackID = Mod16.Input.addCallback(
+            device: Mod16.Input.DEVICES.KEYBOARD,
             callback:::(event, text, key) {
-                when(event != SES.Input.EVENTS.KEY_DOWN) empty;
-                if (key == SES.Input.KEYS.RETURN) ::<= {
-                    SES.Debug.query(expression:entry.text => String);
+                when(event != Mod16.Input.EVENTS.KEY_DOWN) empty;
+                if (key == Mod16.Input.KEYS.RETURN) ::<= {
+                    Mod16.Debug.query(expression:entry.text => String);
                     entry.text = '';
                     entry.scrollY = 0;
                     entry.moveCursor(x:0, y:0); 
@@ -798,7 +798,7 @@
 
 
     @:onDebugLeave ::{
-        SES.Input.removeCallback(id:callbackID, device:SES.Input.DEVICES.KEYBOARD);
+        Mod16.Input.removeCallback(id:callbackID, device:Mod16.Input.DEVICES.KEYBOARD);
         display.release();
         cursor.release();
         entry.release();
@@ -817,7 +817,7 @@
         
 
 
-    SES.Debug.bind(
+    Mod16.Debug.bind(
         onDebugPrint, onDebugClear, onDebugEnter, onDebugCommit, onDebugLeave
     );
 
@@ -825,7 +825,7 @@
 
     return ::{    
 
-        SES.Debug.enter();
+        Mod16.Debug.enter();
 
     };
 };

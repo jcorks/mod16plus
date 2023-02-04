@@ -7,46 +7,46 @@
 
 typedef struct {
     // all oscillators
-    sesCartridge_Oscillator_t all[SES_CARTRIDGE__MAX_OSCILLATOR_COUNT];
+    mod16Cartridge_Oscillator_t all[MOD16_CARTRIDGE__MAX_OSCILLATOR_COUNT];
     
     // array of active oscillators
-    sesCartridge_Oscillator_t * active[SES_CARTRIDGE__MAX_OSCILLATOR_COUNT];
+    mod16Cartridge_Oscillator_t * active[MOD16_CARTRIDGE__MAX_OSCILLATOR_COUNT];
     
     // number of active oscillators;
     uint32_t activeCount;
 
-} sesCartridge_OscillatorContext_t;
+} mod16Cartridge_OscillatorContext_t;
 
-struct sesCartridge_t {
+struct mod16Cartridge_t {
     matteVM_t * vm;
     
     // graphics context used for all operations.
     // parents and children always use the same graphics
     // context.
-    sesGraphicsContext_t * graphics;
+    mod16GraphicsContext_t * graphics;
 
 
     // Storage for rendering operations. This is unique to 
     // each cartridge.
-    sesGraphicsContext_Storage_t * storage;
+    mod16GraphicsContext_Storage_t * storage;
     
     // The rom for the cart. If parent != NULL, the rom is owned 
     // by the cartridge and needs to be destroyed with the cart
-    sesROM_t * rom;
+    mod16ROM_t * rom;
 
-    // an array of SES_Sprite, representing all accessed 
+    // an array of MOD16_Sprite, representing all accessed 
     // sprites.
-    sesGraphicsContext_Sprite_t sprites[SES_CARTRIDGE__MAX_SPRITE_COUNT];   
+    mod16GraphicsContext_Sprite_t sprites[MOD16_CARTRIDGE__MAX_SPRITE_COUNT];   
 
-    sesGraphicsContext_Background_t bgs[SES_CARTRIDGE__MAX_BACKGROUND_COUNT];
+    mod16GraphicsContext_Background_t bgs[MOD16_CARTRIDGE__MAX_BACKGROUND_COUNT];
 
 
     // all oscillators
-    sesCartridge_OscillatorContext_t osc;
+    mod16Cartridge_OscillatorContext_t osc;
     
     // linked list of active sprites
     // This ref is the head (prev == NULL)
-    sesGraphicsContext_Sprite_t * activeSprites;
+    mod16GraphicsContext_Sprite_t * activeSprites;
     
     
     // The result of the main script after boot. Used as 
@@ -56,7 +56,7 @@ struct sesCartridge_t {
     
     // The parent cartridge if any. Toplevel carts will have this 
     // set to NULL
-    sesCartridge_t * parent;
+    mod16Cartridge_t * parent;
     
     // Child cartridges. References are owned by the parent.
     matteArray_t * children;
@@ -80,20 +80,20 @@ struct sesCartridge_t {
 
 static matteArray_t * ALL_CARTRIDGES = NULL;
 
-sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphicsContext_t * graphics, const matteString_t * namein, sesCartridge_t * parent) {
+mod16Cartridge_t * mod16_cartridge_create(matteVM_t * vm, mod16ROM_t * rom, mod16GraphicsContext_t * graphics, const matteString_t * namein, mod16Cartridge_t * parent) {
     if (!ALL_CARTRIDGES) {
-        ALL_CARTRIDGES = matte_array_create(sizeof(sesCartridge_t *));
+        ALL_CARTRIDGES = matte_array_create(sizeof(mod16Cartridge_t *));
     }
-    sesCartridge_t * cart = calloc(1, sizeof(sesCartridge_t));
+    mod16Cartridge_t * cart = calloc(1, sizeof(mod16Cartridge_t));
     cart->vm = vm;
     cart->graphics = graphics;
     cart->rom = rom;
-    cart->storage =  ses_graphics_context_create_storage(graphics);
+    cart->storage =  mod16_graphics_context_create_storage(graphics);
     cart->main = matte_heap_new_value(matte_vm_get_heap(vm));   
-    cart->children = matte_array_create(sizeof(sesCartridge_t *));
+    cart->children = matte_array_create(sizeof(mod16Cartridge_t *));
     cart->uniqueID = matte_array_get_size(ALL_CARTRIDGES);
-    cart->sourceValues = calloc(ses_rom_get_bytecode_segment_count(rom), sizeof(matteValue_t));
-    cart->sourcesRun = calloc(ses_rom_get_bytecode_segment_count(rom), 1);
+    cart->sourceValues = calloc(mod16_rom_get_bytecode_segment_count(rom), sizeof(matteValue_t));
+    cart->sourcesRun = calloc(mod16_rom_get_bytecode_segment_count(rom), 1);
     cart->name = matte_string_clone(namein);   
     cart->parent = parent;
     if (parent == NULL) {      
@@ -108,42 +108,42 @@ sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphic
     matte_array_push(ALL_CARTRIDGES, cart);
     
     int i;
-    for(i = 0; i < SES_CARTRIDGE__MAX_SPRITE_COUNT; ++i) {
+    for(i = 0; i < MOD16_CARTRIDGE__MAX_SPRITE_COUNT; ++i) {
         cart->sprites[i].scaleX = 1;
         cart->sprites[i].scaleY = 1;
     }
     
     
     matteString_t * name = matte_string_create();
-    for(i = 0; i < ses_rom_get_subcartridge_rom_count(rom); ++i) {
+    for(i = 0; i < mod16_rom_get_subcartridge_rom_count(rom); ++i) {
         uint32_t bytelen;
-        const uint8_t * bytes = ses_rom_get_subcartridge_rom(
+        const uint8_t * bytes = mod16_rom_get_subcartridge_rom(
             rom,
             i,
             &bytelen, 
             name
         );
-        sesROM_UnpackError_t result;
-        sesROM_t * subrom = ses_rom_unpack(bytes, bytelen, &result); 
+        mod16ROM_UnpackError_t result;
+        mod16ROM_t * subrom = mod16_rom_unpack(bytes, bytelen, &result); 
         if (result != 0) {
             printf("Unpacking sub-ROM resulted in error:\n");
             switch(result) {
-              case SES_ROM_UNPACK_ERROR__TOO_SMALL:
+              case MOD16_ROM_UNPACK_ERROR__TOO_SMALL:
                 printf("The ROM is too small to be valid.\n");
                 break;
                 
-              case SES_ROM_UNPACK_ERROR__BAD_HEADER:
+              case MOD16_ROM_UNPACK_ERROR__BAD_HEADER:
                 printf("The header is incorrect. This can happen if the ROM source is corrupted at the start or is not a ROM file.\n");
                 break;
               
                 
-              case SES_ROM_UNPACK_ERROR__UNSUPPORTED_VERSION:
+              case MOD16_ROM_UNPACK_ERROR__UNSUPPORTED_VERSION:
                 printf("The ROM version is unsupported.\n");
                 break;
                 
                 // the ROM data has an invalid size of some kind,
                 // likely indicating a corrupted ROM.
-              case SES_ROM_UNPACK_ERROR__SIZE_MISMATCH:
+              case MOD16_ROM_UNPACK_ERROR__SIZE_MISMATCH:
                 printf("The ROM has inconsistencies and is unreadable, likely due to corruption.\n");
                 
             }
@@ -151,7 +151,7 @@ sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphic
         }
         
         if (subrom) {
-            sesCartridge_t * subcart = ses_cartridge_create(vm, subrom, graphics, name, cart);
+            mod16Cartridge_t * subcart = mod16_cartridge_create(vm, subrom, graphics, name, cart);
             matte_array_push(cart->children, subcart);
         }
     }
@@ -161,27 +161,27 @@ sesCartridge_t * ses_cartridge_create(matteVM_t * vm, sesROM_t * rom, sesGraphic
 }
 
 
-matteValue_t ses_cartridge_get_main(sesCartridge_t * cart) {
+matteValue_t mod16_cartridge_get_main(mod16Cartridge_t * cart) {
     return cart->main;
 }
 
-sesROM_t * ses_cartridge_get_rom(const sesCartridge_t * cart) {
+mod16ROM_t * mod16_cartridge_get_rom(const mod16Cartridge_t * cart) {
     return cart->rom;
 }
 
 
 // Gets the context storage for this 
-sesGraphicsContext_Storage_t * ses_cartridge_get_context_storage(sesCartridge_t * cart) {
+mod16GraphicsContext_Storage_t * mod16_cartridge_get_context_storage(mod16Cartridge_t * cart) {
     return cart->storage;
 }
 
 
 
 static int COUNT_ENABLED = 0;
-void ses_cartridge_enable_sprite(sesCartridge_t * cart, uint16_t index, int enabled) {
-    if (index >= SES_CARTRIDGE__MAX_SPRITE_COUNT) return;
+void mod16_cartridge_enable_sprite(mod16Cartridge_t * cart, uint16_t index, int enabled) {
+    if (index >= MOD16_CARTRIDGE__MAX_SPRITE_COUNT) return;
     
-    sesGraphicsContext_Sprite_t * spr = &cart->sprites[index];
+    mod16GraphicsContext_Sprite_t * spr = &cart->sprites[index];
 
     if (spr->enabled == enabled) return;;
     
@@ -218,26 +218,26 @@ void ses_cartridge_enable_sprite(sesCartridge_t * cart, uint16_t index, int enab
 }
 
 
-sesGraphicsContext_Sprite_t * ses_cartridge_get_sprite(sesCartridge_t * cart, uint16_t index) {
-    if (index >= SES_CARTRIDGE__MAX_SPRITE_COUNT) return NULL;
+mod16GraphicsContext_Sprite_t * mod16_cartridge_get_sprite(mod16Cartridge_t * cart, uint16_t index) {
+    if (index >= MOD16_CARTRIDGE__MAX_SPRITE_COUNT) return NULL;
     return &cart->sprites[index];
 }
 
-sesGraphicsContext_Background_t * ses_cartridge_get_background(sesCartridge_t * cart, uint16_t index) {
-    if (index >= SES_CARTRIDGE__MAX_BACKGROUND_COUNT) return NULL;
+mod16GraphicsContext_Background_t * mod16_cartridge_get_background(mod16Cartridge_t * cart, uint16_t index) {
+    if (index >= MOD16_CARTRIDGE__MAX_BACKGROUND_COUNT) return NULL;
     return &cart->bgs[index];
 }
 
 
-sesCartridge_Oscillator_t * ses_cartridge_get_oscillator(sesCartridge_t * cart, uint16_t index) {
-    if (index >= SES_CARTRIDGE__MAX_OSCILLATOR_COUNT) return NULL;
+mod16Cartridge_Oscillator_t * mod16_cartridge_get_oscillator(mod16Cartridge_t * cart, uint16_t index) {
+    if (index >= MOD16_CARTRIDGE__MAX_OSCILLATOR_COUNT) return NULL;
     return &cart->osc.all[index];
 }
 
 
-void ses_cartridge_enable_oscillator(sesCartridge_t * cart, uint16_t index, int enabled, double ticks) {
-    if (index >= SES_CARTRIDGE__MAX_OSCILLATOR_COUNT) return;
-    sesCartridge_Oscillator_t * osc = &cart->osc.all[index];
+void mod16_cartridge_enable_oscillator(mod16Cartridge_t * cart, uint16_t index, int enabled, double ticks) {
+    if (index >= MOD16_CARTRIDGE__MAX_OSCILLATOR_COUNT) return;
+    mod16Cartridge_Oscillator_t * osc = &cart->osc.all[index];
 
     matteHeap_t * heap = matte_vm_get_heap(cart->vm);
     int n;
@@ -269,18 +269,18 @@ void ses_cartridge_enable_oscillator(sesCartridge_t * cart, uint16_t index, int 
 
 
 // Updates
-void ses_cartridge_poll_oscillators(sesCartridge_t * cart, double ticks) {
+void mod16_cartridge_poll_oscillators(mod16Cartridge_t * cart, double ticks) {
     uint32_t i;
     uint32_t len = matte_array_get_size(cart->children);
     for(i = 0; i < len; ++i) {
-        sesCartridge_t * subcart = matte_array_at(cart->children, sesCartridge_t *, i);
-        ses_cartridge_poll_oscillators(subcart, ticks);
+        mod16Cartridge_t * subcart = matte_array_at(cart->children, mod16Cartridge_t *, i);
+        mod16_cartridge_poll_oscillators(subcart, ticks);
     }
 
 
     len = cart->osc.activeCount;
     for(i = 0; i < len; ++i) {
-        sesCartridge_Oscillator_t * alarm = cart->osc.active[i];
+        mod16Cartridge_Oscillator_t * alarm = cart->osc.active[i];
         if (ticks >= alarm->endMS) {
             if (alarm->function.binID) {
                 matte_vm_call(
@@ -301,18 +301,18 @@ void ses_cartridge_poll_oscillators(sesCartridge_t * cart, double ticks) {
 
 
 
-sesCartridge_t * ses_cartridge_push_graphics(sesCartridge_t * cart, sesGraphicsContext_t * ctx) {
+mod16Cartridge_t * mod16_cartridge_push_graphics(mod16Cartridge_t * cart, mod16GraphicsContext_t * ctx) {
     uint32_t i;
     uint32_t len = matte_array_get_size(cart->children);
     for(i = 0; i < len; ++i) {
-        sesCartridge_t * subcart = matte_array_at(cart->children, sesCartridge_t *, i);
-        ses_cartridge_push_graphics(subcart, ctx);
+        mod16Cartridge_t * subcart = matte_array_at(cart->children, mod16Cartridge_t *, i);
+        mod16_cartridge_push_graphics(subcart, ctx);
     }
     
 
-    sesGraphicsContext_Sprite_t * iter = cart->activeSprites;
+    mod16GraphicsContext_Sprite_t * iter = cart->activeSprites;
     while(iter) {
-        ses_graphics_context_add_sprite(ctx, iter, cart->storage);
+        mod16_graphics_context_add_sprite(ctx, iter, cart->storage);
         iter = iter->next;
     }
 
@@ -321,12 +321,12 @@ sesCartridge_t * ses_cartridge_push_graphics(sesCartridge_t * cart, sesGraphicsC
     
 
     int n;
-    for(i = 0; i < SES_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT; ++i) {
-        sesGraphicsContext_Background_t * bg = &cart->bgs[i];
+    for(i = 0; i < MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT; ++i) {
+        mod16GraphicsContext_Background_t * bg = &cart->bgs[i];
         if (bg->enabled == 0) continue;
 
 
-        ses_graphics_context_add_background(ctx, bg, cart->storage);
+        mod16_graphics_context_add_background(ctx, bg, cart->storage);
     }
 }
 
@@ -350,13 +350,13 @@ static matteValue_t compile_run_bytes(const matteString_t * name, matteVM_t * vm
 
 
 
-sesCartridge_t * ses_cartridge_get_subcartridge(sesCartridge_t * cart, const matteString_t * name) {
+mod16Cartridge_t * mod16_cartridge_get_subcartridge(mod16Cartridge_t * cart, const matteString_t * name) {
     uint32_t i;
     uint32_t len = matte_array_get_size(cart->children);
     matteString_t * test = matte_string_create();
     for(i = 0; i < len; ++i) {
         uint32_t bytelen;
-        const uint8_t * bytes = ses_rom_get_subcartridge_rom(
+        const uint8_t * bytes = mod16_rom_get_subcartridge_rom(
             cart->rom,
             i,
             &bytelen, 
@@ -365,7 +365,7 @@ sesCartridge_t * ses_cartridge_get_subcartridge(sesCartridge_t * cart, const mat
     
         if (matte_string_test_eq(name, test)) {
             matte_string_destroy(test);
-            return matte_array_at(cart->children, sesCartridge_t *, i);
+            return matte_array_at(cart->children, mod16Cartridge_t *, i);
         }
     }
     matte_string_destroy(test);
@@ -381,48 +381,48 @@ sesCartridge_t * ses_cartridge_get_subcartridge(sesCartridge_t * cart, const mat
 static matteArray_t * ACTIVE_CARTS = NULL;
 
 
-void ses_cartridge_bootup(sesCartridge_t * cart) {
+void mod16_cartridge_bootup(mod16Cartridge_t * cart) {
     if (!ACTIVE_CARTS) {
-        ACTIVE_CARTS = matte_array_create(sizeof(sesCartridge_t *));    
+        ACTIVE_CARTS = matte_array_create(sizeof(mod16Cartridge_t *));    
     }
 
     // children are ALWAYS booted first
     uint32_t i;
     uint32_t len = matte_array_get_size(cart->children);
     for(i = 0; i < len; ++i) {
-        sesCartridge_t * subcart = matte_array_at(cart->children, sesCartridge_t *, i);
-        ses_cartridge_bootup(subcart);
+        mod16Cartridge_t * subcart = matte_array_at(cart->children, mod16Cartridge_t *, i);
+        mod16_cartridge_bootup(subcart);
     }
 
 
     printf("Initializing Cartridge: %s\n", matte_string_get_c_str(cart->fullname));
 
     matte_array_push(ACTIVE_CARTS, cart);
-    cart->main = ses_cartridge_get_source(cart, MATTE_VM_STR_CAST(cart->vm, "main"));
+    cart->main = mod16_cartridge_get_source(cart, MATTE_VM_STR_CAST(cart->vm, "main"));
     matte_array_set_size(ACTIVE_CARTS, matte_array_get_size(ACTIVE_CARTS)-1);
 }
 
 
-sesCartridge_t * ses_cartridge_get_active_boot_context() {
+mod16Cartridge_t * mod16_cartridge_get_active_boot_context() {
     if (!ACTIVE_CARTS) return NULL;
     if (matte_array_get_size(ACTIVE_CARTS) == 0) return NULL;
-    return matte_array_at(ACTIVE_CARTS, sesCartridge_t *, matte_array_get_size(ACTIVE_CARTS)-1);
+    return matte_array_at(ACTIVE_CARTS, mod16Cartridge_t *, matte_array_get_size(ACTIVE_CARTS)-1);
 }
 
-uint32_t ses_cartridge_get_id(const sesCartridge_t * cart) {
+uint32_t mod16_cartridge_get_id(const mod16Cartridge_t * cart) {
     return cart->uniqueID;
 }
 
-matteValue_t ses_cartridge_get_source(sesCartridge_t * cart, const matteString_t * source) {
+matteValue_t mod16_cartridge_get_source(mod16Cartridge_t * cart, const matteString_t * source) {
     uint32_t id;
     int found = 0;
     uint32_t i;
-    uint32_t len = ses_rom_get_bytecode_segment_count(cart->rom);
+    uint32_t len = mod16_rom_get_bytecode_segment_count(cart->rom);
     uint32_t byteLen;
     const uint8_t * bytes;
     matteString_t * name = matte_string_create();
     for(i = 0; i < len; ++i) {
-        bytes = ses_rom_get_bytecode_segment(cart->rom, i, &byteLen, name);
+        bytes = mod16_rom_get_bytecode_segment(cart->rom, i, &byteLen, name);
         
         if (matte_string_test_eq(name, source)) {
             found = 1;
@@ -458,18 +458,18 @@ matteValue_t ses_cartridge_get_source(sesCartridge_t * cart, const matteString_t
 }
 
 
-sesCartridge_t * ses_cartridge_from_id(uint32_t id) {
+mod16Cartridge_t * mod16_cartridge_from_id(uint32_t id) {
     if (!ALL_CARTRIDGES) return NULL;
     if (id >= matte_array_get_size(ALL_CARTRIDGES)) return NULL;
-    return matte_array_at(ALL_CARTRIDGES, sesCartridge_t *, id);
+    return matte_array_at(ALL_CARTRIDGES, mod16Cartridge_t *, id);
 }
 
 
-const matteString_t * ses_cartridge_get_name(sesCartridge_t * cart) {
+const matteString_t * mod16_cartridge_get_name(mod16Cartridge_t * cart) {
     return cart->name;
 }
 
-const matteString_t * ses_cartridge_get_fullname(sesCartridge_t * cart) {
+const matteString_t * mod16_cartridge_get_fullname(mod16Cartridge_t * cart) {
     return cart->fullname;
 }
 

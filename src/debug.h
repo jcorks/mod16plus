@@ -1,9 +1,9 @@
-#ifndef H_SES_DEBUG_INCLUDED
-#define H_SES_DEBUG_INCLUDED
+#ifndef H_MOD16_DEBUG_INCLUDED
+#define H_MOD16_DEBUG_INCLUDED
 
 #include "matte/src/matte.h"
 
 // Initializes debug symbols.
-void ses_debug_init(matte_t *, int enable, const char *);
+void mod16_debug_init(matte_t *, int enable, const char *);
 
 #endif
