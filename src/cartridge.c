@@ -40,6 +40,8 @@ struct mod16Cartridge_t {
 
     mod16GraphicsContext_Background_t bgs[MOD16_CARTRIDGE__MAX_BACKGROUND_COUNT];
 
+    // settings for rendering vertices.
+    mod16GraphicsContext_VertexSettings_t vertexSettings;
 
     // all oscillators
     mod16Cartridge_OscillatorContext_t osc;
@@ -228,6 +230,11 @@ mod16GraphicsContext_Background_t * mod16_cartridge_get_background(mod16Cartridg
     return &cart->bgs[index];
 }
 
+mod16GraphicsContext_VertexSettings_t * mod16_cartridge_get_vertex_settings(mod16Cartridge_t * cart) {
+    return &cart->vertexSettings;
+}
+
+
 
 mod16Cartridge_Oscillator_t * mod16_cartridge_get_oscillator(mod16Cartridge_t * cart, uint16_t index) {
     if (index >= MOD16_CARTRIDGE__MAX_OSCILLATOR_COUNT) return NULL;
@@ -314,6 +321,14 @@ mod16Cartridge_t * mod16_cartridge_push_graphics(mod16Cartridge_t * cart, mod16G
     while(iter) {
         mod16_graphics_context_add_sprite(ctx, iter, cart->storage);
         iter = iter->next;
+    }
+
+    if (mod16_graphics_context_storage_get_vertex_count(cart->storage)) {
+        mod16_graphics_context_add_vertices(
+            ctx,
+            &cart->vertexSettings,
+            cart->storage
+        );
     }
 
 

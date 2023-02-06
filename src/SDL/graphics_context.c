@@ -11,6 +11,8 @@ typedef struct {
     matteArray_t * sprites;
     // FullBackground_t
     matteArray_t * bgs;
+    // FullVertexSet_t
+    matteArray_t * vertices;
 
 } mod16GraphicsLayer_t;
 
@@ -36,15 +38,30 @@ typedef struct {
     mod16GraphicsContext_Storage_t * src;
 } FullBackground_t;
 
+typedef struct {    
+    mod16GraphicsContext_VertexSettings_t data;
+    mod16GraphicsContext_Storage_t * src;
+} FullVertexSet_t;
+
 
 
 struct mod16GraphicsContext_Storage_t {
     mod16GraphicsContext_t * ctx;
+
     int spriteTexture;
     int bgTexture[MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT];
-    
+
+    // the actual object from the SDLGL abstraction
+    int vertexArrayObject;
+    // whether the object needs its contents re-uploaded
+    int vertexArrayOutOfDate;
+    // the real size of the array. This is always kept up to date.
+    int vertexArraySize;    
+
+    mod16GraphicsContext_Vertex_t vertices[MOD16_GRAPHICS_CONTEXT_STORAGE__VERTEX_COUNT_MAX];
     mod16GraphicsContext_Tile_t tiles[MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT];
     mod16GraphicsContext_Palette_t palettes[MOD16_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT];
+   
 };
 
 
@@ -57,6 +74,7 @@ mod16GraphicsContext_t * mod16_graphics_context_create(mod16Window_t * window) {
     for(i = 0; i < MOD16_GRAPHICS_CONTEXT__LAYER_COUNT; ++i) {
         out->layer[i].sprites = matte_array_create(sizeof(FullSprite_t));
         out->layer[i].bgs = matte_array_create(sizeof(FullBackground_t));
+        out->layer[i].vertices = matte_array_create(sizeof(FullVertexSet_t));
     }
     return out;
 }
@@ -70,6 +88,7 @@ void mod16_graphics_context_get_render_size(mod16GraphicsContext_t * ctx, int * 
 
 mod16GraphicsContext_Storage_t * mod16_graphics_context_create_storage(mod16GraphicsContext_t * ctx) {
     mod16GraphicsContext_Storage_t * str = calloc(1, sizeof(mod16GraphicsContext_Storage_t));
+    str->vertexArrayObject = -1;
     str->ctx = ctx;
     return str;
 }
@@ -89,6 +108,32 @@ void mod16_graphics_context_add_background(mod16GraphicsContext_t * ctx, mod16Gr
     full.data = *bg;
     full.src = storage;
     matte_array_push(layer->bgs, full); 
+
+}
+
+void mod16_graphics_context_add_vertices(mod16GraphicsContext_t * ctx, mod16GraphicsContext_VertexSettings_t * settings, mod16GraphicsContext_Storage_t * storage) {
+    mod16GraphicsLayer_t * layer = &ctx->layer[settings->layer-(MOD16_GRAPHICS_CONTEXT__LAYER_MIN)];
+    FullVertexSet_t full  = {};
+    full.data = *settings;
+    full.src = storage;
+
+    if (storage->vertexArrayObject < 0) {
+        storage->vertexArrayObject = mod16_sdl_gl_new_vertex_array_set(ctx->gl);
+        storage->vertexArrayOutOfDate = 1;
+    } 
+    if (storage->vertexArrayOutOfDate) {
+        // for now just batch and replace whole set.
+        mod16_sdl_gl_vertex_array_set_size(ctx->gl, storage->vertexArrayObject, storage->vertexArraySize);
+        mod16_sdl_gl_vertex_array_update(
+            ctx->gl,
+            storage->vertexArrayObject,
+            0,
+            storage->vertexArraySize,
+            storage->vertices
+        );
+        storage->vertexArrayOutOfDate = 0;
+    }
+    matte_array_push(layer->vertices, full); 
 
 }
 
@@ -130,10 +175,6 @@ void mod16_graphics_context_render(mod16GraphicsContext_t * ctx) {
         }
         // then do sprites
         uint32_t len = matte_array_get_size(layer->sprites);
-        if (!len) {
-            if (lenBackgrounds) mod16_sdl_gl_render_finish_layer(ctx->gl);
-            continue;
-        }
         for(n = 0; n < len; ++n) {        
             FullSprite_t * iter = &matte_array_at(layer->sprites, FullSprite_t, n);
             if (iter->data.tile >= MOD16_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT) continue;
@@ -158,8 +199,41 @@ void mod16_graphics_context_render(mod16GraphicsContext_t * ctx) {
                 iter->data.tile
             );
         }
-        mod16_sdl_gl_render_finish_layer(ctx->gl);
-        matte_array_set_size(layer->sprites, 0);
+        if (len) {
+            mod16_sdl_gl_render_finish_layer(ctx->gl);
+            matte_array_set_size(layer->sprites, 0);
+        }
+
+        // finally, vertices
+        len = matte_array_get_size(layer->vertices);
+        for(n = 0; n < len; ++n) {        
+            FullVertexSet_t * iter = &matte_array_at(layer->vertices, FullVertexSet_t, n);
+
+
+            const mod16GraphicsContext_Palette_t * p = mod16_graphics_context_storage_get_palette(iter->src, iter->data.palette);
+            if (!p) continue;                
+
+            
+            mod16_sdl_gl_render_vertices(
+                ctx->gl,
+                &iter->data.transform,
+                iter->data.effect,
+                iter->data.shape,
+                iter->data.textured ? iter->src->spriteTexture : -1,                
+
+                p->back,
+                p->midBack,
+                p->midFront,
+                p->front,
+                
+                iter->src->vertexArrayObject
+            );
+        }
+        if (len) {
+            mod16_sdl_gl_render_finish_layer(ctx->gl);
+            matte_array_set_size(layer->vertices, 0);
+        }
+
     }
 
     // commit to framebuffer 0    
@@ -238,6 +312,38 @@ void mod16_graphics_context_storage_set_palette(mod16GraphicsContext_Storage_t *
     storage->palettes[id] = *p;
 
 }
+
+
+// Gets / sets a vertex.
+// Vertices can refer to sprite tiles to be used as textures.
+const mod16GraphicsContext_Vertex_t * mod16_graphics_context_storage_get_vertex(const mod16GraphicsContext_Storage_t * storage, uint16_t index) {
+    static mod16GraphicsContext_Vertex_t badvtx = {};
+    if (index >= storage->vertexArraySize) return &badvtx;
+
+    return storage->vertices+index;
+}
+
+void mod16_graphics_context_storage_set_vertex(mod16GraphicsContext_Storage_t * storage, uint16_t index, const mod16GraphicsContext_Vertex_t * data) {
+    if (index >= storage->vertexArraySize)
+        return;
+    storage->vertices[index] = *data;
+    storage->vertexArrayOutOfDate = 1;
+} 
+
+
+// Gets / sets the active vertex count. This count corresponds to 
+// the physical number of vertices used during drawing
+uint16_t mod16_graphics_context_storage_get_vertex_count(const mod16GraphicsContext_Storage_t * storage) {
+    return storage->vertexArraySize;
+}
+
+void mod16_graphics_context_storage_set_vertex_count(mod16GraphicsContext_Storage_t * storage, uint16_t size) {
+    if (size > MOD16_GRAPHICS_CONTEXT_STORAGE__VERTEX_COUNT_MAX)
+        return;
+    storage->vertexArraySize = size;
+    storage->vertexArrayOutOfDate = 1;
+}
+
 
 
 

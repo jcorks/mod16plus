@@ -59,6 +59,12 @@ mod16GraphicsContext_Sprite_t * mod16_cartridge_get_sprite(mod16Cartridge_t * ca
 // beyond the max sprite, NULL is returned.
 mod16GraphicsContext_Background_t * mod16_cartridge_get_background(mod16Cartridge_t * cartridge, uint16_t index);
 
+// Gets the vertex settings for the cartridge.
+// This can be edited and will be used when rendering if 
+// the vertex count is above 0.
+mod16GraphicsContext_VertexSettings_t * mod16_cartridge_get_vertex_settings(mod16Cartridge_t *);
+
+
 
 
 

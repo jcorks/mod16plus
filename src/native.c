@@ -305,6 +305,181 @@ matteValue_t mod16_native_oscillator_attrib(matteVM_t * vm, matteValue_t fn, con
 
 
 
+matteValue_t mod16_native_vertices_set_count(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+
+    
+    mod16GraphicsContext_Storage_t * storage = mod16_cartridge_get_context_storage(cart);
+    mod16_graphics_context_storage_set_vertex_count(
+        storage, 
+        matte_value_as_number(heap, args[1])
+    );        
+    
+    return matte_heap_new_value(heap);
+}
+
+
+
+matteValue_t mod16_native_vertices_set_shape(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+
+    
+    mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
+    settings->shape = matte_value_as_number(heap, args[1]);
+    
+    return matte_heap_new_value(heap);
+}
+
+
+matteValue_t mod16_native_vertices_set_transform(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+
+    mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
+    mod16Matrix_t * tf = &settings->transform;    
+    matteValue_t array = args[1];
+    int i;
+    matteValue_t value;
+    for(i = 0; i < 16; ++i) {
+        matteValue_t v = matte_value_object_access_index(heap, array, i);
+        tf->data[i] = matte_value_as_number(heap, v);
+    }
+    
+    return matte_heap_new_value(heap);
+}
+
+
+matteValue_t mod16_native_vertices_set_effect(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+
+    
+    mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
+    settings->effect = matte_value_as_number(heap, args[1]);
+    
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_vertices_set_layer(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+
+    
+    mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
+    settings->layer = matte_value_as_number(heap, args[1]);
+    
+    return matte_heap_new_value(heap);
+}
+
+
+matteValue_t mod16_native_vertices_set_palette(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+
+    
+    mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
+    settings->palette = matte_value_as_number(heap, args[1]);
+    
+    return matte_heap_new_value(heap);
+}
+
+
+matteValue_t mod16_native_vertices_set_textured(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+
+    
+    mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
+    settings->textured = matte_value_as_number(heap, args[1]);
+    
+    return matte_heap_new_value(heap);
+}
+
+
+matteValue_t mod16_native_vertices_set(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+    
+
+    mod16GraphicsContext_Storage_t * storage = mod16_cartridge_get_context_storage(cart);
+    uint16_t index = matte_value_as_number(heap, args[1]);
+
+    mod16GraphicsContext_Vertex_t vertex = {};
+    vertex.x = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 0));
+    vertex.y = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 1));
+    vertex.z = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 2));
+    vertex.r = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 3));
+    vertex.g = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 4));
+    vertex.b = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 5));
+    vertex.u = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 6));
+    vertex.v = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 7));
+    vertex.tile = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 9));
+
+
+    mod16_graphics_context_storage_set_vertex(storage, index, &vertex);    
+    return matte_heap_new_value(heap);
+}
+
+
+matteValue_t mod16_native_vertices_get(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+    
+
+    mod16GraphicsContext_Storage_t * storage = mod16_cartridge_get_context_storage(cart);
+    uint16_t index = matte_value_as_number(heap, args[1]);
+
+    matteArray_t * arr = matte_array_create(sizeof(matteValue_t));    
+    matteValue_t m;
+    
+    const mod16GraphicsContext_Vertex_t * v = mod16_graphics_context_storage_get_vertex(storage, index);    
+
+    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->x); matte_array_push(arr, m);
+    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->y); matte_array_push(arr, m);
+    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->z); matte_array_push(arr, m);
+    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->r); matte_array_push(arr, m);
+    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->g); matte_array_push(arr, m);
+    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->b); matte_array_push(arr, m);
+    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->u); matte_array_push(arr, m);
+    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->v); matte_array_push(arr, m);
+    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->tile); matte_array_push(arr, m);
+
+
+
+
+    matteValue_t out;
+    matte_value_into_new_object_array_ref(heap, &out, arr);
+    matte_array_destroy(arr);
+
+    return out;
+}
+
+
+
+
+
+
+
 typedef enum {
     MOD16NEA_UPDATERATE,
     MOD16NEA_UPDATEFUNC,
@@ -849,6 +1024,17 @@ void mod16_native_commit_rom(mod16ROM_t * rom, matte_t * m) {
 
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__palette_query"), 4, mod16_native_palette_query, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__tile_query"), 3, mod16_native_tile_query, NULL);
+
+
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__vertices_set_count"), 2, mod16_native_vertices_set_count, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__vertices_set_shape"), 2, mod16_native_vertices_set_shape, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__vertices_set_transform"), 2, mod16_native_vertices_set_transform, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__vertices_set_effect"), 2, mod16_native_vertices_set_effect, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__vertices_set_layer"), 2, mod16_native_vertices_set_layer, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__vertices_set_palette"), 2, mod16_native_vertices_set_palette, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__vertices_set_textured"), 2, mod16_native_vertices_set_textured, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__vertices_set"), 3, mod16_native_vertices_set, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__vertices_get"), 2, mod16_native_vertices_get, NULL);
 
 
     mod16.mainContext = context_create();

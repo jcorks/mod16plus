@@ -32,11 +32,26 @@
 @:mod16_native__debug_context_bind = getExternalFunction(name:"mod16_native__debug_context_bind");
 
 
+@:mod16_native__vertices_set_count = getExternalFunction(name:"mod16_native__vertices_set_count");
+@:mod16_native__vertices_set_shape = getExternalFunction(name:"mod16_native__vertices_set_shape");
+@:mod16_native__vertices_set_transform = getExternalFunction(name:"mod16_native__vertices_set_transform");
+@:mod16_native__vertices_set_effect = getExternalFunction(name:"mod16_native__vertices_set_effect");
+@:mod16_native__vertices_set_layer = getExternalFunction(name:"mod16_native__vertices_set_layer");
+@:mod16_native__vertices_set_palette = getExternalFunction(name:"mod16_native__vertices_set_palette");
+@:mod16_native__vertices_set_textured = getExternalFunction(name:"mod16_native__vertices_set_textured");
+@:mod16_native__vertices_set = getExternalFunction(name:"mod16_native__vertices_set");                                   
+@:mod16_native__vertices_get = getExternalFunction(name:"mod16_native__vertices_get");
+
+
 @:package_native__is_packaging_allowed  = getExternalFunction(name:"package_native__is_packaging_allowed");
 @:package_native__save_source  = getExternalFunction(name:"package_native__save_source");
 @:package_native__make_project = getExternalFunction(name:"package_native__make_project");
 @:package_native__open_source  = getExternalFunction(name:"package_native__open_source");
 @:package_native__list_projects= getExternalFunction(name:"package_native__list_projects");
+
+                
+
+
 
 
 
@@ -805,7 +820,7 @@
 };
 
 
-/*@:Vertices = ::<= {
+@:Vertices = ::<= {
     @:SHAPE = {
         TRIANGLE: 0,
         LINE: 0
@@ -816,58 +831,151 @@
             @cartID_;
             this.constructor = ::(cartID) {
                 cartID_ = cartID;
+                mod16_native__vertices_set_transform(a:cartID_, b:transform);
                 return this;
             };
+            @palette = 0;
+            @count = 0;
+            @shape = 0;
+            @layer = 0;
+            @effect = 0;
+            @textured = 0;
+            @transform = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
             this.interface = {
+                SHAPE : {get::<- SHAPE},
+                 
                 count : {
                     set ::(value){
                         mod16_native__vertices_set_count(a:cartID_, b:value=>Number);
+                        count = value;
+                    },
+
+                    get ::{
+                        return count;
                     }
                 },
                 
                 shape : {
                     set ::(value) {
                         mod16_native__vertices_set_shape(a:cartID_, b:value=>Number);
+                        shape = value;
+                    },
+
+                    get :: {
+                        return shape;
                     }
                 },
                 
                 transform : {
                     set ::(value => Object) {
+                        if (value->keycount != 16)
+                            error(detail:'Transform expected to be a 4x4 matrix formatted as a 16-value array');
                         mod16_native__vertices_set_transform(a:cartID_, b:value);
+                        transform = [...value];
+                    },
+
+                    get :: {
+                        return transform;
                     }
                 },
                 
                 effect : {
                     set ::(value => Number) {
                         mod16_native__vertices_set_effect(a:cartID_, b:value);
+                        effect = value;
+                    },
+                    get :: {
+                        return effect;
                     }
                 },
+
+                layer : {
+                    set ::(value => Number) {
+                        mod16_native__vertices_set_layer(a:cartID_, b:value);
+                        layer = value;
+                    },
+                    get :: {
+                        return layer;
+                    }
+                },
+
+
+                palette : {
+                    set ::(value => Number) {
+                        mod16_native__vertices_set_palette(a:cartID_, b:value);
+                        palette = value;
+                    },
+                    get :: {
+                        return palette;
+                    }
+                },
+
+                layer : {
+                    set ::(value => Number) {
+                        mod16_native__vertices_set_palette(a:cartID_, b:value);
+                        palette = value;
+                    },
+                    get :: {
+                        return palette;
+                    }
+                },
+
+
+
+                textured : {
+                    set ::(value => Number) {
+                        mod16_native__vertices_set_textured(a:cartID_, b:value);
+                        textured = value;
+                    },
+                    get :: {
+                        return textured;
+                    }
+                },
+
                 
                 
                 //
                 
-                //    [x, y, z, r, g, b, u, v, tileID, paletteID]
+                //    [x, y, z, r, g, b, u, v, tileID]
                 
-                set ::(
+                setVertex ::(
                     index => Number,
                     data => Object
                 ) {
-                    when(data->keycount != 10)
-                        error(detail:'Vertex expects array in format: [x, y, z, r, g, b, u , v, tileID, paletteID] for all vertices');
+                    when(index >= count)
+                        error(detail:'Vertex out of bounds');
+                    when(data->keycount != 9)
+                        error(detail:'Vertex expects array in format: [x, y, z, r, g, b, u , v, tileID] for all vertices');
 
                     mod16_native__vertices_set(a:cartID_, b:index, c:data);
                                     
                 },
                 
                 
-                get ::(index => Number) {
+                getVertex ::(index => Number) {
                     return mod16_native__vertices_get(a:cartID_, b:index);
+                },
+
+                vertices : {
+                    set:: (
+                        value => Object
+                    ) {
+                        when(value->keycount >= count)
+                            error(detail:'Vertex out of bounds');
+
+                        value->foreach(do:::(i, v) {
+                            when(v->keycount != 9)
+                                error(detail:'Vertex expects array in format: [x, y, z, r, g, b, u , v, tileID] for all vertices');
+                            mod16_native__vertices_set(a:cartID_, b:i, c:v);
+                        });
+                    }   
                 }
+                
             
             };
         }
     );
-};*/
+};
 
 
 @:Oscillator = ::<= {
@@ -1087,7 +1195,7 @@
                         Background: Background.new(cartID:cart),
                         Audio     : AudioStore.new(cartID:cart),
                         Oscillator: Oscillator.new(cartID:cart),
-//                        Vertices  : Vertices.new(cartID:cart),
+                        Vertices  : Vertices.new(cartID:cart),
                         
                         subCartridge::(name => String) {
                             return mod16_native__get_sub_cartridge_main(a:cart, b:name);

@@ -111,13 +111,41 @@ typedef struct {
     // Y coordinate of the tile texture
     float v;
 
+    // the tile to use as a texture. The tile is also colorized
+    int tile;
+
+} mod16GraphicsContext_Vertex_t;
+
+
+typedef struct {
+    // The primitive to be used when rendering 
+    // storage vertices. 0 means triangles, 1 means line segments
+    int shape;
+
+    // the rendering effect of all vertices.
+    int effect;    
+
+    // The palette to use when rendering the any tile textures.    
+    int palette;
+
+    // whether this vertex should use texturing
     int textured;
 
-    // the tile to use as a texture. 
-    uint16_t tile;
+    // the layer to render vertices on.
+    int layer;
 
-    uint16_t palette;
-} mod16GraphicsContext_Vertex_t;
+
+    // transform to be applied to all vertices.
+    // the matrix is ordered:
+    /*
+        0  1  2  3
+        4  5  6  7
+        8  9  10 11
+        12 13 14 15
+    */
+    mod16Matrix_t transform;
+
+} mod16GraphicsContext_VertexSettings_t;
 
 
 
@@ -171,6 +199,8 @@ void mod16_graphics_context_add_sprite(mod16GraphicsContext_t *, mod16GraphicsCo
 // palette information.
 void mod16_graphics_context_add_background(mod16GraphicsContext_t *, mod16GraphicsContext_Background_t *, mod16GraphicsContext_Storage_t *);
 
+void mod16_graphics_context_add_vertices(mod16GraphicsContext_t *, mod16GraphicsContext_VertexSettings_t *, mod16GraphicsContext_Storage_t *);
+
 // Renders all queued objects. The queue is then 
 // cleared.
 void mod16_graphics_context_render(mod16GraphicsContext_t *);
@@ -188,7 +218,7 @@ void mod16_graphics_context_get_render_size(mod16GraphicsContext_t *, int * w, i
 #define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_TILE_COUNT     (32*(16 * 32))
 #define MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT          (1024 + (32*(16 * 32))) 
 #define MOD16_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT             512
-
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__VERTEX_COUNT_MAX          1024
 
 // Reads the contents of a tile. Tiles are from 0 to 
 // MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT - 1, where the first 
@@ -207,19 +237,18 @@ const mod16GraphicsContext_Palette_t * mod16_graphics_context_storage_get_palett
 
 void mod16_graphics_context_storage_set_palette(mod16GraphicsContext_Storage_t *, uint16_t id, const mod16GraphicsContext_Palette_t *);
 
-
+// Gets / sets a vertex.
+// Vertices can refer to sprite tiles to be used as textures.
 const mod16GraphicsContext_Vertex_t * mod16_graphics_context_storage_get_vertex(const mod16GraphicsContext_Storage_t *, uint16_t);
 
 void mod16_graphics_context_storage_set_vertex(mod16GraphicsContext_Storage_t *, uint16_t id, const mod16GraphicsContext_Vertex_t *); 
 
 
+// Gets / sets the active vertex count. This count corresponds to 
+// the physical number of vertices used during drawing
 uint16_t mod16_graphics_context_storage_get_vertex_count(const mod16GraphicsContext_Storage_t *);
 
-void mod16_graphics_context_storage_set_vertex_count(const mod16GraphicsContext_Storage_t *);
-
-
-
-
+void mod16_graphics_context_storage_set_vertex_count(mod16GraphicsContext_Storage_t *, uint16_t);
 
 
 
