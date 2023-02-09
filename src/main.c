@@ -64,16 +64,15 @@ static void mod16_native__print(matteVM_t * vm, const matteString_t * str, void 
 
 int main(int argc, char ** argv) {
     int developRom = 0;;
+    char * devPath = NULL;
     if (argc < 3||
             (
                 strcmp(argv[1], "run") &&
                 strcmp(argv[1], "debug") &&
-                strcmp(argv[1], "develop") &&
                 strcmp(argv[1], "package")
             )
         ) {
-        printf("Usage:\n   %s run [path to ROM file]\n   %s debug [path to ROM file]\n   %s develop\n   %s package [path to package.json]\n\n",
-            argv[0],        
+        printf("Usage:\n   %s run [path to ROM file]\n   %s debug [path to ROM file]\n   %s package [path to package.json]\n\n",
             argv[0],        
             argv[0],
             argv[0]
@@ -84,8 +83,7 @@ int main(int argc, char ** argv) {
     // treat this mode like a compilation mode
     if (strcmp(argv[1], "package"))
         printf("Mod16+\nJohnathan Corkery, 2022\njcorkery@umich.edu\n\n");
-    
-    
+       
 
 
     // choose the source of the rom. For both run and debug, the rom is external.
@@ -96,9 +94,14 @@ int main(int argc, char ** argv) {
         return mod16_package(argv[2]);
         
     } else {
-        developRom = (!strcmp(argv[1], "develop"));
         romBytes = dump_bytes(argv[2], &romLength);
+        
     }
+    
+    if (argc > 3) {
+        devPath = argv[3];
+    }
+
     
     if (romLength == 0) {
         printf("The ROM was empty or unreadable. Exiting.\n");
@@ -158,7 +161,7 @@ int main(int argc, char ** argv) {
     );
     
     // enable extra features needed for development 
-    mod16_package_bind_natives(vm, developRom || IS_DEBUG);
+    mod16_package_bind_natives(vm, devPath);
 
     
     // ALWAYS import the special scripts before 

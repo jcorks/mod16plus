@@ -14,133 +14,99 @@
 #include <stdio.h>
 #include <string.h>
 
+
+char * BASE_DIR = NULL;
+
 #ifdef __unix__
-    char * BASE_DIR = NULL;
     #include <unistd.h>
     #include <sys/types.h>
     #include <sys/stat.h>
     #include <dirent.h>
+    const char * DIRECTORY_SEPARATOR = "/";
     
     static void assert_base_dir() {
         if (BASE_DIR) return;
         
         BASE_DIR = malloc(1024 + 128);
         getcwd(BASE_DIR, 1024);
-        strcat(BASE_DIR, "/MOD16_projects");
+        strcat(BASE_DIR, "/MOD16PLUS_DATA/");
         mkdir(BASE_DIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }   
     
-    static void make_project_dir(const char * name) {
-        assert_base_dir();
-        matteString_t * path = matte_string_create_from_c_str("%s%s", BASE_DIR, name);
-        mkdir(matte_string_get_c_str(path), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-        matte_string_destroy(path);
-    };
-    
-    static matteString_t * build_path(const matteString_t * project, const matteString_t * file) {
-        assert_base_dir();
-        matteString_t * out = matte_string_create_from_c_str("%s", BASE_DIR);
-        matte_string_concat(out, project);
-        matteString_t * slash = matte_string_create_from_c_str("/");
-        matte_string_concat(out, slash);
-        matte_string_concat(out, file);
-        matte_string_destroy(slash);
-        return out;
-    }
 
-    static matteArray_t * list_projects() {
-        assert_base_dir();
-        matteArray_t * arr = matte_array_create(sizeof(matteString_t *));
-        struct dirent * dir;
-        DIR * d = opendir(BASE_DIR);
-        if (d) {
-            while((dir = readdir(d)) != NULL) {
-                if (!strcmp(dir->d_name, ".") || !strcmp(dir->d_name, "..")) continue;
-                matteString_t * str = matte_string_create_from_c_str("%s", dir->d_name);
-                matte_array_push(arr, str);
-            }
-        }
-        closedir(d);
-        return arr;
-    }
+    
+
+
 
 #elif __WIN32__
-    char * BASE_DIR = NULL;
     #include <windows.h>
+    const char * DIRECTORY_SEPARATOR = "\\";
 
     static void assert_base_dir() {
         if (BASE_DIR) return;
         
         BASE_DIR = malloc(1024, 128);
         _getcwd(BASE_DIR, 1024);
-        strcat(BASE_DIR, "\\MOD16_projects");
+        strcat(BASE_DIR, "\\MOD16PLUS_DATA\\");
         CreateDirectoryA(matte_string_get_c_str(BASE_DIR), NULL);
     }   
 
-
-    static void make_project_dir(const char * name) {
-        assert_base_dir();
-        matteString_t * path = matte_string_create_from_c_str("%s%s", BASE_DIR, name);
-        CreateDirectoryA(matte_string_get_c_str(path), NULL);
-        matte_string_destroy(path);
-    };
-    
-    static matteString_t * build_path(const matteString_t * project, const matteString_t * file) {
-        assert_base_dir();
-        matteString_t * out = matte_string_create_from_c_str("%s", BASE_DIR);
-        matte_string_concat(out, project);
-        matteString_t * slash = matte_string_create_from_c_str("\\");
-        matte_string_concat(out, slash);
-        matte_string_concat(out, file);
-        matte_string_destroy(slash);
-        return out;
-    }
-
-    static matteArray_t * list_projects() {
-        assert_base_dir();
-        matteArray_t * arr = matte_array_create(sizeof(matteString_t *));
-
-        WIN32_FIND_DATA data;
-        matteString_t * query = matte_string_create_from_c_str("%s\\*", BASE_DIR);
-
-        HANDLE file = FindFirstFile(matte_string_get_c_str(query), &data);
-        if (file != INVALID_HANDLE_VALUE) {
-            do {
-                if (!strcmp(data.cFileName, ".") || !strcmp(data.cFileName, "..")) continue;
-                matteString_t * str = matte_string_create_from_c_str("%s", data.cFileName);
-                matte_array_push(arr, str);
-            } while(FindNextFile(file, &data));
-            FindClose(file);
-        }
-        return arr;
-    }
 
 
 
 #endif
 
 
-static int UMOD16_PACKAGING = 0;
-
-static matteValue_t package_native__is_packaging_allowed(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    matteValue_t out = matte_heap_new_value(heap);
-    matte_value_into_boolean(heap, &out, UMOD16_PACKAGING);
-    return out;
+static int is_name_allowed(const matteString_t * file) {
+    uint32_t i;
+    uint32_t len = matte_string_get_length(file);
+    matteString_t * forbidden = matte_string_create_from_c_str("..");
+    int initial = matte_string_test_contains(file, forbidden);
+    matte_string_destroy(forbidden);
+    
+    if (initial) return 0;
+    for(i = 0; i < len; ++i) {
+        if (matte_string_get_char(file, i) == '\\' ||
+            matte_string_get_char(file, i) == '/'  ||
+            matte_string_get_char(file, i) == '$'  ||
+            matte_string_get_char(file, i) == '&'  ||
+            matte_string_get_char(file, i) == '#'  ||
+            matte_string_get_char(file, i) == '&'  ||
+            matte_string_get_char(file, i) == '@'  ||
+            matte_string_get_char(file, i) == '?'  ||
+            matte_string_get_char(file, i) == '!'  ||
+            matte_string_get_char(file, i) == '~'  ||
+            matte_string_get_char(file, i) == ','  ||
+            matte_string_get_char(file, i) == '*')
+            return 0;
+    }
+    return 1;
 
 }
+
+static matteString_t * build_path(const matteString_t * file) {
+    assert_base_dir();
+    matteString_t * out = matte_string_create_from_c_str("%s", BASE_DIR);
+    matte_string_concat(out, file);
+    return out;
+}
+
+
+
 
 
 
 static matteValue_t package_native__save_source (matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
-    matteString_t * fullpath = build_path(
-        matte_value_string_get_string_unsafe(heap, args[0]),
-        matte_value_string_get_string_unsafe(heap, args[1])    
-    );
+    const matteString_t * name = matte_value_string_get_string_unsafe(heap, args[0]);
+    if (!is_name_allowed(name)) {
+        matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Name for file not allowed."));
+        return matte_heap_new_value(heap);
+    }
+    matteString_t * fullpath = build_path(name);
     
     // make a byte array
-    const matteString_t * data = matte_value_string_get_string_unsafe(heap, args[2]);
+    const matteString_t * data = matte_value_string_get_string_unsafe(heap, args[1]);
     
     
     int result = dump_file(
@@ -154,24 +120,19 @@ static matteValue_t package_native__save_source (matteVM_t * vm, matteValue_t fn
     return out;
 
 }
-static matteValue_t package_native__make_project(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    make_project_dir(
-        matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, args[0]))
-    );
-    return matte_heap_new_value(heap);
-
-}
 static matteValue_t package_native__open_source (matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
-    if (args[1].binID != MATTE_VALUE_TYPE_STRING)
+    if (args[0].binID != MATTE_VALUE_TYPE_STRING)
         return matte_heap_new_value(heap);
-    matteString_t * fullpath = build_path(
-        matte_value_string_get_string_unsafe(heap, args[0]),
-        matte_value_string_get_string_unsafe(heap, args[1])    
-    );
+    const matteString_t * name = matte_value_string_get_string_unsafe(heap, args[0]);    
+
+    if (!is_name_allowed(name)) {
+        matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Name for file not allowed."));
+        return matte_heap_new_value(heap);
+    }
+
+    matteString_t * fullpath = build_path(name);
     // make a byte array
-    const matteString_t * data = matte_value_string_get_string_unsafe(heap, args[2]);
     
     uint32_t len = 0;
     void * bytes = dump_bytes(
@@ -199,33 +160,18 @@ static matteValue_t package_native__open_source (matteVM_t * vm, matteValue_t fn
     return out;
 }
 
-static matteValue_t package_native__list_projects(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    matteArray_t * a = list_projects();
-    uint32_t i;
-    uint32_t len = matte_array_get_size(a);
 
-    matteArray_t * vals = matte_array_create(sizeof(matteValue_t));
-    for(i = 0; i < len; ++i) {
-        matteValue_t d = matte_heap_new_value(heap);
-        matte_value_into_string(heap, &d, matte_array_at(a, matteString_t *, i));
-        matte_string_destroy(matte_array_at(a, matteString_t *, i));
-        matte_array_push(vals, d);
+void mod16_package_bind_natives(matteVM_t * vm, const char * devPath) {
+
+    if (devPath) {
+        BASE_DIR = malloc(strlen(devPath)+ 10);
+        BASE_DIR[0] = 0;
+        strcat(BASE_DIR, devPath);
+        strcat(BASE_DIR, DIRECTORY_SEPARATOR);
     }
-    matte_array_destroy(a);
-    matteValue_t out = matte_heap_new_value(heap);
-    matte_value_into_new_object_array_ref(heap, &out, vals);
-    matte_array_destroy(vals);        
-    return out;
-}
 
-void mod16_package_bind_natives(matteVM_t * vm, int umod16Packaging) {
-    UMOD16_PACKAGING = umod16Packaging;
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__is_packaging_allowed"), 0, package_native__is_packaging_allowed, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__save_source"), 3, package_native__save_source, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__make_project"), 2, package_native__make_project, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__open_source"), 2, package_native__open_source, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__list_projects"), 0, package_native__list_projects, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__save_source"), 2, package_native__save_source, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "package_native__open_source"), 1, package_native__open_source, NULL);
     
 }
 
@@ -469,8 +415,8 @@ int mod16_package(const char * dir) {
                 goto L_FAIL;
             }
             
-            matteValue_t id   = matte_value_object_access_index(heap, next, 0);
-            matteValue_t path = matte_value_object_access_index(heap, next, 1);
+            matteValue_t id   = matte_value_object_access_index(heap, set, 0);
+            matteValue_t path = matte_value_object_access_index(heap, set, 1);
 
             if (id.binID != MATTE_VALUE_TYPE_NUMBER) {
                 printf("Error on tile %d: first array value is not a number.\n", i+1);
@@ -493,15 +439,15 @@ int mod16_package(const char * dir) {
 
             char paletteBytes[64];
             if (sscanf(bytes, 
-                    "%c %c %c %c %c %c %c %c"            
-                    "%c %c %c %c %c %c %c %c"            
-                    "%c %c %c %c %c %c %c %c"            
-                    "%c %c %c %c %c %c %c %c"            
+                    " %c %c %c %c %c %c %c %c"            
+                    " %c %c %c %c %c %c %c %c"            
+                    " %c %c %c %c %c %c %c %c"            
+                    " %c %c %c %c %c %c %c %c"            
 
-                    "%c %c %c %c %c %c %c %c"            
-                    "%c %c %c %c %c %c %c %c"            
-                    "%c %c %c %c %c %c %c %c"            
-                    "%c %c %c %c %c %c %c %c"            
+                    " %c %c %c %c %c %c %c %c"            
+                    " %c %c %c %c %c %c %c %c"            
+                    " %c %c %c %c %c %c %c %c"            
+                    " %c %c %c %c %c %c %c %c"            
                 , 
                 paletteBytes,    paletteBytes+1,  paletteBytes+2,  paletteBytes+3,  paletteBytes+4,  paletteBytes+5,  paletteBytes+6, paletteBytes+7,
                 paletteBytes+8,  paletteBytes+9,  paletteBytes+10, paletteBytes+11, paletteBytes+12, paletteBytes+13, paletteBytes+14, paletteBytes+15,
@@ -517,10 +463,23 @@ int mod16_package(const char * dir) {
                 printf("Tile sheet %s is malformed. It should contain 64 byte values in text.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
                 goto L_FAIL;
             }
+            int n;
+            for(n = 0; n < 64; ++n) {
+                switch(paletteBytes[n]) {
+                  case '0': paletteBytes[n] = 0; break;
+                  case '1': paletteBytes[n] = 1; break;
+                  case '2': paletteBytes[n] = 2; break;
+                  case '3': paletteBytes[n] = 3; break;
+                  case '4': paletteBytes[n] = 4; break;
+                  default:
+                    paletteBytes[n] = 0;
+                }
+            }
 
 
-            matte_array_push_n(tiles, paletteBytes, 64);
-            matte_array_push(tileIDs, id);
+            matte_array_push(tiles, paletteBytes);
+            uint32_t idVal = matte_value_as_number(heap, id);
+            matte_array_push(tileIDs, idVal);
         }        
     }
 
@@ -535,8 +494,8 @@ int mod16_package(const char * dir) {
                 goto L_FAIL;
             }
             
-            matteValue_t id   = matte_value_object_access_index(heap, next, 0);
-            matteValue_t path = matte_value_object_access_index(heap, next, 1);
+            matteValue_t id   = matte_value_object_access_index(heap, set, 0);
+            matteValue_t path = matte_value_object_access_index(heap, set, 1);
 
             if (id.binID != MATTE_VALUE_TYPE_NUMBER) {
                 printf("Error on palette %d: first array value is not a number.\n", i+1);
@@ -576,7 +535,8 @@ int mod16_package(const char * dir) {
             }
             
             matte_array_push(palettes, paletteBytes);
-            matte_array_push(paletteIDs, id);
+            uint32_t idVal = matte_value_as_number(heap, id);
+            matte_array_push(paletteIDs, idVal);
 
         }        
     }    

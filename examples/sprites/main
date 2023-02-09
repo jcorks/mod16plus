@@ -1,0 +1,114 @@
+// hi
+
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:Cartridge = Mod16.Cartridge;
+
+
+@index = 0;
+@:particleList = [];
+
+
+//Cartridge.Tile.set(
+//  index:0,
+//  data: [
+//    1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1,
+//
+//    1, 1, 1, 1, 1, 1, 1, 1,     
+//    1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1,
+//    1, 1, 1, 1, 1, 1, 1, 1 
+//  ]
+//);
+
+//Cartridge.Palette.set(
+//  index:0,
+//  colors: [
+//    [0.25, 0.25, 0.25],
+//    [0.25, 0.25, 0.25],
+//    [0.25, 0.25, 0.25],
+//    [0.25, 0.25, 0.25]
+//  ]
+//);
+
+@:makeParticle :: {
+  if (index > 500)
+    index = 0;
+
+  return {
+    sprite:index+=1,
+    rotation: Number.random()*360,
+    scale: 1+Number.random()*3,
+    rotationRate: Number.random()*6,
+    x: 100,
+    y:100,
+    xDelta: (Number.random() - 0.5)*0.4,
+    yDelta: -(Number.random())*2-0.4,
+  };
+};
+
+
+
+
+
+@:updateParticleList ::{
+  @:trash = [];
+  particleList->foreach(do:::(i, p) {
+    when (p.scale < 0.0001)::<= {
+      trash->push(value:p);
+    };
+  
+    Cartridge.Sprite.set(
+      index: p.sprite,
+      effect:Cartridge.Sprite.EFFECTS.BLEND,
+      show: true,
+      palette: 1,
+      tile: 0x0,
+      x:p.x,
+      y:p.y
+    );
+
+    p.x += p.xDelta;
+    p.y += p.yDelta;
+
+    Cartridge.Sprite.transform(
+      index: p.sprite,
+      scaleX: p.scale,
+      scaleY: p.scale,
+      centerX: -4,
+      centerY: -4,
+      rotation: p.rotation
+    );
+
+    p.scale *= 0.92;
+    p.rotation += p.rotationRate;
+  });
+
+  trash->foreach(do::(i, p) {
+    Cartridge.Sprite.set(
+      index:p.sprite,
+      show: false
+    );
+
+    @:key = particleList->findIndex(value:p);
+    particleList->remove(key);
+  });
+};
+
+
+@counter = 0;
+Mod16.update = ::{
+  
+    particleList->push(value:
+      makeParticle()
+    );
+  counter += 1;
+  updateParticleList();
+  print(message:''+particleList->keycount);
+};
+
+
+
+

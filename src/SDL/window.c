@@ -53,7 +53,7 @@ mod16Window_t * mod16_window_create() {
     }    
     
     mod16Window_t * out = calloc(1, sizeof(mod16Window_t));
-    out->window  = SDL_CreateWindow("Sprite Entertainment System", 0, 0, 240*4, 160*4, SDL_WINDOW_OPENGL);
+    out->window  = SDL_CreateWindow("Mod16+", 0, 0, 240*4, 160*4, SDL_WINDOW_OPENGL);
     out->graphics = mod16_graphics_context_create(out);
     out->frameUpdateDelayMS = (1 / 60.0)*1000;
     SDL_AddTimer(out->frameUpdateDelayMS, mod16_window_emit_frame_event, out);

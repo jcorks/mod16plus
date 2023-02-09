@@ -17,7 +17,7 @@ int mod16_package(const char * dir);
 
 // adds the external functions required for 
 // development features.
-void mod16_package_bind_natives(matteVM_t * vm, int usePackaging);
+void mod16_package_bind_natives(matteVM_t * vm, const char * devPath);
 
 
 #endif

@@ -20,8 +20,6 @@ return class(
     statics : {
     },
     define:::(this) {
-        // name of project. is not allowed to contain slashes or dots.
-        @directory;
 
         // name of source. is not allowed to contain slashes or dots.
         @sources = [
@@ -40,13 +38,6 @@ return class(
                 return checkNameAllowed(name);
             },
 
-            name : {
-                get ::<- directory,
-                set ::(value) {
-                    Mod16.Project.makeProject(name:value);                    
-                    directory = value;
-                }
-            },
         
         
         
@@ -61,7 +52,7 @@ return class(
                 });
                 
                 palettes->push(value:[id, 'palette_'+id]);
-                Mod16.Project.saveSource(project:directory, name:'palette_'+id, data: '1 0 1  0 1 0  0 0 1  1 1 1');
+                Mod16.File.saveText(name:'palette_'+id, data: '1 0 1  0 1 0  0 0 1  1 1 1');
             },
             
             savePalette ::(id => Number, paletteColors => Object) {
@@ -77,7 +68,7 @@ return class(
                 }) error(detail:'No such palette exists');
 
     
-                Mod16.Project.saveSource(project:directory, name:entry[1], data:
+                Mod16.File.saveText(name:entry[1], data:
                     '' + 
                     paletteColors[0] + ' ' + paletteColors[1] + ' ' + paletteColors[2] + ' ' +
                     paletteColors[3] + ' ' + paletteColors[4] + ' ' + paletteColors[5] + ' ' +
@@ -99,7 +90,7 @@ return class(
                 }) error(detail:'No such palette exists');
             
                 @:out = [];
-                @:text = Mod16.Project.openSource(project:directory, name:entry);
+                @:text = Mod16.File.openText(name:entry);
                 text->split(token:' ')->foreach(
                     do:::(index, token) {
                         when(token == '') empty;
@@ -146,7 +137,7 @@ return class(
                 });
                 
                 tiles->push(value:[id, 'tile_'+id]);
-                Mod16.Project.saveSource(project:directory, name:'tile_'+id, data: 
+                Mod16.File.saveText(name:'tile_'+id, data: 
                     String.combine(strings: [
                         '0 0 0 0 0 0 0 0\n',
                         '0 0 0 0 0 0 0 0\n',
@@ -175,7 +166,7 @@ return class(
                 }) error(detail:'No such tile exists');
 
     
-                Mod16.Project.saveSource(directory, name:entry[1], data:
+                Mod16.File.saveText(name:entry[1], data:
                     String.combine(
                         strings: [
                             ' '+data[0],  ' '+ data[1],  ' '+ data[2],  ' '+ data[3],  ' '+ data[4],  ' '+ data[5],  ' '+ data[6],  ' '+ data[7], '\n',
@@ -204,7 +195,7 @@ return class(
                 }) error(detail:'No such tile exists');
             
                 @:out = [];
-                @text = Mod16.Project.openSource(project:directory, name:entry);
+                @text = Mod16.File.openText(name:entry);
                 text = text->replace(key:'\n', with: ' ');
                 text->split(token:' ')->foreach(
                     do:::(index, token) {
@@ -248,7 +239,7 @@ return class(
             },
         
             openSource ::(name) {
-                return Mod16.Project.openSource(project:directory, name);            
+                return Mod16.File.openText(name);            
             },
             
 
@@ -257,15 +248,11 @@ return class(
                 if (index < 0)
                     error(detail:'No such filename. Internal error');
                 
-                Mod16.Project.saveSource(directory, name, data); 
+                Mod16.File.saveText(name, data); 
             },
 
             removeSource ::(name) {
                 sources->remove(key:sources->findIndex(value:name));
-            },
-
-            all : {
-                get::<-Mod16.Project.listProjects()
             },
 
         
@@ -293,12 +280,12 @@ return class(
                 // make object for json
                 // save project.json file
 
-                Mod16.Project.saveSource(project:directory, name:'project.json', data:JSON.encode(object:obj));
+                Mod16.File.saveText(name:'cartridge.json', data:JSON.encode(object:obj));
                 // package command native function
             },
             
             load :: {
-                @str = this.openSource(project:directory, name:'project.json');
+                @str = this.openSource(name:'cartridge.json');
                 @obj = JSON.decode(string:str);
                 sources = obj.sources;
                 palettes = obj.palettes;

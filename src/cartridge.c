@@ -4,6 +4,7 @@
 #include "matte/src/matte_bytecode_stub.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 typedef struct {
     // all oscillators
@@ -114,6 +115,34 @@ mod16Cartridge_t * mod16_cartridge_create(matteVM_t * vm, mod16ROM_t * rom, mod1
         cart->sprites[i].scaleX = 1;
         cart->sprites[i].scaleY = 1;
     }
+
+    // load contents of rom 
+    uint32_t len = mod16_rom_get_tile_count(rom);
+    for(i = 0; i < len; ++i) {
+        mod16GraphicsContext_Tile_t tile;
+        uint32_t id;
+        memcpy(tile.data, mod16_rom_get_tile(rom, i, &id), sizeof(mod16GraphicsContext_Tile_t));
+        
+        mod16_graphics_context_storage_set_tile(
+            cart->storage, 
+            id,
+            &tile
+        );
+    }
+    
+    len = mod16_rom_get_palette_count(rom);
+    for(i = 0; i < len; ++i) {
+        mod16GraphicsContext_Palette_t palette;
+        uint32_t id;
+        memcpy(&palette, mod16_rom_get_palette(rom, i, &id), sizeof(mod16GraphicsContext_Palette_t));
+        
+        mod16_graphics_context_storage_set_palette(
+            cart->storage, 
+            id,
+            &palette
+        );
+    
+    }
     
     
     matteString_t * name = matte_string_create();
@@ -151,6 +180,9 @@ mod16Cartridge_t * mod16_cartridge_create(matteVM_t * vm, mod16ROM_t * rom, mod1
             }
             break;
         }
+        
+        
+        
         
         if (subrom) {
             mod16Cartridge_t * subcart = mod16_cartridge_create(vm, subrom, graphics, name, cart);

@@ -431,7 +431,7 @@ matteValue_t mod16_native_vertices_set(matteVM_t * vm, matteValue_t fn, const ma
     vertex.b = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 5));
     vertex.u = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 6));
     vertex.v = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 7));
-    vertex.tile = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 9));
+    vertex.tile = matte_value_as_number(heap, matte_value_object_access_index(heap, args[2], 8));
 
 
     mod16_graphics_context_storage_set_vertex(storage, index, &vertex);    

@@ -182,7 +182,14 @@
             paletteRadio.onChoose = ::(choice) {
                 @:paletteData = paletteChoices[choice].children[1].palette;
                
-                canvas.palette = palette;                
+                canvas.palette = paletteData; 
+                [1, 5]->for(do:::(i) {
+                    colorChoices[i].palette = paletteData;
+                });               
+                [0, 5]->for(do:::(i) {
+                    tileChoices[i].children[1].palette = paletteData;
+                });
+
                 chosenPalettesSlot = paletteScrollable.currentScrollPosition + choice;
             };
             resetPaletteChoices = ::{
@@ -234,6 +241,7 @@
         @tileScrollable;
         @resetTileChoices;   
         @tileSaveID;
+        @tileChoices;
         ::<= {
             @chosenTilesSlot;
 
@@ -249,7 +257,7 @@
             };
 
 
-            @:tileChoices = [
+            tileChoices = [
                 makeTileChoiceItem(index:0),
                 makeTileChoiceItem(index:1),
                 makeTileChoiceItem(index:2),
@@ -443,7 +451,7 @@
         canvas.onDraw = ::{
             when(tileSaveID == empty) empty;
             // when an edit is made, save the sprite 
-            Project.saveTile(id:tileSaveID, data:canvas.tile.data);
+            Project.saveTile(id:tileSaveID, data:canvas.tile);
             if (tileMode) ::<= {
                 resetTileChoices();
             };

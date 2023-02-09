@@ -337,9 +337,8 @@ static matteValue_t mod16_native__debug_context_enter(matteVM_t * vm, matteValue
 
     matte_vm_call(debug.vm, debug.onEnter, matte_array_empty(), matte_array_empty(), NULL);
     
-    debug_println("MOD16 Debugger", MOD16Debug_Color__Normal);
-    debug_println("http://github.com/jcorks/", MOD16Debug_Color__Normal);
-    debug_println("sprite-entertainment-system", MOD16Debug_Color__Normal);    
+    debug_println("MOD16+ Debugger", MOD16Debug_Color__Normal);
+    debug_println("http://github.com/jcorks/mod16plus", MOD16Debug_Color__Normal);
     debug_println("", MOD16Debug_Color__Normal);
     debug_println("[[enter :? for help]]", MOD16Debug_Color__Normal);
     

@@ -313,7 +313,6 @@
                 text: 'New script:',
                 onEntry:::(text){
 
-                    @:Project = import(module:'project');
                     when (!Project.isNameAllowed(name:text)) 
                         Window.alert(text:'Name not allowed.');
                         
@@ -339,7 +338,6 @@
         };
         @:switchFile ::{
             @:Window = import(module:'window');
-            @:Project = import(module:'project');
 
             Window.listDialog(
                 text: 'Open Which',
@@ -353,7 +351,6 @@
         };
         
         @:saveFile :: {
-            @:Project = import(module:'project');
             Project.saveSource(name:filename, data:getSourceData());
             
         };

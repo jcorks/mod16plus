@@ -188,7 +188,7 @@ return class(
             );
             
             dialog.move(x:20, y:30);
-
+            dialog.hide();
             @lastChoice = 0;
             return {
                 setup::(
@@ -348,58 +348,24 @@ return class(
                     addView(view:Manager.new());
                 };
                 @:Project = Cartridge.import(source:'project');
-                this.question(
-                    text: 'Open existing?',
-                    onResponse ::(which) {
-                        // new
-                        if (!which) ::<= {
-                            this.entryDialog(
-                                text: 'Name of project:',
-                                onEntry::(text){
-                                    when (!Project.isNameAllowed(name:text))
-                                        this.alert(text: 'Invalid name', onOkay: ::<-this.start());
 
-                                    Project.name = text;
-                                    views[0].openFile(name:'main');
-                                    Project.save();
-                                    selectView(view:views[0]);
-                                }
-                            );
-                        } else ::<= {
-                            when(Project.all->keycount == 0)
-                                this.alert(text:'No projects available.',onOkay: ::<-this.start());
-                        
-                            this.listDialog(
-                                text: 'Open project:',
-                                items: Project.all,
-                                onChoose::(choice) {
-                                
-                                    [::] {
-                                        Project.name = choice;
-                                        Project.load();                                
-                                        views[0].openFile(name:'main');
-                                        selectView(view:views[0]);
-                                    } : {
-                                        onError ::(message) {
-                                            print(message);
-                                            this.alert(text: 'Couldnt open.', onOkay: ::<-this.start());
-                                            
-                                        }
-                                    };
-
-                                    /*
-                                    when (!Project.isNameAllowed(name:text))
-                                        this.alert(text: 'Invalid name', onOkay: ::<-this.start());
-
-                                    */
-                                }
-                            );
-                        };
-                        
-                        
+                [::] {
+                    Project.load();                                
+                    views[0].openFile(name:'main');
+                    selectView(view:views[0]);
+                } : {
+                    onError ::(message) {
+                        this.alert(text: 'No existing project.', onOkay: ::<-
+                            this.alert(text: 'Starting new...', onOkay:: {
+                                views[0].openFile(name:'main');
+                                Project.save();
+                                selectView(view:views[0]);
+                            })
+                        );
                     }
-                );
-            
+                };
+
+
             
             },
             

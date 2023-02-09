@@ -43,11 +43,8 @@
 @:mod16_native__vertices_get = getExternalFunction(name:"mod16_native__vertices_get");
 
 
-@:package_native__is_packaging_allowed  = getExternalFunction(name:"package_native__is_packaging_allowed");
 @:package_native__save_source  = getExternalFunction(name:"package_native__save_source");
-@:package_native__make_project = getExternalFunction(name:"package_native__make_project");
 @:package_native__open_source  = getExternalFunction(name:"package_native__open_source");
-@:package_native__list_projects= getExternalFunction(name:"package_native__list_projects");
 
                 
 
@@ -823,7 +820,7 @@
 @:Vertices = ::<= {
     @:SHAPE = {
         TRIANGLE: 0,
-        LINE: 0
+        LINE: 1
     };
     return class(
         name: 'MOD16.Vertices',
@@ -956,11 +953,11 @@
                     return mod16_native__vertices_get(a:cartID_, b:index);
                 },
 
-                vertices : {
+                data : {
                     set:: (
                         value => Object
                     ) {
-                        when(value->keycount >= count)
+                        when(value->keycount > count)
                             error(detail:'Vertex out of bounds');
 
                         value->foreach(do:::(i, v) {
@@ -1083,46 +1080,298 @@
 };
 
 
-@:Project = ::<= {
+@:File = ::<= {
 
 
     return class(
         define:::(this) {
             this.interface = {
-                saveSource ::(
-                    project => String,
+                saveText ::(
                     name => String,
                     data => String
                 ) {
-                    when (!package_native__is_packaging_allowed()) empty;
-                    package_native__save_source(a:project, b:name, c:data);
+                    package_native__save_source(a:name, b:data);
                 },
                 
-                makeProject ::(
-                    name => String
-                ) {                    
-                    when (!package_native__is_packaging_allowed()) empty;
-                    package_native__make_project(a:name);                    
-                },
-                
-                openSource::(
-                    project => String,
+                openText::(
                     name => String
                 ) {
-                    when (!package_native__is_packaging_allowed()) empty;
-                    return package_native__open_source(a:project, b: name);
-                },
-                
-                listProjects::(
-                    
-                ) {
-                    when (!package_native__is_packaging_allowed()) empty;
-                    return package_native__list_projects();
-                
+                    return package_native__open_source(a: name);
                 }
                 
                 
+            };
+        }
+    ).new();
+};
+
+
+@:Linear = ::<= {
+    @:identity = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    ];
+
+    return class(
+        define:::(this) {
+            this.interface = {
+                IDENTITY : {
+                    get ::{
+                        return identity;
+                    }
+                },
                 
+                // returns new vector
+                transformVertex ::(matrix => Object, point => Object) {
+                    return [
+                        matrix[0] * point[0] + matrix[1] * point[1] + matrix[2]  * point[2] + matrix[3],
+                        matrix[1] * point[0] + matrix[5] * point[1] + matrix[6]  * point[2] + matrix[7],
+                        matrix[2] * point[0] + matrix[9] * point[1] + matrix[10] * point[2] + matrix[11]
+                    ];
+                },
+                
+                // modifies matrix
+                transpose::(matrix => Object) {
+                    @temp;
+                    temp = matrix[0]; matrix[0] = matrix[15]; matrix[15] = temp;
+                    temp = matrix[1]; matrix[1] = matrix[11]; matrix[15] = temp;
+                    temp = matrix[2]; matrix[2] = matrix[7];  matrix[7]  = temp;
+                    temp = matrix[4]; matrix[4] = matrix[14]; matrix[14] = temp;
+                    temp = matrix[5]; matrix[5] = matrix[10]; matrix[10] = temp;
+                    temp = matrix[8]; matrix[8] = matrix[13]; matrix[13] = temp;
+                },
+                
+                invert::(matrix => Object) {
+                    @data = matrix;
+                    @inv = [];
+                    @det;
+                                    
+                    inv[0] = data[5]  * data[10] * data[15] - 
+                             data[5]  * data[11] * data[14] - 
+                             data[9]  * data[6]  * data[15] + 
+                             data[9]  * data[7]  * data[14] +
+                             data[13] * data[6]  * data[11] - 
+                             data[13] * data[7]  * data[10];
+
+                    inv[4] = -data[4]  * data[10] * data[15] + 
+                              data[4]  * data[11] * data[14] + 
+                              data[8]  * data[6]  * data[15] - 
+                              data[8]  * data[7]  * data[14] - 
+                              data[12] * data[6]  * data[11] + 
+                              data[12] * data[7]  * data[10];
+
+                    inv[8] = data[4]  * data[9] * data[15] - 
+                             data[4]  * data[11] * data[13] - 
+                             data[8]  * data[5] * data[15] + 
+                             data[8]  * data[7] * data[13] + 
+                             data[12] * data[5] * data[11] - 
+                             data[12] * data[7] * data[9];
+
+                    inv[12] = -data[4]  * data[9] * data[14] + 
+                               data[4]  * data[10] * data[13] +
+                               data[8]  * data[5] * data[14] - 
+                               data[8]  * data[6] * data[13] - 
+                               data[12] * data[5] * data[10] + 
+                               data[12] * data[6] * data[9];
+
+                    inv[1] = -data[1]  * data[10] * data[15] + 
+                              data[1]  * data[11] * data[14] + 
+                              data[9]  * data[2] * data[15] - 
+                              data[9]  * data[3] * data[14] - 
+                              data[13] * data[2] * data[11] + 
+                              data[13] * data[3] * data[10];
+
+                    inv[5] = data[0]  * data[10] * data[15] - 
+                             data[0]  * data[11] * data[14] - 
+                             data[8]  * data[2] * data[15] + 
+                             data[8]  * data[3] * data[14] + 
+                             data[12] * data[2] * data[11] - 
+                             data[12] * data[3] * data[10];
+
+                    inv[9] = -data[0]  * data[9] * data[15] + 
+                              data[0]  * data[11] * data[13] + 
+                              data[8]  * data[1] * data[15] - 
+                              data[8]  * data[3] * data[13] - 
+                              data[12] * data[1] * data[11] + 
+                              data[12] * data[3] * data[9];
+
+                    inv[13] = data[0]  * data[9] * data[14] - 
+                              data[0]  * data[10] * data[13] - 
+                              data[8]  * data[1] * data[14] + 
+                              data[8]  * data[2] * data[13] + 
+                              data[12] * data[1] * data[10] - 
+                              data[12] * data[2] * data[9];
+
+                    inv[2] = data[1]  * data[6] * data[15] - 
+                             data[1]  * data[7] * data[14] - 
+                             data[5]  * data[2] * data[15] + 
+                             data[5]  * data[3] * data[14] + 
+                             data[13] * data[2] * data[7] - 
+                             data[13] * data[3] * data[6];
+
+                    inv[6] = -data[0]  * data[6] * data[15] + 
+                              data[0]  * data[7] * data[14] + 
+                              data[4]  * data[2] * data[15] - 
+                              data[4]  * data[3] * data[14] - 
+                              data[12] * data[2] * data[7] + 
+                              data[12] * data[3] * data[6];
+
+                    inv[10] = data[0]  * data[5] * data[15] - 
+                              data[0]  * data[7] * data[13] - 
+                              data[4]  * data[1] * data[15] + 
+                              data[4]  * data[3] * data[13] + 
+                              data[12] * data[1] * data[7] - 
+                              data[12] * data[3] * data[5];
+
+                    inv[14] = -data[0]  * data[5] * data[14] + 
+                               data[0]  * data[6] * data[13] + 
+                               data[4]  * data[1] * data[14] - 
+                               data[4]  * data[2] * data[13] - 
+                               data[12] * data[1] * data[6] + 
+                               data[12] * data[2] * data[5];
+
+                    inv[3] = -data[1] * data[6] * data[11] + 
+                              data[1] * data[7] * data[10] + 
+                              data[5] * data[2] * data[11] - 
+                              data[5] * data[3] * data[10] - 
+                              data[9] * data[2] * data[7] + 
+                              data[9] * data[3] * data[6];
+
+                    inv[7] = data[0] * data[6] * data[11] - 
+                             data[0] * data[7] * data[10] - 
+                             data[4] * data[2] * data[11] + 
+                             data[4] * data[3] * data[10] + 
+                             data[8] * data[2] * data[7] - 
+                             data[8] * data[3] * data[6];
+
+                    inv[11] = -data[0] * data[5] * data[11] + 
+                               data[0] * data[7] * data[9] + 
+                               data[4] * data[1] * data[11] - 
+                               data[4] * data[3] * data[9] - 
+                               data[8] * data[1] * data[7] + 
+                               data[8] * data[3] * data[5];
+
+                    inv[15] = data[0] * data[5] * data[10] - 
+                              data[0] * data[6] * data[9] - 
+                              data[4] * data[1] * data[10] + 
+                              data[4] * data[2] * data[9] + 
+                              data[8] * data[1] * data[6] - 
+                              data[8] * data[2] * data[5];
+
+                    det = data[0] * inv[0] + data[1] * inv[4] + data[2] * inv[8] + data[3] * inv[12];
+
+                    when (det == 0) empty;
+                    det = 1.0 / det;
+
+                    [0, 16]->for(do:::(i) {
+                        data[i] = inv[i] * det;                    
+                    });
+                    
+                },
+                
+                
+                multiply::(matrixA => Object, matrixB => Object) {
+                    @out = [];
+                    [0, 4]->for(do:::(j) {
+                        [0, 4]->for(do:::(i) {
+                            @i4 = i*4;
+                            out[i4+j] = 
+                                matrixA[i4+0]*matrixB[0+j] +
+                                matrixA[i4+1]*matrixB[4+j] +
+                                matrixA[i4+2]*matrixB[8+j] +
+                                matrixA[i4+3]*matrixB[12+j];
+                        });
+                    });
+
+
+                    return out;                
+                },
+                
+                translation::(x, y, z) {
+                    @data = [...identity];
+                    data[3]  += data[0] *x + data[1] *y + data[2] *z;
+                    data[7]  += data[4] *x + data[5] *y + data[6] *z;
+                    data[11] += data[8] *x + data[9] *y + data[10]*z;
+                    data[15] += data[12]*x + data[13]*y + data[14]*z;                
+                    return data;
+                },
+                
+                rotation::(vector => Object, angleDegrees => Number) {
+                    @m = [...identity];
+                    @c = (angleDegrees * Number.PI() / 180)->cos;
+                    @s = (angleDegrees * Number.PI() / 180)->sin;
+
+                    m[0] = vector[0] * vector[0] * (1 - c) + c;
+                    m[1] = vector[0] * vector[1] * (1 - c) - vector[2]*s;
+                    m[2] = vector[0] * vector[2] * (1 - c) + vector[1]*s;
+
+                    m[4] = vector[1] * vector[0] * (1 - c) + vector[2]*s;
+                    m[5] = vector[1] * vector[1] * (1 - c) + c;
+                    m[6] = vector[1] * vector[2] * (1 - c) - vector[0]*s;
+
+                    m[8]  = vector[2] * vector[0] * (1 - c) - vector[1]*s;
+                    m[9]  = vector[2] * vector[1] * (1 - c) + vector[0]*s;
+                    m[10] = vector[2] * vector[2] * (1 - c) + c;
+
+                    
+                    return m;
+                },
+                
+                
+                scale::(vector) {
+                    @data = [...identity];
+                    data[0] = vector[0];
+                    data[5] = vector[1];
+                    data[10] = vector[2];
+                    return data;
+                },
+                
+                // returns a perspective matrix
+                perspective::(
+                    fov => Number,
+                    aspectRatio => Number, // w/h
+                    zNear => Number,
+                    zFar => Number
+                ) {
+                    @matrix = [...identity];
+                    @radians = (fov / 2) * Number.PI() / 180;
+                    @f = radians->cos / radians->sin;
+                    
+                    matrix[0]  = f / aspectRatio;
+                    matrix[5]  = f;
+                    matrix[10] = (zFar + zNear) / (zNear - zFar);
+                    matrix[11] = (2 * zFar * zNear) / (zNear - zFar);
+                    matrix[14] = -1; 
+                    return matrix;
+                },
+                
+                
+                length::(vector => Object) {
+                    return (vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2])**0.5;
+                },
+                
+                normalize::(vector => Object) {
+                    @len = this.length(vector);
+                    vector[0] /= len;
+                    vector[1] /= len;
+                    vector[2] /= len;
+                },
+                
+                dot::(vectorA => Object, vectorB => Object) {
+                    return   vectorA[0] * vectorB[0] +
+                             vectorA[1] * vectorB[1] +
+                             vectorA[2] * vectorB[2];
+                },
+                
+                cross::(vectorA => Object, vectorB => Object) {
+                    return [
+                        vectorA[1] * vectorB[2] - vectorA[2] * vectorB[1],
+                        vectorA[2] * vectorB[0] - vectorA[0] * vectorB[2],
+                        vectorA[0] * vectorB[1] - vectorA[1] * vectorB[0]
+                    ];
+                }
             };
         }
     ).new();
@@ -1220,8 +1469,8 @@
             Input     : {get ::<- Input},
             RESOLUTION : RESOLUTION,
             Debug     : {get ::<- Debug},
-            Project   : {get ::<- Project},
-            
+            File      : {get ::<- File},
+            Linear    : {get ::<- Linear},
             
 
             resolution : {

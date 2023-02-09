@@ -258,6 +258,7 @@
             // select palette 
             paletteBox.children[0].text = 'Palette: '+hexDisplay(number:paletteData[choice][0]);
             @:palette = readPalette(storedPaletteIndex:paletteData[choice][0]); 
+
             paletteBox.children[1].children[0].palette = palette;
             paletteBox.children[2].children[0].palette = palette;
             paletteBox.children[3].children[0].palette = palette;

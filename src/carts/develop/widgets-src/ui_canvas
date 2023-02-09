@@ -160,7 +160,7 @@ return class(
                 set ::(value => Object) {
                     Cartridge.Tile.set(
                         index:tile,
-                        tile: value
+                        data: value
                     );  
                 },
                 

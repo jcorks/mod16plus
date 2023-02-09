@@ -94,7 +94,8 @@ void mod16_sdl_gl_render_vertices(
     mod16Vector_t midFront,
     mod16Vector_t front,
 
-    int vertexArray
+    int vertexArray,
+    int count
 );
 
 

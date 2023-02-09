@@ -40,7 +40,7 @@ void main() {
             front = colorFront_frag;
             midFront = colorMidFront_frag;
             midBack = colorMidBack_frag;
-            back = colorMidBack_frag;
+            back = colorBack_frag;
         }
 
 

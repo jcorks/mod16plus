@@ -1,0 +1,41 @@
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:Cartridge = Mod16.Cartridge;
+
+
+
+
+Cartridge.Vertices.count = 3;
+Cartridge.Vertices.data = [
+    [(-45 * Number.PI()/180)->cos*80, (-45 * Number.PI()/180)->sin*80,     0, 1, 0, 0, 0, 0, 0],
+    [( 90 * Number.PI()/180)->cos*80, ( 90 * Number.PI()/180)->sin*80,     0, 0, 1, 0, 0, 0, 0],
+    [(225 * Number.PI()/180)->cos*80, (225 * Number.PI()/180)->sin*80,     0, 0, 0, 1, 0, 0, 0],
+
+];
+
+Cartridge.Vertices.shape = Cartridge.Vertices.SHAPE.TRIANGLE;
+
+
+@angle = 1;
+Mod16.update = ::{  
+    @:axis = [1, 1, 1];
+    Mod16.Linear.normalize(vector:axis);
+
+    @:rotation = Mod16.Linear.rotation(
+        vector:axis, 
+        angleDegrees:angle
+    );    
+    
+    @:translation = Mod16.Linear.translation(
+        x: 100,
+        y: 100,
+        z: 0
+    );
+
+
+
+    Cartridge.Vertices.transform = Mod16.Linear.multiply(
+        matrixB: rotation,
+        matrixA: translation
+    );
+    angle += 1;
+};

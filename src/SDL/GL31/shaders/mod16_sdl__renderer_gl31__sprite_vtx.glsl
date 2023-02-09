@@ -45,4 +45,6 @@ void main() {
     if (effect == 1.0 ||
         effect == 2.0 )
         gl_Position.z = 1.0;
+
+
 }

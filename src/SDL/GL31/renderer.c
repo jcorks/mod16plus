@@ -123,7 +123,7 @@ typedef struct {
     mod16Vector_t midFront;
     mod16Vector_t front;
     GLint vbo;
-    
+    int count;
 } MOD16_GLVertexBatch;
 
 struct mod16SDLGL_t {
@@ -353,7 +353,7 @@ void mod16_sdl_gl_render_begin(mod16SDLGL_t * gl) {
         &gl->proj, 
         0, gl->resolutionWidth,
         0, gl->resolutionHeight,
-        0, 100
+       -100, 100
     );
 
     glUniformMatrix4fv(
@@ -445,29 +445,53 @@ void mod16_sdl_gl_render_sprite(
     */
     int x0real = centerX * scaleX;
     int y0real = centerY * scaleY;
-    int x1real = (centerX + MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS) * scaleX;
-    int y1real = (centerY + MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS) * scaleY;
+    int x2real = (centerX + MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS) * scaleX;
+    int y2real = (centerY + MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS) * scaleY;
+
+    int x1real = x2real;
+    int y1real = y0real;
+    int x3real = x0real;
+    int y3real = y2real;
+
+
     if (rotation) {
-        x0real *= cos(rotation / 180.0 * M_PI);
-        y0real *= sin(rotation / 180.0 * M_PI);
-        x1real *= cos(rotation / 180.0 * M_PI);
-        y1real *= sin(rotation / 180.0 * M_PI);
-    };
+        float x0realn = x0real * cos(rotation / 180.0 * M_PI) - y0real * sin(rotation / 180.0 * M_PI);
+        float y0realn = y0real * cos(rotation / 180.0 * M_PI) + x0real * sin(rotation / 180.0 * M_PI);
+        float x1realn = x1real * cos(rotation / 180.0 * M_PI) - y1real * sin(rotation / 180.0 * M_PI);
+        float y1realn = y1real * cos(rotation / 180.0 * M_PI) + x1real * sin(rotation / 180.0 * M_PI);
+        float x2realn = x2real * cos(rotation / 180.0 * M_PI) - y2real * sin(rotation / 180.0 * M_PI);
+        float y2realn = y2real * cos(rotation / 180.0 * M_PI) + x2real * sin(rotation / 180.0 * M_PI);
+        float x3realn = x3real * cos(rotation / 180.0 * M_PI) - y3real * sin(rotation / 180.0 * M_PI);
+        float y3realn = y3real * cos(rotation / 180.0 * M_PI) + x3real * sin(rotation / 180.0 * M_PI);
+
+        x0real = x0realn;
+        y0real = y0realn;
+        x1real = x1realn;
+        y1real = y1realn;
+        x2real = x2realn;
+        y2real = y2realn;
+        x3real = x3realn;
+        y3real = y3realn;
+    }
     x0real += x;
     y0real += y;
     x1real += x;
     y1real += y;
+    x2real += x;
+    y2real += y;
+    x3real += x;
+    y3real += y;
 
 
     float u0, v0, u1, v1;        
     mod16_sdl_gl_get_tile_attribs(id, &u0, &v0, &u1, &v1);
     MOD16_VBOvertex vboData[] = {
         {x0real, y0real, 0, u0, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
-        {x1real, y0real, 0, u1, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
-        {x1real, y1real, 0, u1, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
+        {x1real, y1real, 0, u1, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
+        {x2real, y2real, 0, u1, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
 
-        {x1real, y1real, 0, u1, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
-        {x0real, y1real, 0, u0, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
+        {x2real, y2real, 0, u1, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
+        {x3real, y3real, 0, u0, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
         {x0real, y0real, 0, u0, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f }
     };
     MOD16_GLSpriteBatch * batch = matte_table_find_by_int(gl->spriteBatches, SPRITE_BATCH_KEY(effect, spriteTexture));
@@ -526,7 +550,8 @@ void mod16_sdl_gl_render_vertices(
     mod16Vector_t midFront,
     mod16Vector_t front,
 
-    int vertexArray
+    int vertexArray,
+    int count
 ) {
     MOD16_GLVertexBatch v = {};
     v.vbo = vertexArray;
@@ -538,6 +563,7 @@ void mod16_sdl_gl_render_vertices(
     v.midBack = midBack;
     v.midFront = midFront;
     v.front = front;
+    v.count = count;
     matte_array_push(gl->vertexBatches, v);
 }
 
@@ -751,7 +777,7 @@ void mod16_sdl_gl_vertex_array_update(
 ) {
     glBindBuffer(GL_ARRAY_BUFFER, object);
 
-    MOD16_VBOvertex * convertex = malloc(sizeof(MOD16_VBOvertex));
+    MOD16_VBOvertex * convertex = malloc(sizeof(MOD16_VBOvertex)*count);
     int i;
     for(i = 0; i < count; ++i) {
         float u0, v0, u1, v1;        
@@ -1001,7 +1027,7 @@ static void mod16_sdl_gl_render_vertex_batch(mod16SDLGL_t * gl, MOD16_GLVertexBa
     glVertexAttribPointer(gl->spriteProgram.locationVBObase,     3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*17));
 
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(batch->shape == 0 ? GL_TRIANGLES : GL_LINES, 0, batch->count);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 

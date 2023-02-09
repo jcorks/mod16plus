@@ -226,7 +226,8 @@ void mod16_graphics_context_render(mod16GraphicsContext_t * ctx) {
                 p->midFront,
                 p->front,
                 
-                iter->src->vertexArrayObject
+                iter->src->vertexArrayObject,
+                iter->src->vertexArraySize
             );
         }
         if (len) {

@@ -127,7 +127,7 @@ mod16ROM_t * mod16_rom_unpack(const uint8_t * romBytes, uint32_t romLength, mod1
     
 
     // palettes
-    matte_array_set_size(rom->tiles, paletteCount);
+    matte_array_set_size(rom->palettes, paletteCount);
     MOD16_CHOMP_LARGE(
         paletteCount * sizeof(MOD16Palette),
         matte_array_get_data(rom->palettes)
@@ -259,7 +259,7 @@ mod16ROM_t * mod16_rom_create(
     for(i = 0; i < len; ++i) {
         MOD16Palette palette;
         palette.id = matte_array_at(paletteIDs, uint32_t, i);
-        memcpy(palette.data, &matte_array_at(palettes, float, i*12), 12);
+        memcpy(palette.data, &matte_array_at(palettes, float, i*12), 12*sizeof(float));
 
         matte_array_push(rom->palettes, palette);
     };
@@ -362,7 +362,7 @@ matteArray_t * mod16_rom_pack(const mod16ROM_t * rom) {
     // palettes
     len = matte_array_get_size(rom->palettes);
     for(i = 0; i < len; ++i) {
-        MOD16Palette palette = matte_array_at(rom->tiles, MOD16Palette, i);
+        MOD16Palette palette = matte_array_at(rom->palettes, MOD16Palette, i);
         PUSHN(
             sizeof(MOD16Palette),
             &palette
@@ -498,7 +498,7 @@ const float * mod16_rom_get_palette(const mod16ROM_t * rom, uint32_t index, uint
     if (index >= mod16_rom_get_palette_count(rom)) return NULL;
     
 
-    MOD16Palette * palette = &matte_array_at(rom->tiles, MOD16Palette, index);
+    MOD16Palette * palette = &matte_array_at(rom->palettes, MOD16Palette, index);
     *id = palette->id;
     return palette->data;
 }
