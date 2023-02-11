@@ -15,11 +15,11 @@ return class(
         @onDraw = ::{};
         @needsUpdate = false;
         
-        Cartridge.Sprite.set(
-            index:sprite,
+        Cartridge.Sprite.bind(index:sprite);
+        Cartridge.Sprite. = {
             tile:tile,
             palette:paletteID
-        );  
+        };  
         
         
         
@@ -83,34 +83,28 @@ return class(
         
         connectInput();
         @:reposition :: {
-            Cartridge.Sprite.set(
-                index:sprite,
+            Cartridge.Sprite.bind(index:sprite);
+            Cartridge.Sprite. = {
                 x:this.x + this.width / 2 - size / 2,
-                y:this.y + this.height / 2 - size / 2 
-            );
-            Cartridge.Sprite.transform(
-                index:sprite,
+                y:this.y + this.height / 2 - size / 2,
                 scaleX: size / 8,
                 scaleY: size / 8
-            );
+            };
 
         
         };
         this.events.installHooks(
             events:{
                 onShow ::(detail){
-                    Cartridge.Sprite.set(
-                        index:sprite,
-                        show: true
-                    );
+                    Cartridge.Sprite.bind(index:sprite);
+                    Cartridge.Sprite.show = true;
                     connectInput();
                 },
                 
                 onHide ::(detail){
-                    Cartridge.Sprite.set(
-                        index:sprite,
-                        show: false
-                    );
+                    Cartridge.Sprite.bind(index:sprite);
+                    Cartridge.Sprite.show = false;
+
                     if (inputid != empty) ::<= {
                         Mod16.Input.removeCallback(device:Mod16.Input.DEVICES.POINTER0, id:inputid);
                         inputid = empty;
@@ -128,21 +122,19 @@ return class(
                 },
                 
                 onLayerChange::(detail) {
-                    Cartridge.Sprite.set(
-                        index:sprite,
-                        layer: this.layer
-                    );
+                    Cartridge.Sprite.bind(index:sprite);
+                    Cartridge.Sprite.layer = this.layer;
                 }
 
             }
         );        
         
         this.constructor = ::() {
-            Cartridge.Sprite.set(
-                index:sprite,
+            Cartridge.Sprite.bind(index:sprite);
+            Cartridge.Sprite. = {
                 show:true,
                 layer: this.layer
-            );  
+            };  
             return this;
         };
         

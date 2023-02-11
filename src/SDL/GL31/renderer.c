@@ -100,9 +100,14 @@ typedef struct {
 
 
 typedef struct {
-    float x; float y;
     int effect;
     int texture;
+    
+    int x0; int y0;
+    int x1; int y1;
+    int x2; int y2;
+    int x3; int y3;
+
     mod16Vector_t back;
     mod16Vector_t midBack;
     mod16Vector_t midFront;
@@ -156,6 +161,18 @@ static MOD16_GLProgram create_program(const char * srcVertex, const char * srcFr
 static MOD16_GLFramebuffer create_framebuffer(int w, int h);
 static int mod16_sdl_gl_get_error();
 static void mod16_sdl_gl_get_tile_attribs(uint32_t id, float * u, float * v, float * u1, float * v1);
+static void mod16_sdl_gl_2d_transform(
+    float x, float y,
+    float width, float height,
+    float centerX, float centerY,
+    float scaleX, float scaleY,
+    float rotation,
+    
+    int * x0, int * y0,
+    int * x1, int * y1,
+    int * x2, int * y2,
+    int * x3, int * y3
+);
 static uint8_t background_empty[
     MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES *
     MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES *
@@ -201,9 +218,9 @@ mod16SDLGL_t * mod16_sdl_gl_create(mod16Window_t * w) {
 
     
     // default is gba resolution    
-    gl->resultFramebuffer = create_framebuffer(240, 160);
-    gl->resolutionWidth = 240;
-    gl->resolutionHeight = 160;
+    gl->resultFramebuffer = create_framebuffer(MOD16_GRAPHICS_CONTEXT__RENDER_WIDTH, MOD16_GRAPHICS_CONTEXT__RENDER_HEIGHT);
+    gl->resolutionWidth = MOD16_GRAPHICS_CONTEXT__RENDER_WIDTH;
+    gl->resolutionHeight = MOD16_GRAPHICS_CONTEXT__RENDER_HEIGHT;
 
     gl->spriteProgram = create_program(
         mod16_sdl__renderer_gl31__sprite_vtx_data,
@@ -339,7 +356,7 @@ void mod16_sdl_gl_set_background_tile(mod16SDLGL_t * gl, int bgTexture, int x, i
 
 
 void mod16_sdl_gl_render_begin(mod16SDLGL_t * gl) {
-    glViewport(0, 0, 240, 160);
+    glViewport(0, 0, MOD16_GRAPHICS_CONTEXT__RENDER_WIDTH, MOD16_GRAPHICS_CONTEXT__RENDER_HEIGHT);
 
     glBindFramebuffer(GL_FRAMEBUFFER, gl->resultFramebuffer.handle);
     glClearColor(0.12, 0.051, 0.145, 1);
@@ -414,6 +431,60 @@ void mod16_sdl_gl_render_finish_layer(mod16SDLGL_t * gl) {
     glFinish();
 }
 
+static void mod16_sdl_gl_2d_transform(
+    float x, float y,
+    float width, float height,
+    
+    float centerX, float centerY,
+    float scaleX, float scaleY,
+    float rotation,
+    
+    int * x0real, int * y0real,
+    int * x1real, int * y1real,
+    int * x2real, int * y2real,
+    int * x3real, int * y3real
+) {
+    *x0real = centerX * scaleX;
+    *y0real = centerY * scaleY;
+    *x2real = (centerX + width) * scaleX;
+    *y2real = (centerY + height) * scaleY;
+
+    *x1real = *x2real;
+    *y1real = *y0real;
+    *x3real = *x0real;
+    *y3real = *y2real;
+
+
+    if (rotation) {
+        float x0realn = *x0real * cos(rotation / 180.0 * M_PI) - *y0real * sin(rotation / 180.0 * M_PI);
+        float y0realn = *y0real * cos(rotation / 180.0 * M_PI) + *x0real * sin(rotation / 180.0 * M_PI);
+        float x1realn = *x1real * cos(rotation / 180.0 * M_PI) - *y1real * sin(rotation / 180.0 * M_PI);
+        float y1realn = *y1real * cos(rotation / 180.0 * M_PI) + *x1real * sin(rotation / 180.0 * M_PI);
+        float x2realn = *x2real * cos(rotation / 180.0 * M_PI) - *y2real * sin(rotation / 180.0 * M_PI);
+        float y2realn = *y2real * cos(rotation / 180.0 * M_PI) + *x2real * sin(rotation / 180.0 * M_PI);
+        float x3realn = *x3real * cos(rotation / 180.0 * M_PI) - *y3real * sin(rotation / 180.0 * M_PI);
+        float y3realn = *y3real * cos(rotation / 180.0 * M_PI) + *x3real * sin(rotation / 180.0 * M_PI);
+
+        *x0real = x0realn;
+        *y0real = y0realn;
+        *x1real = x1realn;
+        *y1real = y1realn;
+        *x2real = x2realn;
+        *y2real = y2realn;
+        *x3real = x3realn;
+        *y3real = y3realn;
+    }
+    *x0real += x;
+    *y0real += y;
+    *x1real += x;
+    *y1real += y;
+    *x2real += x;
+    *y2real += y;
+    *x3real += x;
+    *y3real += y;
+}
+
+
 
 #define SPRITE_BATCH_KEY(__E__, __T__) ((__E__) + (__T__)*10)
 
@@ -443,44 +514,24 @@ void mod16_sdl_gl_render_sprite(
         - rotation 
         - position
     */
-    int x0real = centerX * scaleX;
-    int y0real = centerY * scaleY;
-    int x2real = (centerX + MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS) * scaleX;
-    int y2real = (centerY + MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS) * scaleY;
+    int x0real, y0real,
+        x1real, y1real,
+        x2real, y2real,
+        x3real, y3real;
+    mod16_sdl_gl_2d_transform(
+        x, y,
+        MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS, MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS,
+        centerX, centerY,
+        scaleX, scaleY,
+        rotation,
+        
+        &x0real, &y0real,
+        &x1real, &y1real,
+        &x2real, &y2real,
+        &x3real, &y3real
+    );
 
-    int x1real = x2real;
-    int y1real = y0real;
-    int x3real = x0real;
-    int y3real = y2real;
 
-
-    if (rotation) {
-        float x0realn = x0real * cos(rotation / 180.0 * M_PI) - y0real * sin(rotation / 180.0 * M_PI);
-        float y0realn = y0real * cos(rotation / 180.0 * M_PI) + x0real * sin(rotation / 180.0 * M_PI);
-        float x1realn = x1real * cos(rotation / 180.0 * M_PI) - y1real * sin(rotation / 180.0 * M_PI);
-        float y1realn = y1real * cos(rotation / 180.0 * M_PI) + x1real * sin(rotation / 180.0 * M_PI);
-        float x2realn = x2real * cos(rotation / 180.0 * M_PI) - y2real * sin(rotation / 180.0 * M_PI);
-        float y2realn = y2real * cos(rotation / 180.0 * M_PI) + x2real * sin(rotation / 180.0 * M_PI);
-        float x3realn = x3real * cos(rotation / 180.0 * M_PI) - y3real * sin(rotation / 180.0 * M_PI);
-        float y3realn = y3real * cos(rotation / 180.0 * M_PI) + x3real * sin(rotation / 180.0 * M_PI);
-
-        x0real = x0realn;
-        y0real = y0realn;
-        x1real = x1realn;
-        y1real = y1realn;
-        x2real = x2realn;
-        y2real = y2realn;
-        x3real = x3realn;
-        y3real = y3realn;
-    }
-    x0real += x;
-    y0real += y;
-    x1real += x;
-    y1real += y;
-    x2real += x;
-    y2real += y;
-    x3real += x;
-    y3real += y;
 
 
     float u0, v0, u1, v1;        
@@ -515,6 +566,9 @@ void mod16_sdl_gl_render_sprite(
 void mod16_sdl_gl_render_background(
     mod16SDLGL_t * gl,
     int x, int y,
+    float scaleX, float scaleY,
+    float centerX, float centerY,
+    float rotation,
     int effect,
 
     mod16Vector_t back,
@@ -527,14 +581,28 @@ void mod16_sdl_gl_render_background(
 ) {
 
     MOD16_GLBackgroundBatch b = {};
-    b.x = x;
-    b.y = y;
     b.back = back;
     b.midBack = midBack;
     b.midFront = midFront;
     b.front = front;
     b.id = id;
     b.texture = backgroundTexture;
+
+    mod16_sdl_gl_2d_transform(
+        x, y,
+        MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES,
+        MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS * MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES,
+        centerX, centerY,
+        scaleX, scaleY,
+        rotation,
+        
+        &b.x0, &b.y0,
+        &b.x1, &b.y1,
+        &b.x2, &b.y2,
+        &b.x3, &b.y3
+    );
+    
+    
     matte_array_push(gl->bgBatches, b);
 }
 
@@ -923,16 +991,14 @@ static void mod16_sdl_gl_render_background_batch(mod16SDLGL_t * gl, MOD16_GLBack
 
 
     glBindBuffer(GL_ARRAY_BUFFER, gl->spriteProgram.vbo);
-    int BACKGROUND_PIXEL_WIDTH  = MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES  * MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
-    int BACKGROUND_PIXEL_HEIGHT = MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES * MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
     MOD16_VBOvertex vboData[] = {
-        {batch->x, batch->y, 0, 0, 0                                               , batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
-        {batch->x+BACKGROUND_PIXEL_WIDTH, batch->y, 0, 1, 0                        , batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
-        {batch->x+BACKGROUND_PIXEL_WIDTH, batch->y+BACKGROUND_PIXEL_HEIGHT, 0, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
+        {batch->x0, batch->y0, 0, 0, 0, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
+        {batch->x1, batch->y1, 0, 1, 0, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
+        {batch->x2, batch->y2, 0, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
 
-        {batch->x+BACKGROUND_PIXEL_WIDTH, batch->y+BACKGROUND_PIXEL_HEIGHT, 0, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
-        {batch->x,batch->y+BACKGROUND_PIXEL_HEIGHT, 0, 0, 1,                         batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
-        {batch->x, batch->y, 0, 0, 0,                                                batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f}
+        {batch->x2, batch->y2, 0, 0, 0, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
+        {batch->x3, batch->y3, 0, 1, 0, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
+        {batch->x0, batch->y0, 0, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
     };
     
     glBufferData(GL_ARRAY_BUFFER, sizeof(MOD16_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);

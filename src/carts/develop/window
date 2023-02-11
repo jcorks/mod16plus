@@ -350,9 +350,11 @@ return class(
                 @:Project = Cartridge.import(source:'project');
 
                 [::] {
-                    Project.load();                                
-                    views[0].openFile(name:'main');
-                    selectView(view:views[0]);
+                    this.alert(text: 'Preject Loaded.', onOkay::{
+                        Project.load();                                
+                        views[0].openFile(name:'main');
+                        selectView(view:views[0]);
+                    });
                 } : {
                     onError ::(message) {
                         this.alert(text: 'No existing project.', onOkay: ::<-

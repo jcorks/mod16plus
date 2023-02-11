@@ -11,50 +11,42 @@ return class(
         @:tile = Fetcher.Tile.newID();
         @:paletteID = Fetcher.Palette.newID();
         
-        Cartridge.Sprite.set(
-            index:sprite,
+        Cartridge.Sprite.bind(index:sprite);
+        Cartridge.Sprite. = {
             palette: paletteID,
-            tile
-        );
+            tile:tile
+        };
         
         @resizeable = false;
         
         @:reposition :: {
+            Cartridge.Sprite.bind(index:sprite);
             if (resizeable) ::<= {
-                Cartridge.Sprite.set(
-                    index:sprite,
+                Cartridge.Sprite. = {
                     x:this.x,
-                    y:this.y
-                );
-                Cartridge.Sprite.transform(
-                    index:sprite,
+                    y:this.y,
                     scaleX: this.width / 8,
                     scaleY: this.height / 8
-                );
+                };
 
             } else 
-                Cartridge.Sprite.set(
-                    index:sprite,
+                Cartridge.Sprite. = {
                     x:this.x + this.width / 2 - 4,
                     y:this.y + this.height / 2 - 4
-                )
+                }
             ;
         
         };
         this.events.installHooks(
             events:{
                 onShow ::(detail){
-                    Cartridge.Sprite.set(
-                        index:sprite,
-                        show: true
-                    );
+                    Cartridge.Sprite.bind(index:sprite);
+                    Cartridge.Sprite.show = true;
                 },
                 
                 onHide ::(detail){
-                    Cartridge.Sprite.set(
-                        index:sprite,
-                        show: false
-                    );
+                    Cartridge.Sprite.bind(index:sprite);
+                    Cartridge.Sprite.show = false;
                 },
                 
                 onResize ::(detail) {
@@ -66,10 +58,8 @@ return class(
                 },
                 
                 onLayerChange::(detail) {
-                    Cartridge.Sprite.set(
-                        index:sprite,
-                        layer: this.layer
-                    );
+                    Cartridge.Sprite.bind(index:sprite);
+                    Cartridge.Sprite.layer = this.layer;
                 }
 
             }

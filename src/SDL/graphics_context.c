@@ -158,6 +158,10 @@ void mod16_graphics_context_render(mod16GraphicsContext_t * ctx) {
                 mod16_sdl_gl_render_background(
                     ctx->gl,
                     bg->data.x, bg->data.y,
+                    bg->data.scaleX, bg->data.scaleY,
+                    bg->data.centerX, bg->data.centerY,
+                    bg->data.rotation,
+
                     bg->data.effect,
                     
                     p->back,

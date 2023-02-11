@@ -3,41 +3,17 @@
 @:Mod16 = import(module:'Mod16Plus.Core');
 @:Cartridge = Mod16.Cartridge;
 
-
 @index = 0;
 @:particleList = [];
 
 
-//Cartridge.Tile.set(
-//  index:0,
-//  data: [
-//    1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1,
-//
-//    1, 1, 1, 1, 1, 1, 1, 1,     
-//    1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1,
-//    1, 1, 1, 1, 1, 1, 1, 1 
-//  ]
-//);
-
-//Cartridge.Palette.set(
-//  index:0,
-//  colors: [
-//    [0.25, 0.25, 0.25],
-//    [0.25, 0.25, 0.25],
-//    [0.25, 0.25, 0.25],
-//    [0.25, 0.25, 0.25]
-//  ]
-//);
 
 @:makeParticle :: {
   if (index > 500)
     index = 0;
 
-  return {
+
+  @:out = {
     sprite:index+=1,
     rotation: Number.random()*360,
     scale: 1+Number.random()*3,
@@ -47,6 +23,10 @@
     xDelta: (Number.random() - 0.5)*0.4,
     yDelta: -(Number.random())*2-0.4,
   };
+  
+  Cartridge.Sprite.bind(index:out.sprite);
+  Cartridge.Sprite.show = true;
+  return out;
 };
 
 
@@ -56,41 +36,34 @@
 @:updateParticleList ::{
   @:trash = [];
   particleList->foreach(do:::(i, p) {
-    when (p.scale < 0.0001)::<= {
+    when (p.scale < 0.1)::<= {
       trash->push(value:p);
     };
   
-    Cartridge.Sprite.set(
-      index: p.sprite,
+    Cartridge.Sprite.bind(index:p.sprite);  
+    Cartridge.Sprite. = {
       effect:Cartridge.Sprite.EFFECTS.BLEND,
       show: true,
       palette: 1,
       tile: 0x0,
       x:p.x,
-      y:p.y
-    );
-
-    p.x += p.xDelta;
-    p.y += p.yDelta;
-
-    Cartridge.Sprite.transform(
-      index: p.sprite,
+      y:p.y,
       scaleX: p.scale,
       scaleY: p.scale,
       centerX: -4,
       centerY: -4,
       rotation: p.rotation
-    );
+    };
 
+    p.x += p.xDelta;
+    p.y += p.yDelta;
     p.scale *= 0.92;
     p.rotation += p.rotationRate;
   });
 
   trash->foreach(do::(i, p) {
-    Cartridge.Sprite.set(
-      index:p.sprite,
-      show: false
-    );
+    Cartridge.Sprite.bind(index:p.sprite);
+    Cartridge.Sprite.show = false;
 
     @:key = particleList->findIndex(value:p);
     particleList->remove(key);

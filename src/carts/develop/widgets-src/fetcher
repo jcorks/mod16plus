@@ -55,12 +55,12 @@
             // Fetches the next free Sprite ID and initializes the sprite
             newID :: {
                 count += 1;
-                Cartridge.Sprite.set(
-                    index: count,                    
+                Cartridge.Sprite.bind(index:count);
+                Cartridge.Sprite. = {
                     x:-8,
                     y:-8,
                     show:false
-                );
+                };
                 return count;
             },
             
@@ -69,12 +69,12 @@
             // that are off-limits to other users.
             claimIDs::(amount) {
                 [count, count+amount]->for(do:::(i) {
-                    Cartridge.Sprite.set(
-                        index: i,                    
+                    Cartridge.Sprite.bind(index:i);
+                    Cartridge.Sprite. = {
                         x:-8,
                         y:-8,
                         show:false
-                    );
+                    };
                 
                 });
                 count += amount;

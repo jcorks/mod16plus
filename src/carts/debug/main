@@ -733,21 +733,17 @@
     
     @:onDebugEnter :: {
 
-
-        Cart.Sprite.set(
-            index: spritebg,
+        @:Sprite = Cart.Sprite;
+        Sprite.bind(index: spritebg);
+        Cart.Sprite. = {
             tile: tilebg,
             show: true,
             y : (Mod16.resolutionHeight) / 2 - 3,
             x : 0,
-            layer: 63
-        );
-        
-        Cart.Sprite.transform(
-            index: spritebg,
+            layer: 63,
             scaleX: (Mod16.resolutionWidth / 8)->floor,
             scaleY:((Mod16.resolutionHeight + 8) / 8)/2
-        );
+        };
     
         display = Text.new();
         display. = {
@@ -809,10 +805,8 @@
         cursor.text = '';
         inDebugContext = false;   
         
-        Cart.Sprite.set(
-            index: spritebg,
-            show: false
-        );              
+        Cart.Sprite.bind(index: spritebg);
+        Cart.Sprite.show = false;
     };
         
 

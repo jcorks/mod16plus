@@ -106,16 +106,15 @@ return class(
 
             
             [0, count]->for(do:::(i) {
-                Cartridge.Sprite.set(
-                    index: spr,
+                Cartridge.Sprite.bind(index:spr);
+                Cartridge.Sprite. = {
                     tile: TILE_HIGHLIGHT,
                     show:true,
-                    layer,
+                    layer:layer,
                     x: i * GLYPH_WIDTH +x,
                     y: y,
-                    effect: Cartridge.Sprite.EFFECTS.Color,
                     palette:TILE_HIGHLIGHT_PALETTE
-                );                    
+                };
                 spr += 1;
                 chX += 1;
             });
@@ -154,10 +153,8 @@ return class(
             });
             refs = [];
             [0, lastSpriteCount]->for(do:::(i) {
-                Cartridge.Sprite.set(
-                    index: i,
-                    show: false
-                );
+                Cartridge.Sprite.bind(index:i);
+                Cartridge.Sprite.show = false;
             });
             lastSpriteCount = 0;
         };
@@ -168,16 +165,17 @@ return class(
         @redrawActive = false;
         @:redrawLines :: {
             when(redrawActive) empty;
-            Cartridge.Oscillator.set(
+            Cartridge.Oscillator.bind(index:REDRAW_OSCILLATOR);
+            Cartridge.Oscillator. = {
                 enable:true,
-                index:REDRAW_OSCILLATOR,
                 periodMS:17,
                 onCycle::{
                     print(message:"update frame");
                     clearCanvas();                    
                     when(!shown) ::<= {
                         redrawActive = false;
-                        Cartridge.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
+                        Cartridge.Oscillator.bind(index:REDRAW_OSCILLATOR);
+                        Cartridge.Oscillator.enable = false;
                     };
                     @spr = 0;
                     @i = 0;
@@ -254,25 +252,25 @@ return class(
                     if (inputCallbackID != empty) ::<= {
                         
                     
-                        Cartridge.Sprite.set(
-                            index: spr,
+                        Cartridge.Sprite.bind(index:spr);
+                        Cartridge.Sprite. = {
                             tile: 0,
                             show:true,
-                            layer,
+                            layer:layer,
                             x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
                             y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
-                            effect: Cartridge.Sprite.EFFECTS.Color,
                             palette:DEFAULT_PALETTE_ID
-                        );                    
+                        };                    
                         lastSpriteCount = spr+1;
                     } else 
                         lastSpriteCount = spr;
 
                     redrawActive = false;
-                    Cartridge.Oscillator.set(index:REDRAW_OSCILLATOR, enable:false);
+                    Cartridge.Oscillator.bind(index:REDRAW_OSCILLATOR);
+                    Cartridge.Oscillator.enable = false;
 
                 }
-            );
+            };
                 
         };
 

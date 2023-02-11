@@ -1,6 +1,6 @@
 @:Mod16 = import(module:'Mod16Plus.Core');
 @:Cart = Mod16.Cartridge;
-
+@:Sprite = Cart.Sprite;
 
 // Sets ascii tiles 
 // that can be used for displaying text
@@ -1442,15 +1442,15 @@ return {
                 count += 1;
                 return count - 1;
             };
-            Cart.Sprite.set(
-                index: spr,
+            Sprite.bind(index:spr);
+            Sprite. = {
                 tile: string->charCodeAt(index:i),
-                show:true,
+                show: true,
                 x: chX * GLYPH_WIDTH  + x,
                 y: chY * GLYPH_HEIGHT + y,
-                palette: refs.palettes[0],
-                layer
-            );
+                palette:refs.palettes[0],
+                layer:layer
+            };
             chX += 1;
             refs.sprites->push(value:spr);
         });
@@ -1476,10 +1476,8 @@ return {
         );
 
         [from, to]->for(do:::(i) {
-            Cart.Sprite.set(
-                index: refs.sprites[i],
-                palette: p
-            );            
+            Sprite.bind(index:refs.sprites[i]);
+            Sprite.palette = p;
         });
     
          
@@ -1490,10 +1488,8 @@ return {
     
     destroy::(refs) {
         refs.sprites->foreach(do:::(i, spr) {
-            Cart.Sprite.set(
-                index: spr,
-                show:false
-            );
+            Sprite.bind(index:spr);
+            Sprite.show = false;
         });
         
         refs.sprites->foreach(do:::(i, v) {

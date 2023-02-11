@@ -8,12 +8,9 @@
 @:mod16_native__get_sub_cartridge_main = getExternalFunction(name:"mod16_native__get_sub_cartridge_main");
 
 
-@:mod16_native__sprite_attrib = getExternalFunction(name:"mod16_native__sprite_attrib");
 @:mod16_native__palette_attrib = getExternalFunction(name:"mod16_native__palette_attrib");
 @:mod16_native__tile_attrib = getExternalFunction(name:"mod16_native__tile_attrib");
 @:mod16_native__audio_attrib = getExternalFunction(name:"mod16_native__audio_attrib");
-@:mod16_native__bg_attrib = getExternalFunction(name:"mod16_native__bg_attrib");
-@:mod16_native__oscillator_attrib = getExternalFunction(name:"mod16_native__oscillator_attrib");
 // query functions are necessary because they are (can be) pre-populated by the ROM.
 @:mod16_native__palette_query = getExternalFunction(name:"mod16_native__palette_query");
 @:mod16_native__tile_query = getExternalFunction(name:"mod16_native__tile_query");
@@ -48,6 +45,36 @@
 
                 
 
+
+@:mod16_native__sprite_attrib__centerx = getExternalFunction(name:"mod16_native__sprite_attrib__centerx");
+@:mod16_native__sprite_attrib__centery = getExternalFunction(name:"mod16_native__sprite_attrib__centery");
+@:mod16_native__sprite_attrib__effect = getExternalFunction(name:"mod16_native__sprite_attrib__effect");
+@:mod16_native__sprite_attrib__layer = getExternalFunction(name:"mod16_native__sprite_attrib__layer");
+@:mod16_native__sprite_attrib__palette = getExternalFunction(name:"mod16_native__sprite_attrib__palette");
+@:mod16_native__sprite_attrib__positionx = getExternalFunction(name:"mod16_native__sprite_attrib__positionx");
+@:mod16_native__sprite_attrib__positiony = getExternalFunction(name:"mod16_native__sprite_attrib__positiony");
+@:mod16_native__sprite_attrib__rotation = getExternalFunction(name:"mod16_native__sprite_attrib__rotation");
+@:mod16_native__sprite_attrib__scalex = getExternalFunction(name:"mod16_native__sprite_attrib__scaleX");
+@:mod16_native__sprite_attrib__scaley = getExternalFunction(name:"mod16_native__sprite_attrib__scaleY");
+@:mod16_native__sprite_attrib__show = getExternalFunction(name:"mod16_native__sprite_attrib__show");
+@:mod16_native__sprite_attrib__tile = getExternalFunction(name:"mod16_native__sprite_attrib__tile");
+
+@:mod16_native__bg_attrib__centerx = getExternalFunction(name:"mod16_native__bg_attrib__centerx");
+@:mod16_native__bg_attrib__centery = getExternalFunction(name:"mod16_native__bg_attrib__centery");
+@:mod16_native__bg_attrib__effect = getExternalFunction(name:"mod16_native__bg_attrib__effect");
+@:mod16_native__bg_attrib__layer = getExternalFunction(name:"mod16_native__bg_attrib__layer");
+@:mod16_native__bg_attrib__palette = getExternalFunction(name:"mod16_native__bg_attrib__palette");
+@:mod16_native__bg_attrib__positionx = getExternalFunction(name:"mod16_native__bg_attrib__positionx");
+@:mod16_native__bg_attrib__positiony = getExternalFunction(name:"mod16_native__bg_attrib__positiony");
+@:mod16_native__bg_attrib__rotation = getExternalFunction(name:"mod16_native__bg_attrib__rotation");
+@:mod16_native__bg_attrib__scalex = getExternalFunction(name:"mod16_native__bg_attrib__scaleX");
+@:mod16_native__bg_attrib__scaley = getExternalFunction(name:"mod16_native__bg_attrib__scaleY");
+@:mod16_native__bg_attrib__show = getExternalFunction(name:"mod16_native__bg_attrib__show");
+
+@:mod16_native__oscillator_attrib__enable = getExternalFunction(name:"mod16_native__oscillator_attrib__enable");
+@:mod16_native__oscillator_attrib__oncycle = getExternalFunction(name:"mod16_native__oscillator_attrib__oncycle");
+@:mod16_native__oscillator_attrib__periodms = getExternalFunction(name:"mod16_native__oscillator_attrib__periodms");
+@:mod16_native__oscillator_attrib__time = getExternalFunction(name:"mod16_native__oscillator_attrib__time");
 
 
 
@@ -674,36 +701,74 @@
                 return this;
             };
         
+            @bound = -1;
+        
+        
             this.interface = {
-                set::(
-                    index => Number,
-                    show,
-                    x,
-                    y,
-                    layer,
-                    effect,
-                    palette
-                ) {
-                    if (show != empty) 
-                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.ENABLE, d:if((show => Boolean) == true) 1 else 0);
- 
-                    if (x != empty)
-                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.POSITIONX, d:x=>Number);
-
-                    if (y != empty)
-                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.POSITIONY, d:y=>Number);
-
-
-                    if (layer != empty)
-                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.LAYER, d:layer=>Number);            
-
-                    if (effect != empty)                        
-                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.EFFECT, d:effect=>Number);                        
-
-                    if (palette != empty)
-                        mod16_native__bg_attrib(a:cartID_, b:index, c:ATTRIBS.PALETTE, d:palette=>Number);
-
+                bind:: (index => Number) {
+                    bound = index;
                 },
+                
+                show : {
+                    set ::(value => Boolean) {
+                        mod16_native__bg_attrib__show(a:cartID_, b:bound, c:value);                    
+                    }
+                },
+                
+                x: {
+                    set ::(value => Number) {
+                        mod16_native__bg_attrib__positionx(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                y: {
+                    set ::(value => Number) {
+                        mod16_native__bg_attrib__positiony(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                layer: {
+                    set ::(value => Number) {
+                        mod16_native__bg_attrib__layer(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                effect : {
+                    set ::(value => Number) {                
+                        mod16_native__bg_attrib__effect(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                palette : {
+                    set ::(value => Number) {
+                        mod16_native__bg_attrib__palette(a:cartID_, b:bound, c:value);                
+                    }
+                },
+
+
+
+                scaleX: {
+                    set ::(value => Number) {                
+                        mod16_native__bg_attrib__scalex(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                scaleY: {
+                    set ::(value => Number) {
+                        mod16_native__bg_attrib__scaley(a:cartID_, b:bound, c:value);               
+                    } 
+                },
+                centerX: {
+                    set ::(value => Number) {
+                        mod16_native__bg_attrib__centerx(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                centerY: {
+                    set ::(value => Number) {
+                        mod16_native__bg_attrib__centery(a:cartID_, b:bound, c:value);              
+                    } 
+                },
+                rotation: {
+                    set ::(value => Number) {
+                        mod16_native__bg_attrib__rotation(a:cartID_, b:bound, c:value);                
+                    }
+                },
+
                 
                 EFFECTS: {
                     get::<-EFFECTS
@@ -762,51 +827,80 @@
                 return this;
             };
         
+            @bound = -1;
+        
+        
             this.interface = {
-                set::(
-                    index => Number,
-                    show,
-                    tile,
-                    x,
-                    y,
-                    layer,
-                    effect,
-                    palette
-                ) {
-                    @commands = [];
-                    if (show != empty) commands     = [...commands, ATTRIBS.ENABLE, if((show => Boolean) == true) 1 else 0];
-                    if (tile != empty) commands     = [...commands, ATTRIBS.TILEINDEX, tile=>Number];
-                    if (x != empty) commands        = [...commands, ATTRIBS.POSITIONX, x=>Number];
-                    if (y != empty) commands        = [...commands, ATTRIBS.POSITIONY, y=>Number];
-                    if (layer != empty) commands    = [...commands, ATTRIBS.LAYER, layer=>Number];            
-                    if (effect != empty) commands   = [...commands, ATTRIBS.EFFECT, effect=>Number];                        
-                    if (palette != empty) commands  = [...commands, ATTRIBS.PALETTE, palette=>Number];
-
-                    mod16_native__sprite_attrib(a:cartID_, b:index, c:commands);
-
+                bind:: (index => Number) {
+                    bound = index;
                 },
                 
-                transform::(
-                    index => Number,
-                    scaleX,
-                    scaleY,
-                    centerX,
-                    centerY,
-                    rotation
-                               
-                ) {
-                    @commands = [];
-
-                    if (scaleX != empty) commands   = [...commands, ATTRIBS.SCALEX, scaleX=>Number];
-                    if (scaleY != empty) commands   = [...commands, ATTRIBS.SCALEY, scaleY=>Number];
-                    if (rotation != empty) commands = [...commands, ATTRIBS.ROTATION, rotation=>Number];
-                    if (centerX != empty) commands  = [...commands, ATTRIBS.CENTERX, centerX=>Number];
-                    if (centerY != empty) commands  = [...commands, ATTRIBS.CENTERY, centerY=>Number];
-
-                    mod16_native__sprite_attrib(a:cartID_, b:index, c:commands);
-                
+                show : {
+                    set ::(value => Boolean) {
+                        mod16_native__sprite_attrib__show(a:cartID_, b:bound, c:value);                    
+                    }
                 },
-             
+                
+                tile: {
+                    set ::(value => Number) {
+                        mod16_native__sprite_attrib__tile(a:cartID_, b:bound, c:value);                                    
+                    }
+                },
+                x: {
+                    set ::(value => Number) {
+                        mod16_native__sprite_attrib__positionx(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                y: {
+                    set ::(value => Number) {
+                        mod16_native__sprite_attrib__positiony(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                layer: {
+                    set ::(value => Number) {
+                        mod16_native__sprite_attrib__layer(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                effect : {
+                    set ::(value => Number) {                
+                        mod16_native__sprite_attrib__effect(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                palette : {
+                    set ::(value => Number) {
+                        mod16_native__sprite_attrib__palette(a:cartID_, b:bound, c:value);                
+                    }
+                },
+
+
+
+                scaleX: {
+                    set ::(value => Number) {                
+                        mod16_native__sprite_attrib__scalex(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                scaleY: {
+                    set ::(value => Number) {
+                        mod16_native__sprite_attrib__scaley(a:cartID_, b:bound, c:value);               
+                    } 
+                },
+                centerX: {
+                    set ::(value => Number) {
+                        mod16_native__sprite_attrib__centerx(a:cartID_, b:bound, c:value);                
+                    }
+                },
+                centerY: {
+                    set ::(value => Number) {
+                        mod16_native__sprite_attrib__centery(a:cartID_, b:bound, c:value);              
+                    } 
+                },
+                rotation: {
+                    set ::(value => Number) {
+                        mod16_native__sprite_attrib__rotation(a:cartID_, b:bound, c:value);                
+                    }
+                },
+
+
                 
                 EFFECTS: {
                     get::<-EFFECTS
@@ -975,14 +1069,7 @@
 };
 
 
-@:Oscillator = ::<= {
-    @:ATTRIBS = {
-        ENABLE:    0,
-        PERIODMS:  1,
-        ONCYCLE:   2,
-        GET:       3
-    };
-    
+@:Oscillator = ::<= {    
     return class(
         name: 'MOD16.Oscillator',
         define:::(this) {
@@ -991,28 +1078,37 @@
                 cartID_ = cartID;
                 return this;
             };
+            
+            @bound = -1;
+            
             this.interface = {
-                set ::(
-                    index => Number,
-                    enable,
-                    periodMS,
-                    onCycle
-                ) {
-                    @commands = [];
-
-                    if (enable != empty) commands   = [...commands, ATTRIBS.ENABLE, enable=>Boolean];
-                    if (periodMS != empty) commands   = [...commands, ATTRIBS.PERIODMS, periodMS=>Number];
-                    if (onCycle != empty) commands = [...commands, ATTRIBS.ONCYCLE, onCycle=>Function];
-
-                    mod16_native__oscillator_attrib(a:cartID_, b:index, c:commands);
-                                    
+                bind::(index => Number) {
+                    bound = index;
                 },
                 
+                enable : {
+                    set ::(value => Boolean) {
+                        mod16_native__oscillator_attrib__enable(a:cartID_, b:bound, c:value);
+                    }
+                },
+
+                periodMS : {
+                    set ::(value => Number) {
+                        mod16_native__oscillator_attrib__periodms(a:cartID_, b:bound, c:value);
+                    }
+                },
+
+                onCycle : {
+                    set ::(value => Function) {
+                        mod16_native__oscillator_attrib__oncycle(a:cartID_, b:bound, c:value);
+                    }
+                },
                 
-                get ::(index => Number) {
-                    return mod16_native__oscillator_attrib(a:cartID_, b:index, c:[ATTRIBS.GET, 0]);
+                time : {
+                    get :: {
+                        return mod16_native__oscillator_attrib__time(a:cartID_, b:bound);                    
+                    }
                 }
-            
             };
         }
     );
@@ -1385,22 +1481,14 @@
         @:ATTRIBS = {
             UPDATERATE:  0,
             UPDATEFUNC:  1,
-            RESOLUTION:  2,
-            CLIPBOARDGET:3,
-            CLIPBOARDSET:4
+            CLIPBOARDGET:2,
+            CLIPBOARDSET:3
         };
         
-        @:RESOLUTION = {
-            NES : 0, // 256 x 240       
-            GBA : 1, // 240 x 160,
-            GBC : 2, // 160 x 144,
-            MD  : 3, // 320 x 224
-        };
 
 
         @updateRate = 1 / 60; // how fast update should be called in the engine
         @updateFunc = ::{};
-        @resolution = RESOLUTION.GBA;
 
 
         // before update is called: engine polls input         
@@ -1417,7 +1505,6 @@
 
         mod16_native__engine_attrib(a:ATTRIBS.UPDATERATE, b:updateRate);
         mod16_native__engine_attrib(a:ATTRIBS.UPDATEFUNC, b:update);
-        mod16_native__engine_attrib(a:ATTRIBS.RESOLUTION, b:resolution);
     
         @:allcartIDs = {};
     
@@ -1467,36 +1554,16 @@
 
             Audio     : {get ::<- Audio},
             Input     : {get ::<- Input},
-            RESOLUTION : RESOLUTION,
             Debug     : {get ::<- Debug},
             File      : {get ::<- File},
             Linear    : {get ::<- Linear},
             
-
-            resolution : {
-                set ::(value => Number) {
-                    if (value > RESOLUTION.MD || value < 0) error(detail: 'Invalid resolution type.');
-                    resolution = value;
-                },
-                get ::<- resolution
-            },
-            
             resolutionWidth : {
-                get ::<- match(resolution) {
-                  (RESOLUTION.NES): 256,
-                  (RESOLUTION.GBA): 240,
-                  (RESOLUTION.GBC): 160,
-                  (RESOLUTION.MD):  320
-                }
+                get ::<- 240
             },
             
             resolutionHeight : {
-                get ::<- match(resolution) {
-                  (RESOLUTION.NES):240,
-                  (RESOLUTION.GBA):160,
-                  (RESOLUTION.GBC):144,
-                  (RESOLUTION.MD): 224
-                }
+                get ::<- 160
             },
             
             

@@ -43,12 +43,12 @@ return class(
 
         @:scrollbar = Fetcher.Sprite.newID();
         
-        Cartridge.Sprite.set(
-            index:scrollbar,
+        Cartridge.Sprite.bind(index:scrollbar);
+        Cartridge.Sprite. = {
             show: false,
             tile: line,
-            palette
-        );
+            palette:palette
+        };
 
 
         @:resetChildren ::{
@@ -69,25 +69,19 @@ return class(
             });
 
             if (children->keycount > count) ::<={
-                Cartridge.Sprite.set(
-                    index:scrollbar,
+                Cartridge.Sprite.bind(index:scrollbar);
+                Cartridge.Sprite. = {
                     show: true,
                     layer: this.layer,
                     x: this.x + this.width,
-                    y: this.y + (this.height / children->keycount) * iter
-                );
-
-                Cartridge.Sprite.transform(
-                    index:scrollbar,
+                    y: this.y + (this.height / children->keycount) * iter,
                     scaleY: (1 / 8) * this.height * (count / children->keycount)
-                );
+                };
 
                 
             } else ::<= {
-                Cartridge.Sprite.set(
-                    index:scrollbar,
-                    show: false
-                );
+                Cartridge.Sprite.bind(index:scrollbar);
+                Cartridge.Sprite.show = false;
             };
 
     

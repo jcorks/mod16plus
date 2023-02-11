@@ -115,6 +115,11 @@ mod16Cartridge_t * mod16_cartridge_create(matteVM_t * vm, mod16ROM_t * rom, mod1
         cart->sprites[i].scaleX = 1;
         cart->sprites[i].scaleY = 1;
     }
+    for(i = 0; i < MOD16_CARTRIDGE__MAX_BACKGROUND_COUNT; ++i) {
+        cart->bgs[i].scaleX = 1;
+        cart->bgs[i].scaleY = 1;
+    }
+
 
     // load contents of rom 
     uint32_t len = mod16_rom_get_tile_count(rom);

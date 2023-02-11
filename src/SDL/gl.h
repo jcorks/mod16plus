@@ -15,6 +15,11 @@ int mod16_sdl_gl_new_sprite_texture(mod16SDLGL_t *);
 
 int mod16_sdl_gl_new_bg_texture(mod16SDLGL_t *);
 
+// gets the texture object representing the framebuffer itself 
+// It will contain the previous frame drawn.
+int mod16_sdl_gl_get_framebuffer_texture(mod16SDLGL_t *);
+
+
 // Sets a tile ID as the "working tile"
 // for either writing or reading.
 void mod16_sdl_gl_set_sprite_tile(mod16SDLGL_t *, int tileTexture, uint16_t id, const mod16GraphicsContext_Tile_t *);
@@ -70,6 +75,9 @@ void mod16_sdl_gl_render_sprite(
 void mod16_sdl_gl_render_background(
     mod16SDLGL_t *,
     int x, int y,
+    float scaleX, float scaleY,
+    float centerX, float centerY,
+    float rotation,
 
     int effect,
 

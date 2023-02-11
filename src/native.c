@@ -135,26 +135,11 @@ static void mod16_native_render() {
 
 
 
-typedef enum {
-    MOD16NSA_ENABLE,
-    MOD16NSA_ROTATION,
-    MOD16NSA_SCALEX,
-    MOD16NSA_SCALEY,
-    MOD16NSA_POSITIONX,
-    MOD16NSA_POSITIONY,
-    MOD16NSA_CENTERX,
-    MOD16NSA_CENTERY,
-    MOD16NSA_LAYER,
-    MOD16NSA_TILEINDEX,
-    MOD16NSA_EFFECT,
-    MOD16NSA_PALETTE,
-} MOD16Native_SpriteAttribs;
 
 
 
 
-matteValue_t mod16_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+mod16GraphicsContext_Sprite_t * mod16_native_bind_sprite(matteVM_t * vm, matteHeap_t * heap, const matteValue_t * args) {
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -162,72 +147,93 @@ matteValue_t mod16_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const m
 
     uint32_t id = matte_value_as_number(heap, args[1]);
     mod16GraphicsContext_Sprite_t * spr = mod16_cartridge_get_sprite(cart, id);
-    
     if (!spr) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Sprite accessed beyond limit"));                
-        return matte_heap_new_value(heap);    
+        return NULL;   
     }
+    return spr;
+}
 
 
-    uint32_t len = matte_value_object_get_number_key_count(heap, args[2]);
-    uint32_t i;
-    for(i = 0; i < len; i+=2) {
-        matteValue_t * flag  = matte_value_object_array_at_unsafe(heap, args[2], i);
-        matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[2], i+1);
 
-        switch((int)matte_value_as_number(heap, *flag)) {
-          case MOD16NSA_ENABLE: {
-            mod16_cartridge_enable_sprite(cart, id, matte_value_as_number(heap, *value));
-            break;
-          }  
-          case MOD16NSA_ROTATION:
-            spr->rotation = matte_value_as_number(heap, *value);
-            break;
+matteValue_t mod16_native_sprite_attrib__rotation(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->rotation = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
 
-          case MOD16NSA_SCALEX:
-            spr->scaleX = matte_value_as_number(heap, *value);
-            break;
+matteValue_t mod16_native_sprite_attrib__scaleX(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->scaleX = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
 
-          case MOD16NSA_SCALEY:
-            spr->scaleY = matte_value_as_number(heap, *value);
-            break;
+matteValue_t mod16_native_sprite_attrib__scaleY(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->scaleY = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
 
-          case MOD16NSA_POSITIONX:
-            spr->x = matte_value_as_number(heap, *value);
-            break;
-          
-          case MOD16NSA_POSITIONY:
-            spr->y = matte_value_as_number(heap, *value);
-            break;
+matteValue_t mod16_native_sprite_attrib__positionx(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->x = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
 
-          case MOD16NSA_CENTERX:
-            spr->centerX = matte_value_as_number(heap, *value);
-            break;
 
-          case MOD16NSA_CENTERY:
-            spr->centerY = matte_value_as_number(heap, *value);
-            break;
+matteValue_t mod16_native_sprite_attrib__positiony(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->y = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
 
-          case MOD16NSA_LAYER:
-            spr->layer = matte_value_as_number(heap, *value);
-            if (spr->layer > MOD16_GRAPHICS_CONTEXT__LAYER_MAX) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MAX;
-            if (spr->layer < MOD16_GRAPHICS_CONTEXT__LAYER_MIN) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MIN;
-            break;
+matteValue_t mod16_native_sprite_attrib__centerx(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->centerX = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
 
-          case MOD16NSA_TILEINDEX:
-            spr->tile = matte_value_as_number(heap, *value);
-            break;
-          
-          case MOD16NSA_EFFECT:
-            spr->effect = matte_value_as_number(heap, *value);
-            break;
 
-          case MOD16NSA_PALETTE:
-            spr->palette = matte_value_as_number(heap, *value);
-            break;
-        }
+matteValue_t mod16_native_sprite_attrib__centery(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->centerY = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
 
-    }
+matteValue_t mod16_native_sprite_attrib__layer(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->layer = matte_value_as_number(heap, args[2]);
+    if (spr->layer > MOD16_GRAPHICS_CONTEXT__LAYER_MAX) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MAX;
+    if (spr->layer < MOD16_GRAPHICS_CONTEXT__LAYER_MIN) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MIN;
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_sprite_attrib__tile(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->tile = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_sprite_attrib__effect(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->effect = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_sprite_attrib__palette(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
+    spr->palette = matte_value_as_number(heap, args[2]);
     return matte_heap_new_value(heap);
 }
 
@@ -235,70 +241,89 @@ matteValue_t mod16_native_sprite_attrib(matteVM_t * vm, matteValue_t fn, const m
 
 
 
-typedef enum {
-    MOD16NOA_ENABLE,
-    MOD16NOA_PERIODMS,
-    MOD16NOA_ONCYCLE,
-    MOD16NOA_GET
-} MOD16Native_OscillatorAttribs;
 
 
 
-matteValue_t mod16_native_oscillator_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_sprite_attrib__show(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
+    
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+    uint32_t id = matte_value_as_number(heap, args[1]);
+
+    mod16_cartridge_enable_sprite(cart, id, matte_value_as_number(heap, args[2]));
+    return matte_heap_new_value(heap);
+}
+
+
+
+
+
+
+
+
+
+mod16Cartridge_Oscillator_t * mod16_native_bind_osc(matteVM_t * vm, matteHeap_t * heap, const matteValue_t * args) {
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
-
 
     uint32_t id = matte_value_as_number(heap, args[1]);
     mod16Cartridge_Oscillator_t * osc = mod16_cartridge_get_oscillator(cart, id);
     
     if (!osc) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Oscillator accessed beyond limit"));
-        return matte_heap_new_value(heap);
+        return NULL;
     }
-    
+    return osc;
+}
 
-    uint32_t len = matte_value_object_get_number_key_count(heap, args[2]);
-    uint32_t i;
-    int n;
-    for(i = 0; i < len; i+=2) {
-        matteValue_t * flag  = matte_value_object_array_at_unsafe(heap, args[2], i);
-        matteValue_t * value = matte_value_object_array_at_unsafe(heap, args[2], i+1);
 
-        switch((int)matte_value_as_number(heap, *flag)) {
-          case MOD16NOA_ENABLE:
-            mod16_cartridge_enable_oscillator(cart, id, matte_value_as_boolean(heap, *value), mod16_window_get_ticks(mod16.window));
-            break;
-            
-          case MOD16NOA_PERIODMS:
-            osc->lengthMS = matte_value_as_number(heap, *value);
-            osc->endMS = osc->startMS + osc->lengthMS;
-            break;
-            
-          case MOD16NOA_ONCYCLE:
-            if (osc->function.value.id == value->value.id) break;
-            if (osc->function.binID) {
-                matte_value_object_pop_lock(heap, osc->function);
-            }
-            osc->function = *value;
-            matte_value_object_push_lock(heap, osc->function);
-            break;            
-            
-            
-          case MOD16NOA_GET: {
-            float prog = (osc->endMS - mod16_window_get_ticks(mod16.window)) / (double)osc->lengthMS;
-            double frac = 0.5*(1+sin((prog) * (2*M_PI)));
-            matteValue_t fracVal = matte_heap_new_value(heap);
-            matte_value_into_number(heap, &fracVal, frac);
-            return fracVal;
-          }
-    
-        }
 
-    }
+matteValue_t mod16_native_oscillator_attrib__enable(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16Cartridge_Oscillator_t * spr = mod16_native_bind_osc(vm, heap, args);
+    uint32_t cartID = matte_value_as_number(heap, args[0]);
+    mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
+    uint32_t id = matte_value_as_number(heap, args[1]);
+    mod16_cartridge_enable_oscillator(cart, id, matte_value_as_boolean(heap, args[2]), mod16_window_get_ticks(mod16.window));
     return matte_heap_new_value(heap);
+}
+
+
+
+matteValue_t mod16_native_oscillator_attrib__periodms(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16Cartridge_Oscillator_t * osc = mod16_native_bind_osc(vm, heap, args);
+    osc->lengthMS = matte_value_as_number(heap, args[2]);
+    osc->endMS = osc->startMS + osc->lengthMS;
+    return matte_heap_new_value(heap);
+}
+
+
+matteValue_t mod16_native_oscillator_attrib__oncycle(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16Cartridge_Oscillator_t * osc = mod16_native_bind_osc(vm, heap, args);
+
+    if (osc->function.value.id == args[2].value.id) return matte_heap_new_value(heap);
+    if (osc->function.binID) {
+        matte_value_object_pop_lock(heap, osc->function);
+    }
+    osc->function = args[2];
+    matte_value_object_push_lock(heap, osc->function);
+    return matte_heap_new_value(heap);
+}
+
+
+
+matteValue_t mod16_native_oscillator_attrib__time(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16Cartridge_Oscillator_t * osc = mod16_native_bind_osc(vm, heap, args);
+    float prog = (osc->endMS - mod16_window_get_ticks(mod16.window)) / (double)osc->lengthMS;
+    double frac = 0.5*(1+sin((prog) * (2*M_PI)));
+    matteValue_t fracVal = matte_heap_new_value(heap);
+    matte_value_into_number(heap, &fracVal, frac);
+    return fracVal;
 }
 
 
@@ -483,7 +508,6 @@ matteValue_t mod16_native_vertices_get(matteVM_t * vm, matteValue_t fn, const ma
 typedef enum {
     MOD16NEA_UPDATERATE,
     MOD16NEA_UPDATEFUNC,
-    MOD16NEA_RESOLUTION,
     MOD16NEA_CLIPBOARDGET,
     MOD16NEA_CLIPBOARDSET 
 } MOD16Native_EngineAttribs_t;
@@ -803,28 +827,7 @@ matteValue_t mod16_native_get_sub_cartridge_main(matteVM_t * vm, matteValue_t fn
 
 
 
-
-
-
-
-typedef enum {
-    MOD16NBA_ENABLE,
-    MOD16NBA_POSITIONX,
-    MOD16NBA_POSITIONY,
-    MOD16NBA_LAYER,
-    MOD16NBA_EFFECT,
-    MOD16NBA_PALETTE
-
-} MOD16Native_BackgroundAttribs_t;
-
-matteValue_t mod16_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    /*
-    printf("BG       ID: %d, ATTRIB: %d\n",
-        (int)matte_value_as_number(heap, args[0]),
-        (int)matte_value_as_number(heap, args[1])
-    );
-    */  
+mod16GraphicsContext_Background_t * mod16_native_bind_bg(matteVM_t * vm, matteHeap_t * heap, const matteValue_t * args) {
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -835,41 +838,102 @@ matteValue_t mod16_native_bg_attrib(matteVM_t * vm, matteValue_t fn, const matte
     
     if (!bg) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "BG accessed beyond limit"));                
-        return matte_heap_new_value(heap);    
+        return NULL;;    
     }
-    
-    
-    switch((int)matte_value_as_number(heap, args[2])) {
-      case MOD16NBA_ENABLE:
-        bg->enabled = matte_value_as_number(heap, args[3]);
-        break;
+    return bg;
+}
 
-      case MOD16NBA_POSITIONX:
-        bg->x = matte_value_as_number(heap, args[3]);
-        break;
-      
-      case MOD16NBA_POSITIONY:
-        bg->y = matte_value_as_number(heap, args[3]);
-        break;
 
-      case MOD16NBA_LAYER:
-        bg->layer = matte_value_as_number(heap, args[3]);
-        if (bg->layer > MOD16_GRAPHICS_CONTEXT__LAYER_MAX) bg->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MAX;
-        if (bg->layer < MOD16_GRAPHICS_CONTEXT__LAYER_MIN) bg->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MIN;
-        break;
-      
-      case MOD16NBA_EFFECT:
-        bg->effect = matte_value_as_number(heap, args[3]);
-        break;
 
-      case MOD16NBA_PALETTE:
-        bg->palette = matte_value_as_number(heap, args[3]);
-        break;
-
-            
-    }
+matteValue_t mod16_native_bg_attrib__rotation(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->rotation = matte_value_as_number(heap, args[2]);
     return matte_heap_new_value(heap);
 }
+
+matteValue_t mod16_native_bg_attrib__scaleX(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->scaleX = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_bg_attrib__scaleY(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->scaleY = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_bg_attrib__positionx(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->x = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+
+matteValue_t mod16_native_bg_attrib__positiony(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->y = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_bg_attrib__centerx(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->centerX = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+
+matteValue_t mod16_native_bg_attrib__centery(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->centerY = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_bg_attrib__layer(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->layer = matte_value_as_number(heap, args[2]);
+    if (spr->layer > MOD16_GRAPHICS_CONTEXT__LAYER_MAX) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MAX;
+    if (spr->layer < MOD16_GRAPHICS_CONTEXT__LAYER_MIN) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MIN;
+    return matte_heap_new_value(heap);
+}
+
+
+
+matteValue_t mod16_native_bg_attrib__effect(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->effect = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_bg_attrib__palette(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->palette = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+matteValue_t mod16_native_bg_attrib__show(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+    matteHeap_t * heap = matte_vm_get_heap(vm);
+    mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
+    spr->enabled = matte_value_as_number(heap, args[2]);
+    return matte_heap_new_value(heap);
+}
+
+
+
+
+
+
+
 
 
 
@@ -1012,14 +1076,46 @@ void mod16_native_commit_rom(mod16ROM_t * rom, matte_t * m) {
 
 
 
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib"), 3, mod16_native_sprite_attrib, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__centerx"), 3, mod16_native_sprite_attrib__centerx, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__centery"), 3, mod16_native_sprite_attrib__centery, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__effect"), 3, mod16_native_sprite_attrib__effect, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__layer"), 3, mod16_native_sprite_attrib__layer, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__palette"), 3, mod16_native_sprite_attrib__palette, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__positionx"), 3, mod16_native_sprite_attrib__positionx, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__positiony"), 3, mod16_native_sprite_attrib__positiony, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__rotation"), 3, mod16_native_sprite_attrib__rotation, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__scaleX"), 3, mod16_native_sprite_attrib__scaleX, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__scaleY"), 3, mod16_native_sprite_attrib__scaleY, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__show"), 3, mod16_native_sprite_attrib__show, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__sprite_attrib__tile"), 3, mod16_native_sprite_attrib__tile, NULL);
+
+
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__centerx"), 3, mod16_native_bg_attrib__centerx, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__centery"), 3, mod16_native_bg_attrib__centery, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__effect"), 3, mod16_native_bg_attrib__effect, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__layer"), 3, mod16_native_bg_attrib__layer, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__palette"), 3, mod16_native_bg_attrib__palette, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__positionx"), 3, mod16_native_bg_attrib__positionx, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__positiony"), 3, mod16_native_bg_attrib__positiony, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__rotation"), 3, mod16_native_bg_attrib__rotation, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__scaleX"), 3, mod16_native_bg_attrib__scaleX, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__scaleY"), 3, mod16_native_bg_attrib__scaleY, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib__show"), 3, mod16_native_bg_attrib__show, NULL);
+
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib__enable"), 3, mod16_native_oscillator_attrib__enable, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib__periodms"), 3, mod16_native_oscillator_attrib__periodms, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib__oncycle"), 3, mod16_native_oscillator_attrib__oncycle, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib__time"), 2, mod16_native_oscillator_attrib__time, NULL);
+
+
+
+
+
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__engine_attrib"), 4, mod16_native_engine_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__palette_attrib"), 6, mod16_native_palette_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__tile_attrib"), 4, mod16_native_tile_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__input_attrib"), 4, mod16_native_input_attrib, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__audio_attrib"), 5, mod16_native_audio_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__bg_attrib"), 5, mod16_native_bg_attrib, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib"), 3, mod16_native_oscillator_attrib, NULL);
 
 
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__palette_query"), 4, mod16_native_palette_query, NULL);

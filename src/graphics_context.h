@@ -17,6 +17,9 @@ typedef struct mod16GraphicsContext_Layer_t mod16GraphicsContext_Layer_t;
 #define MOD16_GRAPHICS_CONTEXT__LAYER_MID 0
 #define MOD16_GRAPHICS_CONTEXT__LAYER_MAX 64
 
+#define MOD16_GRAPHICS_CONTEXT__RENDER_WIDTH 240
+#define MOD16_GRAPHICS_CONTEXT__RENDER_HEIGHT 160
+
 
 
 typedef struct mod16GraphicsContext_Sprite_t mod16GraphicsContext_Sprite_t;
@@ -72,16 +75,35 @@ struct mod16GraphicsContext_Sprite_t {
 
 
 typedef struct {
-    // The X position of the background
+    // x position of the background
     float x;
-    // the Y position of the background
+    
+    // y position of the background
     float y;
+    
+    // Rotation in degrees of the background about the center.
+    float rotation;
+    
+    // scale in the X direction of the background about the center
+    float scaleX;
+    
+    // Scale in the Y direction of the background about the center
+    float scaleY;
+    
+    // The center X position of the background for transform effects.
+    float centerX;
+
+    // The center Y position of the background for transform effects.
+    float centerY;
+    
+    
     // The depth layer of the background
     int layer;
     // the rendering effect mode of the background
     int effect;
     // whether the background is enabled.
     int enabled;
+
     // the ID of the background. This is used to 
     // determine which tiles to use for rendering.
     uint16_t id;
@@ -212,11 +234,11 @@ void mod16_graphics_context_get_render_size(mod16GraphicsContext_t *, int * w, i
 
 
 #define MOD16_GRAPHICS_CONTEXT_STORAGE__SPRITE_TILE_COUNT         1024
-#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES    32
-#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES   16
-#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT          32
-#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_TILE_COUNT     (32*(16 * 32))
-#define MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT          (1024 + (32*(16 * 32))) 
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_WIDTH_TILES    30
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_HEIGHT_TILES   20
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_COUNT          64
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__BACKGROUND_TILE_COUNT     (64*(30 * 20))
+#define MOD16_GRAPHICS_CONTEXT_STORAGE__TOTAL_TILE_COUNT          (1024 + (64*(30 * 20))) 
 #define MOD16_GRAPHICS_CONTEXT_STORAGE__PALETTE_COUNT             512
 #define MOD16_GRAPHICS_CONTEXT_STORAGE__VERTEX_COUNT_MAX          1024
 

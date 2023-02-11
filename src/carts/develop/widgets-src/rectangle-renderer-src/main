@@ -43,28 +43,23 @@ return {
             ]
         );
         
-        Cartridge.Sprite.set(
-            index: id,
-            x, y,
+        Cartridge.Sprite.bind(index:id);
+        Cartridge.Sprite.= {
+            x:x, 
+            y:y,
             show: true,
             tile:0,
-            layer,
-            palette: id
-        );
-        
-        Cartridge.Sprite.transform(
-            index: id,
+            layer:layer,
+            palette: id,
             scaleX: w / 8,
             scaleY: h / 8
-        );
+        };
         return id;
     },
     
     destroy::(ref) {
-        Cartridge.Sprite.set(
-            index:ref,
-            show: false
-        );
+        Cartridge.Sprite.bind(index:ref);
+        Cartridge.Sprite.show = false;
         
         pool->push(value:ref);
     }
