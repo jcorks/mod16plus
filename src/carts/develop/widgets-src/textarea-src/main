@@ -16,6 +16,7 @@ Cartridge.Palette.set(
         [0, 0, 0],
         [0.5, 0.5, 0.5],
         [0.6, 0.6, 0.6],
+        [0.5, 0.5, 1],        
         [0.5, 0.5, 1]
     ]
 );
@@ -41,6 +42,7 @@ Cartridge.Tile.set(
 Cartridge.Palette.set(
     index: DEFAULT_PALETTE_ID,
     colors: [
+        [0.5, 0.5, 0.5],
         [0.5, 0.5, 0.5],
         [0.5, 0.5, 0.5],
         [0.5, 0.5, 0.5],
@@ -1124,6 +1126,7 @@ return class(
                     Cartridge.Palette.set(
                         index:DEFAULT_PALETTE_ID,
                         colors: [
+                            value,
                             value,
                             value,
                             value,

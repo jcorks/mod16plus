@@ -562,7 +562,8 @@ typedef enum {
     MOD16NPA_BACK,
     MOD16NPA_MIDBACK,
     MOD16NPA_MIDFRONT,
-    MOD16NPA_FRONT
+    MOD16NPA_FRONT,
+    MOD16NPA_TOP
 } MOD16Native_PaletteAttribs_t;
 
 matteValue_t mod16_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
@@ -608,6 +609,12 @@ matteValue_t mod16_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const 
         p.front.x = matte_value_as_number(heap, args[3]);
         p.front.y = matte_value_as_number(heap, args[4]);
         p.front.z = matte_value_as_number(heap, args[5]);
+        break;
+
+      case MOD16NPA_TOP:
+        p.top.x = matte_value_as_number(heap, args[3]);
+        p.top.y = matte_value_as_number(heap, args[4]);
+        p.top.z = matte_value_as_number(heap, args[5]);
         break;
 
             
@@ -975,6 +982,9 @@ matteValue_t mod16_native_palette_query(matteVM_t * vm, matteValue_t fn, const m
 
       case MOD16NPA_FRONT:
         color = &p->front;
+        break;
+      case MOD16NPA_TOP:
+        color = &p->top;
         break;
 
       default:    return matte_heap_new_value(heap);
@@ -1565,6 +1575,7 @@ int mod16_native_get_palette_info(
     data[1] = p->midBack;
     data[2] = p->midFront;
     data[3] = p->front;
+    data[4] = p->top;
     return 1;
 }
 

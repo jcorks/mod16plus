@@ -361,7 +361,7 @@ int mod16_package(const char * dir) {
 
 
     matteArray_t * paletteIDs = matte_array_create(sizeof(uint32_t));
-    matteArray_t * palettes = matte_array_create(sizeof(float)*12); // uint8_t *, see mod16_rom_get_palette
+    matteArray_t * palettes = matte_array_create(sizeof(float)*15); // uint8_t *, see mod16_rom_get_palette
     
     
     matteArray_t * bytecodeSegmentNames = matte_array_create(sizeof(matteString_t*));
@@ -471,6 +471,7 @@ int mod16_package(const char * dir) {
                   case '2': paletteBytes[n] = 2; break;
                   case '3': paletteBytes[n] = 3; break;
                   case '4': paletteBytes[n] = 4; break;
+                  case '5': paletteBytes[n] = 5; break;
                   default:
                     paletteBytes[n] = 0;
                 }
@@ -523,14 +524,16 @@ int mod16_package(const char * dir) {
                     "%f %f %f "            
                     "%f %f %f "            
                     "%f %f %f "            
+                    "%f %f %f "            
                     "%f %f %f"            
                     , 
                 paletteBytes,   paletteBytes+1, paletteBytes+2, 
                 paletteBytes+3, paletteBytes+4, paletteBytes+5,
                 paletteBytes+6, paletteBytes+7, paletteBytes+8,
-                paletteBytes+9, paletteBytes+10,paletteBytes+11
-                ) != 12) {
-                printf("Palette sheet %s is malformed. It should contain 12 decimal values.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
+                paletteBytes+9, paletteBytes+10,paletteBytes+11,
+                paletteBytes+12, paletteBytes+13,paletteBytes+14
+                ) != 15) {
+                printf("Palette sheet %s is malformed. It should contain 15 decimal values.\n", matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, path)));
                 goto L_FAIL;
             }
             

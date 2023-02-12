@@ -43,6 +43,7 @@ typedef struct {
     GLint locationVBOmidBack;
     GLint locationVBOmidFront;
     GLint locationVBOfront;
+    GLint locationVBOtop;
     GLint locationVBObase;
     
     GLint locationUniformProj;
@@ -54,6 +55,7 @@ typedef struct {
     GLint locationUniformMidBackStatic;
     GLint locationUniformMidFrontStatic;
     GLint locationUniformFrontStatic;   
+    GLint locationUniformTopStatic;   
 
 
 
@@ -84,6 +86,11 @@ typedef struct {
     float colorFrontG;
     float colorFrontB;
 
+    float colorTopR;
+    float colorTopG;
+    float colorTopB;
+
+
     float colorBaseR;
     float colorBaseG;
     float colorBaseB;
@@ -112,6 +119,7 @@ typedef struct {
     mod16Vector_t midBack;
     mod16Vector_t midFront;
     mod16Vector_t front;
+    mod16Vector_t top;
     
     uint32_t id;
 
@@ -127,6 +135,7 @@ typedef struct {
     mod16Vector_t midBack;
     mod16Vector_t midFront;
     mod16Vector_t front;
+    mod16Vector_t top;
     GLint vbo;
     int count;
 } MOD16_GLVertexBatch;
@@ -319,7 +328,7 @@ void mod16_sdl_gl_set_sprite_tile(mod16SDLGL_t * gl, int tileTexture, uint16_t i
     mod16GraphicsContext_Tile_t converted = {};
     int i;
     for(i = 0; i < 64; ++i) {
-        converted.data[i] = data->data[i] * (255 / 4);
+        converted.data[i] = data->data[i] * (255 / 5.0);
     }
 
     glBindTexture(GL_TEXTURE_2D, tileTexture);
@@ -387,6 +396,7 @@ void mod16_sdl_gl_render_begin(mod16SDLGL_t * gl) {
     glEnableVertexAttribArray(gl->spriteProgram.locationVBOmidBack);
     glEnableVertexAttribArray(gl->spriteProgram.locationVBOmidFront);
     glEnableVertexAttribArray(gl->spriteProgram.locationVBOfront);
+    glEnableVertexAttribArray(gl->spriteProgram.locationVBOtop);
     glEnableVertexAttribArray(gl->spriteProgram.locationVBObase);
     
     
@@ -500,7 +510,8 @@ void mod16_sdl_gl_render_sprite(
     mod16Vector_t midBack,
     mod16Vector_t midFront,
     mod16Vector_t front,
-    
+    mod16Vector_t top,
+
     int spriteTexture,
     uint32_t id
 ) {
@@ -536,15 +547,40 @@ void mod16_sdl_gl_render_sprite(
 
     float u0, v0, u1, v1;        
     mod16_sdl_gl_get_tile_attribs(id, &u0, &v0, &u1, &v1);
-    MOD16_VBOvertex vboData[] = {
-        {x0real, y0real, 0, u0, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
-        {x1real, y1real, 0, u1, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
-        {x2real, y2real, 0, u1, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
-
-        {x2real, y2real, 0, u1, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
-        {x3real, y3real, 0, u0, v1,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f },
-        {x0real, y0real, 0, u0, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, 1.f, 1.f, 1.f }
+    MOD16_VBOvertex base = {x0real, y0real, 0, u0, v0,    back.x, back.y, back.z,     midBack.x, midBack.y, midBack.z,    midFront.x, midFront.y, midFront.z,    front.x, front.y, front.z, top.x, top.y, top.z,1.f, 1.f, 1.f };    
+    MOD16_VBOvertex vboData[6] = {
+        base,
+        base,
+        base,
+        base,
+        base,
+        base
     };
+    
+    vboData[1].x = x1real;
+    vboData[1].y = y1real;
+    vboData[1].u = u1;
+    vboData[1].v = v0;
+    
+
+    vboData[2].x = x2real;
+    vboData[2].y = y2real;
+    vboData[2].u = u1;
+    vboData[2].v = v1;
+
+
+    vboData[3].x = x2real;
+    vboData[3].y = y2real;
+    vboData[3].u = u1;
+    vboData[3].v = v1;
+
+    vboData[4].x = x3real;
+    vboData[4].y = y3real;
+    vboData[4].u = u0;
+    vboData[4].v = v1;
+
+
+
     MOD16_GLSpriteBatch * batch = matte_table_find_by_int(gl->spriteBatches, SPRITE_BATCH_KEY(effect, spriteTexture));
     if (batch == NULL) {
         if (!matte_array_get_size(gl->spriteBatchPool)) {
@@ -575,6 +611,7 @@ void mod16_sdl_gl_render_background(
     mod16Vector_t midBack,
     mod16Vector_t midFront,
     mod16Vector_t front,
+    mod16Vector_t top,
     
     int backgroundTexture,
     uint32_t id
@@ -585,6 +622,7 @@ void mod16_sdl_gl_render_background(
     b.midBack = midBack;
     b.midFront = midFront;
     b.front = front;
+    b.top = top;
     b.id = id;
     b.texture = backgroundTexture;
 
@@ -617,6 +655,7 @@ void mod16_sdl_gl_render_vertices(
     mod16Vector_t midBack,
     mod16Vector_t midFront,
     mod16Vector_t front,
+    mod16Vector_t top,
 
     int vertexArray,
     int count
@@ -631,6 +670,7 @@ void mod16_sdl_gl_render_vertices(
     v.midBack = midBack;
     v.midFront = midFront;
     v.front = front;
+    v.top = top;
     v.count = count;
     matte_array_push(gl->vertexBatches, v);
 }
@@ -647,6 +687,7 @@ void mod16_sdl_gl_render_end(mod16SDLGL_t * gl) {
     glDisableVertexAttribArray(gl->spriteProgram.locationVBOmidBack);
     glDisableVertexAttribArray(gl->spriteProgram.locationVBOmidFront);
     glDisableVertexAttribArray(gl->spriteProgram.locationVBOfront);
+    glDisableVertexAttribArray(gl->spriteProgram.locationVBOtop);
     glDisableVertexAttribArray(gl->spriteProgram.locationVBObase);
 
     glUseProgram(gl->screenProgram.handle);
@@ -800,6 +841,7 @@ static MOD16_GLProgram create_program(const char * srcVertex, const char * srcFr
     program.locationVBOmidBack = glGetAttribLocation(program.handle, "colorMidBack");
     program.locationVBOmidFront = glGetAttribLocation(program.handle, "colorMidFront");
     program.locationVBOfront = glGetAttribLocation(program.handle, "colorFront");
+    program.locationVBOtop = glGetAttribLocation(program.handle, "colorTop");
     program.locationVBObase = glGetAttribLocation(program.handle, "colorBase");
 
     program.locationUniformEffect = glGetUniformLocation(program.handle, "effect");
@@ -810,6 +852,7 @@ static MOD16_GLProgram create_program(const char * srcVertex, const char * srcFr
     program.locationUniformMidBackStatic = glGetUniformLocation(program.handle, "midBackStatic");
     program.locationUniformMidFrontStatic = glGetUniformLocation(program.handle, "midFrontStatic");
     program.locationUniformFrontStatic = glGetUniformLocation(program.handle, "frontStatic");
+    program.locationUniformTopStatic = glGetUniformLocation(program.handle, "topStatic");
     
     glGenBuffers(1, &program.vbo);
     
@@ -991,16 +1034,40 @@ static void mod16_sdl_gl_render_background_batch(mod16SDLGL_t * gl, MOD16_GLBack
 
 
     glBindBuffer(GL_ARRAY_BUFFER, gl->spriteProgram.vbo);
-    MOD16_VBOvertex vboData[] = {
-        {batch->x0, batch->y0, 0, 0, 0, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
-        {batch->x1, batch->y1, 0, 1, 0, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
-        {batch->x2, batch->y2, 0, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
+    MOD16_VBOvertex base = {batch->x0, batch->y0, 0, 0, 0, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z,  batch->top.x, batch->top.y, batch->top.z, 1.f, 1.f, 1.f};
 
-        {batch->x2, batch->y2, 0, 0, 0, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
-        {batch->x3, batch->y3, 0, 1, 0, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
-        {batch->x0, batch->y0, 0, 1, 1, batch->back.x, batch->back.y, batch->back.z,      batch->midBack.x, batch->midBack.y, batch->midBack.z,       batch->midFront.x, batch->midFront.y, batch->midFront.z,        batch->front.x, batch->front.y, batch->front.z, 1.f, 1.f, 1.f},
+    MOD16_VBOvertex vboData[] = {
+        base,
+        base,
+        base,
+        base,
+        base,
+        base
     };
     
+    vboData[1].x = batch->x1;
+    vboData[1].y = batch->y1;
+    vboData[1].u = 1;    
+    vboData[1].v = 0;    
+
+    vboData[2].x = batch->x2;
+    vboData[2].y = batch->y2;
+    vboData[2].u = 1;    
+    vboData[2].v = 1;    
+
+    vboData[3].x = batch->x2;
+    vboData[3].y = batch->y2;
+    vboData[3].u = 1;    
+    vboData[3].v = 1;    
+
+    vboData[4].x = batch->x3;
+    vboData[4].y = batch->y3;
+    vboData[4].u = 0;    
+    vboData[4].v = 1;    
+
+
+    
+
     glBufferData(GL_ARRAY_BUFFER, sizeof(MOD16_VBOvertex)*6, vboData, GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(gl->spriteProgram.locationVBOposition, 3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)0);
@@ -1009,7 +1076,8 @@ static void mod16_sdl_gl_render_background_batch(mod16SDLGL_t * gl, MOD16_GLBack
     glVertexAttribPointer(gl->spriteProgram.locationVBOmidBack,  3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*8));
     glVertexAttribPointer(gl->spriteProgram.locationVBOmidFront, 3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*11));
     glVertexAttribPointer(gl->spriteProgram.locationVBOfront,    3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*14));
-    glVertexAttribPointer(gl->spriteProgram.locationVBObase,     3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*17));
+    glVertexAttribPointer(gl->spriteProgram.locationVBOtop,      3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*17));
+    glVertexAttribPointer(gl->spriteProgram.locationVBObase,     3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*20));
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -1079,6 +1147,7 @@ static void mod16_sdl_gl_render_vertex_batch(mod16SDLGL_t * gl, MOD16_GLVertexBa
     glUniform3f(gl->spriteProgram.locationUniformMidBackStatic, batch->midBack.x, batch->midBack.y, batch->midBack.z);
     glUniform3f(gl->spriteProgram.locationUniformMidFrontStatic, batch->midFront.x, batch->midFront.y, batch->midFront.z);
     glUniform3f(gl->spriteProgram.locationUniformFrontStatic, batch->front.x, batch->front.y, batch->front.z);
+    glUniform3f(gl->spriteProgram.locationUniformTopStatic, batch->top.x, batch->top.y, batch->top.z);
 
 
 
@@ -1090,7 +1159,8 @@ static void mod16_sdl_gl_render_vertex_batch(mod16SDLGL_t * gl, MOD16_GLVertexBa
     glVertexAttribPointer(gl->spriteProgram.locationVBOmidBack,  3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*8));
     glVertexAttribPointer(gl->spriteProgram.locationVBOmidFront, 3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*11));
     glVertexAttribPointer(gl->spriteProgram.locationVBOfront,    3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*14));
-    glVertexAttribPointer(gl->spriteProgram.locationVBObase,     3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*17));
+    glVertexAttribPointer(gl->spriteProgram.locationVBOtop,      3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*17));
+    glVertexAttribPointer(gl->spriteProgram.locationVBObase,     3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*20));
 
 
     glDrawArrays(batch->shape == 0 ? GL_TRIANGLES : GL_LINES, 0, batch->count);
@@ -1158,7 +1228,8 @@ static void mod16_sdl_gl_render_sprite_batch(mod16SDLGL_t * gl, MOD16_GLSpriteBa
     glVertexAttribPointer(gl->spriteProgram.locationVBOmidBack,  3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*8));
     glVertexAttribPointer(gl->spriteProgram.locationVBOmidFront, 3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*11));
     glVertexAttribPointer(gl->spriteProgram.locationVBOfront,    3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*14));
-    glVertexAttribPointer(gl->spriteProgram.locationVBObase,     3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*17));
+    glVertexAttribPointer(gl->spriteProgram.locationVBOtop,      3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*17));
+    glVertexAttribPointer(gl->spriteProgram.locationVBObase,     3, GL_FLOAT, GL_FALSE, sizeof(MOD16_VBOvertex), (void*)(sizeof(float)*20));
 
     glDrawArrays(GL_TRIANGLES, 0, matte_array_get_size(batch->vertices));
     glBindTexture(GL_TEXTURE_2D, 0);

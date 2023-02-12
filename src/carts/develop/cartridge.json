@@ -12,7 +12,8 @@
     "painter",
     "project",
     "view",
-    "window"
+    "window",
+    "tp_selector"
   ],
 
   "subcartridges" : [

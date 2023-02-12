@@ -1429,6 +1429,7 @@ return {
                 color,
                 color,
                 color,
+                color,
                 color
             ]
         );
@@ -1468,6 +1469,7 @@ return {
         Cart.Palette.set(
             index:refs.p,
             colors: [
+                color,
                 color,
                 color,
                 color,

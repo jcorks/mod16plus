@@ -52,7 +52,7 @@ return class(
                 });
                 
                 palettes->push(value:[id, 'palette_'+id]);
-                Mod16.File.saveText(name:'palette_'+id, data: '1 0 1  0 1 0  0 0 1  1 1 1');
+                Mod16.File.saveText(name:'palette_'+id, data: '1 0 1  0 1 0  0 0 1  1 1 1  1 1 0');
             },
             
             savePalette ::(id => Number, paletteColors => Object) {
@@ -73,7 +73,8 @@ return class(
                     paletteColors[0] + ' ' + paletteColors[1] + ' ' + paletteColors[2] + ' ' +
                     paletteColors[3] + ' ' + paletteColors[4] + ' ' + paletteColors[5] + ' ' +
                     paletteColors[6] + ' ' + paletteColors[7] + ' ' + paletteColors[8] + ' ' +
-                    paletteColors[9] + ' ' + paletteColors[10] + ' ' + paletteColors[11]
+                    paletteColors[9] + ' ' + paletteColors[10] + ' ' + paletteColors[11] + ' ' +
+                    paletteColors[12] + ' ' + paletteColors[13] + ' ' + paletteColors[14]
                 );
             },
             

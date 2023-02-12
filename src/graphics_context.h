@@ -176,17 +176,22 @@ typedef struct {
     // This is represented with the value 1 in tiles.
     mod16Vector_t back;
 
-    // The first color, also called the mid-back color.
+    // The second color, also called the mid-back color.
     // This is represented with the value 2 in tiles.
     mod16Vector_t midBack;
     
-    // The first color, also called the mid-front color.
+    // The third color, also called the mid-front color.
     // This is represented with the value 3 in tiles.    
     mod16Vector_t midFront;
     
-    // The first color, also called the front color.
+    // The fourth color, also called the front color.
     // This is represented with the value 4 in tiles.    
     mod16Vector_t front; 
+
+    // The fifth color, also called the top color.
+    // This is represented with the value 4 in tiles.    
+    mod16Vector_t top; 
+
 
 } mod16GraphicsContext_Palette_t;
 

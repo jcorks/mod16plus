@@ -126,7 +126,8 @@
         BACK: 0,
         MIDBACK: 1,
         MIDFRONT: 2,
-        FRONT: 3
+        FRONT: 3,
+        TOP: 4
     };
 
     return class(
@@ -153,11 +154,14 @@
                     @colorMidBack  = parseColor(input:colors[1]);
                     @colorMidFront = parseColor(input:colors[2]);
                     @colorFront    = parseColor(input:colors[3]);
+                    @colorTop      = parseColor(input:colors[4]);
+                    
 
                     mod16_native__palette_attrib(a:cartID_, b:index, c:COLORS.BACK,     d:colorBack[0],     e:colorBack[1],     f:colorBack[2]);
                     mod16_native__palette_attrib(a:cartID_, b:index, c:COLORS.MIDBACK,  d:colorMidBack[0],  e:colorMidBack[1],  f:colorMidBack[2]);
                     mod16_native__palette_attrib(a:cartID_, b:index, c:COLORS.MIDFRONT, d:colorMidFront[0], e:colorMidFront[1], f:colorMidFront[2]);
                     mod16_native__palette_attrib(a:cartID_, b:index, c:COLORS.FRONT,    d:colorFront[0],    e:colorFront[1],    f:colorFront[2]);
+                    mod16_native__palette_attrib(a:cartID_, b:index, c:COLORS.TOP,      d:colorTop[0],      e:colorTop[1],      f:colorTop[2]);
                         
                 },
                 
@@ -188,7 +192,14 @@
                             mod16_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:0),
                             mod16_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:1),
                             mod16_native__palette_query(a:cartID_, b:index, c:COLORS.FRONT, d:2)
+                        ],
+                        [
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.TOP, d:0),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.TOP, d:1),
+                            mod16_native__palette_query(a:cartID_, b:index, c:COLORS.TOP, d:2)
                         ]
+                        
+
                     ];
                 }
             };        

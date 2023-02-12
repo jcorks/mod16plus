@@ -67,6 +67,7 @@ void mod16_sdl_gl_render_sprite(
     mod16Vector_t midBack,
     mod16Vector_t midFront,
     mod16Vector_t front,
+    mod16Vector_t top,
             
     int spriteTexture,
     uint32_t id
@@ -85,6 +86,7 @@ void mod16_sdl_gl_render_background(
     mod16Vector_t midBack,
     mod16Vector_t midFront,
     mod16Vector_t front,
+    mod16Vector_t top,
             
     int backgroundTexture,            
     uint32_t id
@@ -101,6 +103,7 @@ void mod16_sdl_gl_render_vertices(
     mod16Vector_t midBack,
     mod16Vector_t midFront,
     mod16Vector_t front,
+    mod16Vector_t top,
 
     int vertexArray,
     int count

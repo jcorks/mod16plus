@@ -16,7 +16,7 @@ typedef struct {
 
 typedef struct {
     uint32_t id;
-    float data[12];
+    float data[15];
 } MOD16Palette;
 
 
@@ -200,7 +200,7 @@ mod16ROM_t * mod16_rom_create(
     // Pre-computed palettes and their associated IDs. 
     // Like tiles, palettes can be made during runtime, so 
     // these are just the initial set.
-    // Palettes are 12 floating point values.
+    // Palettes are 15 floating point values.
     matteArray_t * paletteIDs, // uint32_t
     matteArray_t * palettes, // uint8_t *, see mod16_rom_get_palette
     
@@ -259,7 +259,7 @@ mod16ROM_t * mod16_rom_create(
     for(i = 0; i < len; ++i) {
         MOD16Palette palette;
         palette.id = matte_array_at(paletteIDs, uint32_t, i);
-        memcpy(palette.data, &matte_array_at(palettes, float, i*12), 12*sizeof(float));
+        memcpy(palette.data, &matte_array_at(palettes, float, i*15), 15*sizeof(float));
 
         matte_array_push(rom->palettes, palette);
     };

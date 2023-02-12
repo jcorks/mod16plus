@@ -6,6 +6,7 @@ in vec3 colorBack;
 in vec3 colorMidBack;
 in vec3 colorMidFront;
 in vec3 colorFront;
+in vec3 colorTop;
 in vec3 colorBase;
 
 out vec2 uv_frag;
@@ -13,6 +14,7 @@ out vec3 colorBack_frag;
 out vec3 colorMidBack_frag;
 out vec3 colorMidFront_frag;
 out vec3 colorFront_frag;
+out vec3 colorTop_frag;
 out vec3 colorBase_frag;
 
 uniform mat4 proj;
@@ -24,6 +26,7 @@ uniform vec3 backStatic;
 uniform vec3 midBackStatic;
 uniform vec3 midFrontStatic;
 uniform vec3 frontStatic;
+uniform vec3 topStatic;
 
 
 void main() {
@@ -34,6 +37,7 @@ void main() {
     colorMidBack_frag = colorMidBack;
     colorMidFront_frag = colorMidFront;
     colorFront_frag = colorFront;
+    colorTop_frag = colorTop;
     colorBase_frag = colorBase;
     
     

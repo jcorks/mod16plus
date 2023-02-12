@@ -168,6 +168,7 @@ void mod16_graphics_context_render(mod16GraphicsContext_t * ctx) {
                     p->midBack,
                     p->midFront,
                     p->front,
+                    p->top,
                     
                     bg->src->bgTexture[bg->data.id],
                     bg->data.id
@@ -198,6 +199,7 @@ void mod16_graphics_context_render(mod16GraphicsContext_t * ctx) {
                 p->midBack,
                 p->midFront,
                 p->front,
+                p->top,
                 
                 iter->src->spriteTexture,
                 iter->data.tile
@@ -229,6 +231,7 @@ void mod16_graphics_context_render(mod16GraphicsContext_t * ctx) {
                 p->midBack,
                 p->midFront,
                 p->front,
+                p->top,
                 
                 iter->src->vertexArrayObject,
                 iter->src->vertexArraySize

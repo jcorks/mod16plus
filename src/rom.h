@@ -64,7 +64,7 @@ mod16ROM_t * mod16_rom_create(
     // Pre-computed palettes and their associated IDs. 
     // Like tiles, palettes can be made during runtime, so 
     // these are just the initial set.
-    // Palettes are 12 floating point values.
+    // Palettes are 15 floating point values.
     matteArray_t * paletteIDs, // uint32_t
     matteArray_t * palettes, // uint8_t *, see mod16_rom_get_palette
     
@@ -135,9 +135,9 @@ uint32_t mod16_rom_get_palette_count(const mod16ROM_t *);
 
 // Gets the palette in the ROM. Returns null if none at that index within the rom.
 // Palettes are always packages in RGB, one byte for each component.
-// Palette color orders are always: background, mid-background, mid-front, and front
+// Palette color orders are always: background, mid-background, mid-front, front, and top
 // in order of bytes.
-// Palettes returned are always 12 floats.
+// Palettes returned are always 15 floats.
 const float * mod16_rom_get_palette(const mod16ROM_t *, uint32_t index, uint32_t * id);
 
 

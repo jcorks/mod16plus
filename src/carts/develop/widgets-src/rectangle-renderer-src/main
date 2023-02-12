@@ -39,7 +39,8 @@ return {
                 color,
                 color,
                 color,
-                color            
+                color,
+                color          
             ]
         );
         

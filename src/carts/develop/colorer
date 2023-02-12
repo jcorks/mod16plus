@@ -47,15 +47,15 @@
 ];
 
 
-@:PREVIEW_PALETTE_TILE_DATA =  [
-    1, 1, 2, 2, 3, 3, 4, 4,
-    1, 1, 2, 2, 3, 3, 4, 4,
-    1, 1, 2, 2, 3, 3, 4, 4,
-    1, 1, 2, 2, 3, 3, 4, 4,
-    1, 1, 2, 2, 3, 3, 4, 4,
-    1, 1, 2, 2, 3, 3, 4, 4,
-    1, 1, 2, 2, 3, 3, 4, 4,
-    1, 1, 2, 2, 3, 3, 4, 4,
+@:PREVIEW_PALETTE_TILE_DATA = [
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0
 ];
 
 @:BUTTON_TILE1_DATA = [
@@ -103,7 +103,20 @@
     4, 4, 4, 4, 4, 4, 4, 4,
 ];
 
+@:BUTTON_TILE5_DATA = [
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5,
+
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5
+];
+
 @:INACTIVE_PALETTE_DATA = [
+    [0, 0, 0, 0],
     [0, 0, 0, 0],
     [0, 0, 0, 0],
     [0, 0, 0, 0],
@@ -119,10 +132,11 @@
 
 
         @:palette = [
-            [0.1, 0.1, 0.1, 0.1],
-            [0.3, 0.3, 0.3, 0.3],
-            [0.7, 0.7, 0.7, 0.7],
-            [0.9, 0.9, 0.9, 0.9],
+            [0.1, 0.1, 0.1],
+            [0.3, 0.3, 0.3],
+            [0.7, 0.7, 0.7],
+            [0.85, 0.85, 0.85],
+            [1, 1, 1]
         ];
 
 
@@ -169,7 +183,8 @@
                 [data[0], data[1], data[2]],
                 [data[3], data[4], data[5]],
                 [data[6], data[7], data[8]],
-                [data[9], data[10], data[11]]
+                [data[9], data[10], data[11]],
+                [data[12], data[13], data[14]]
             ];
             return dataFormatted;
         };
@@ -242,6 +257,7 @@
                 paletteBox.children[2].children[0].palette = INACTIVE_PALETTE_DATA;
                 paletteBox.children[3].children[0].palette = INACTIVE_PALETTE_DATA;
                 paletteBox.children[4].children[0].palette = INACTIVE_PALETTE_DATA;
+                paletteBox.children[5].children[0].palette = INACTIVE_PALETTE_DATA;
             };
             
             
@@ -253,6 +269,7 @@
                 paletteBox.children[2].children[0].palette = INACTIVE_PALETTE_DATA;
                 paletteBox.children[3].children[0].palette = INACTIVE_PALETTE_DATA;
                 paletteBox.children[4].children[0].palette = INACTIVE_PALETTE_DATA;
+                paletteBox.children[5].children[0].palette = INACTIVE_PALETTE_DATA;
             };
 
             // select palette 
@@ -263,6 +280,7 @@
             paletteBox.children[2].children[0].palette = palette;
             paletteBox.children[3].children[0].palette = palette;
             paletteBox.children[4].children[0].palette = palette;
+            paletteBox.children[5].children[0].palette = palette;
         };
 
         @:scrollable = UIScrollable.new(
@@ -351,10 +369,11 @@
         @:paletteBox = UILayout.new(
             children: [
                 [UILabel.new(text:'No Palette'), 0.1],
-                [makePaletteChoiceItem(index:0, tile:BUTTON_TILE1_DATA), 0.2],
-                [makePaletteChoiceItem(index:1, tile:BUTTON_TILE2_DATA), 0.2],
-                [makePaletteChoiceItem(index:2, tile:BUTTON_TILE3_DATA), 0.2],
-                [makePaletteChoiceItem(index:3, tile:BUTTON_TILE4_DATA), 0.2]
+                [makePaletteChoiceItem(index:0, tile:BUTTON_TILE1_DATA), 0.16],
+                [makePaletteChoiceItem(index:1, tile:BUTTON_TILE2_DATA), 0.16],
+                [makePaletteChoiceItem(index:2, tile:BUTTON_TILE3_DATA), 0.16],
+                [makePaletteChoiceItem(index:3, tile:BUTTON_TILE4_DATA), 0.16],
+                [makePaletteChoiceItem(index:4, tile:BUTTON_TILE5_DATA), 0.16]
             ]
         );
 
