@@ -1,0 +1,340 @@
+@:Mod16 = import(module:'Mod16Plus.Core');
+@:class = import(module:'Matte.Core.Class');
+@:Cartridge = Mod16.Cartridge;
+@:Project = Cartridge.import(source:'project');
+
+@:Widgets = Cartridge.subCartridge(name:'widgets');
+
+@:UILabel = Widgets.UILabel;
+@:UITile = Widgets.UITile;
+@:UIFlat = Widgets.UIFlat;
+@:UIRadioLayout = Widgets.UIRadioLayout;
+@:UIScrollable = Widgets.UIScrollable;
+@:UIButton = Widgets.UIMousable;
+@:UILayout = Widgets.UILayout;
+
+
+@:hexDisplay = Cartridge.import(source:'hexdisplay');
+
+
+@:PREVIEW_PALETTE_TILE_ID = [
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0,
+    1, 2, 3, 4, 5, 0, 0, 0
+];
+
+@:palette = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0]
+
+];
+
+
+return ::(
+    onChoosePalette,
+    onChooseTile
+){
+    @:Window = Cartridge.import(source:'window');
+
+
+    ////////////////////////////////////////////
+    // PALETTE CHOOSER
+    @paletteScrollable;
+    @resetPaletteChoices;        
+    @tileChoices;
+    
+    ::<= {
+
+
+        @:makePaletteChoiceItem ::(index) {
+            @:label = UILabel.new(text:'');
+            @:tile = UITile.new(tileData:PREVIEW_PALETTE_TILE_ID);
+            @:box = UIFlat.new(children:[
+                [label, 0.8],
+                [tile, 0.2]
+            ]);
+            return box;
+        };
+
+
+        @:paletteChoices = [
+            makePaletteChoiceItem(index:0),
+            makePaletteChoiceItem(index:1),
+            makePaletteChoiceItem(index:2),
+            makePaletteChoiceItem(index:3),
+            makePaletteChoiceItem(index:4)
+        ];
+
+        @:readIntoPalette::(storedPaletteIndex => Number) {
+            @:data = Project.openPalette(id:storedPaletteIndex);
+            @:dataFormatted = [
+                [data[0], data[1], data[2]],
+                [data[3], data[4], data[5]],
+                [data[6], data[7], data[8]],
+                [data[9], data[10], data[11]],
+                [data[12], data[13], data[14]]
+            ];
+            return dataFormatted;
+        };        
+
+        
+
+        
+        @:paletteRadio = UIRadioLayout.new(
+            choices : [
+                paletteChoices[0],
+                paletteChoices[1],
+                paletteChoices[2],
+                paletteChoices[3],
+                paletteChoices[4]
+            ]
+        );   
+
+        
+        @chosenPalettesSlot;
+        paletteRadio.onChoose = ::(choice) {
+            @:paletteData = paletteChoices[choice].children[1].palette;
+            onChoosePalette(data:paletteData);
+            [0, 5]->for(do:::(i) {
+                tileChoices[i].children[1].palette = paletteData;
+            });
+            chosenPalettesSlot = paletteScrollable.currentScrollPosition + choice;            
+        };
+        resetPaletteChoices = ::{
+            when (out.tileMode) empty;
+        
+            @paletteData = Project.palettes;
+            @:top = paletteScrollable.currentScrollPosition;
+            paletteScrollable.setupPage(itemCount:Project.palettes->keycount, itemsPerPage:5);
+
+            
+            @i = 0;
+            [::] {
+                [top, paletteData->keycount]->for(do:::(index) {
+                    paletteChoices[i].show();
+
+                    paletteChoices[i].children[1].palette = readIntoPalette(storedPaletteIndex:paletteData[index][0]);
+                    paletteChoices[i].children[0].text = hexDisplay(number:paletteData[index][0]);
+                        
+                    i+=1;
+                    
+                    when(i == 5) send();
+                });
+                
+                [i, 5]->for(do:::(index) {
+                    paletteChoices[i].hide();
+                });
+            };        
+        };
+        
+
+        paletteScrollable = UIScrollable.new(
+            child: paletteRadio,
+            onScroll::(itemTop, itemCount, itemsPerPage) {
+                resetPaletteChoices();
+                
+                when(chosenPalettesSlot == empty) empty;
+                paletteRadio.choice = chosenPalettesSlot - itemTop;
+                
+            },
+            itemCount: 1,  
+            itemsPerPage: 5
+        );
+    };
+
+
+
+    /////////////////////////////////// 
+    // TILE CHOOSER
+    @tileScrollable;
+    @resetTileChoices;   
+    ::<= {
+        @chosenTilesSlot;
+
+
+        @:makeTileChoiceItem ::(index) {
+            @:label = UILabel.new(text:'');
+            @:tile = UITile.new(paletteData:palette);
+            @:box = UIFlat.new(children:[
+                [label, 0.8],
+                [tile, 0.2]
+            ]);
+            return box;
+        };
+
+
+        tileChoices = [
+            makeTileChoiceItem(index:0),
+            makeTileChoiceItem(index:1),
+            makeTileChoiceItem(index:2),
+            makeTileChoiceItem(index:3),
+            makeTileChoiceItem(index:4)
+        ];
+
+
+        @:readIntoTile::(storedTileIndex => Number) {
+            @:data = Project.openTile(id:storedTileIndex);
+            return data;
+        };        
+
+        
+
+        
+        @:tileRadio = UIRadioLayout.new(
+            choices : [
+                tileChoices[0],
+                tileChoices[1],
+                tileChoices[2],
+                tileChoices[3],
+                tileChoices[4]
+            ]
+        );   
+
+        
+        tileRadio.onChoose = ::(choice) {
+            when (tileChoices[choice].children[0].text == '') empty;
+
+
+            when (tileChoices[choice].children[0].text == ' Add Tile') ::<= {
+                Window.entryDialog(text:'Tile ID:', onEntry::(text) {
+                    [::] {
+                        Project.newTile(id:Number.parse(string:text));
+                    } : {
+                        onError ::(message) {
+                            Window.alert(text:'Error: ' + message.data);
+                        }
+                    };
+                    resetTileChoices();
+                    Project.save();
+                });                                
+            };
+        
+            @:tileData = tileChoices[choice].children[1].tile;            
+            chosenTilesSlot = tileScrollable.currentScrollPosition + choice;
+            onChooseTile(data:tileData, id:Project.tiles[chosenTilesSlot][0]);
+            
+        };
+        resetTileChoices = ::{
+            when (!out.tileMode) empty;
+
+            @tileData = Project.tiles;
+            @:top = tileScrollable.currentScrollPosition;
+            tileScrollable.setupPage(itemCount:Project.tiles->keycount, itemsPerPage:5);
+
+            tileData->push(value:[]);
+            
+            
+            
+            
+            @i = 0;
+            [::] {
+                [top, tileData->keycount]->for(do:::(index) {
+                    tileChoices[i].show();
+
+
+                    if (index == tileData->keycount-1) ::<= {                            
+                        tileChoices[i].children[0].text = ' Add Tile';
+                    } else ::<= {
+                        tileChoices[i].children[1].tile = readIntoTile(storedTileIndex:tileData[index][0]);
+                        tileChoices[i].children[0].text = hexDisplay(number:tileData[index][0]);
+                    };
+                    i+=1;
+                    
+                    when(i == 5) send();
+                });
+                
+                [i, 5]->for(do:::(index) {
+                    tileChoices[i].hide();
+                });
+            };        
+        };
+        
+
+        tileScrollable = UIScrollable.new(
+            child: tileRadio,
+            onScroll::(itemTop, itemCount, itemsPerPage) {
+                resetTileChoices();
+                
+                when(chosenTilesSlot == empty) empty;
+                tileRadio.choice = chosenTilesSlot - itemTop;
+                
+            },
+            itemCount: 1,  
+            itemsPerPage: 5
+        );
+    };
+
+
+
+
+
+
+
+            
+
+
+
+
+
+
+
+
+    @:switchPalette = UIButton.new(child:UILabel.new(text:'Palet.'));
+    @:switchTile = UIButton.new(child:UILabel.new(text:'Tile'));
+
+    @:buttonBox = UIFlat.new(        
+        children: [
+            [switchPalette, 0.5],
+            [switchTile, 0.5]
+        ]
+
+    );
+    @:leftBox = UILayout.new(
+        children: [
+            [paletteScrollable, 0.9],
+            [buttonBox, 0.1]
+        ]
+    );
+
+    tileScrollable.hide();
+
+
+
+    switchPalette.onClick = ::{
+        leftBox.clearChildren();
+        leftBox.addChild(child:paletteScrollable, sizeRequest:0.9);
+        leftBox.addChild(child:buttonBox, sizeRequest:0.1);
+        paletteScrollable.show();
+        tileScrollable.hide();
+        out.tileMode = false;
+        resetPaletteChoices();
+
+    };
+
+    switchTile.onClick = ::{
+        leftBox.clearChildren();
+        leftBox.addChild(child:tileScrollable, sizeRequest:0.9);
+        leftBox.addChild(child:buttonBox, sizeRequest:0.1);
+        tileScrollable.show();            
+        paletteScrollable.hide();
+        out.tileMode = true;
+        resetTileChoices();
+    };
+
+
+    @out = {
+        tileMode: false,
+        rereadTileChoices : resetTileChoices,
+        rereadPaletteChoices : resetPaletteChoices,
+        widget:leftBox
+    };
+    return out;
+};
