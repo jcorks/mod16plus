@@ -4,3 +4,5 @@ all:
 	cd ./vertices/ && mod16plus package ./
 	cp ../src/carts/debug/rom.mod16 ./sprites/debug 
 	cd ./sprites/ && mod16plus package ./
+	cp ../src/carts/debug/rom.mod16 ./debug/debug 
+	cd ./debug/ && mod16plus package ./

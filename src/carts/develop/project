@@ -42,7 +42,7 @@ return class(
 
         
             newSubcartridge ::(name) {
-                when(subcartridges->findIndex(key:name)) empty;
+                when(subcartridges->findIndex(value:name) != -1) empty;
                 subcartridges->push(value:name);
                 
             },
@@ -50,7 +50,7 @@ return class(
             removeSubcartridge ::(name) {
                 @index = subcartridges->findIndex(key:name);
                 when(index == -1) empty;
-                subcartridge->remove(key:index);
+                subcartridges->remove(key:index);
             
             },
             

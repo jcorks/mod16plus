@@ -37,6 +37,7 @@
     inherits : [UI],
     define:::(this) {
         
+        @:Window = Cartridge.import(source:'window');
 
         @:ICON_TILE_DATA = [
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -52,37 +53,34 @@
         
         @:tile = Fetcher.Tile.newID();
 
-        @:createListEntry = ::{
-            @:out = UIMousable.new(child:UILabel.new(text:'[No Subcartridge]'));
-            out.onClick = ::{
-                Window.entryDialog(text:'Subcartridge:', onEntry::(text) {
-                    out.children[0].text = text;
-                });
-            };
-        };
+
 
 
         @:list = UILayout.new(
             children: [
-                [UILabel.new(text:'[No SubCartridge]'), 0.125],
-                [UILabel.new(text:'[No SubCartridge]'), 0.125],
-                [UILabel.new(text:'[No SubCartridge]'), 0.125],
-                [UILabel.new(text:'[No SubCartridge]'), 0.125],
-                [UILabel.new(text:'[No SubCartridge]'), 0.125],
-                [UILabel.new(text:'[No SubCartridge]'), 0.125],
-                [UILabel.new(text:'[No SubCartridge]'), 0.125],
-                [UILabel.new(text:'[No SubCartridge]'), 0.125]
+                [UILabel.new(text:''), 0.125],
+                [UILabel.new(text:''), 0.125],
+                [UILabel.new(text:''), 0.125],
+                [UILabel.new(text:''), 0.125],
+                [UILabel.new(text:''), 0.125],
+                [UILabel.new(text:''), 0.125],
+                [UILabel.new(text:''), 0.125],
+                [UILabel.new(text:''), 0.125],
             ]
         );        
         
         @:resetCartridgeList = ::(itemTop, itemCount, itemsPerPage) {
             @:location = scrollable.currentScrollPosition;
             @:subs = Project.subcartridges;
-            [0, subs->keycount]->for(do:::(i) {
+            [0, 8]->for(do:::(i) {
                 @:entry = subs[i+location];
-                if (entry == empty) {
-                
-                }
+                if (entry == empty) ::<= {
+                    list.children[i].text = '[No Subcartridge]';
+                    list.children[i].foreground = '#505050';
+                } else ::<= {
+                    list.children[i].text = entry;
+                    list.children[i].foreground = '#a0faa0';
+                };
             });
         };     
         
@@ -92,16 +90,43 @@
             itemsPerPage: 8,
             itemCount:128
         );
-        scrollable.onScroll = ::{
+        scrollable.onScroll = ::(itemTop, itemCount, itemsPerPage){
             resetCartridgeList();
         };
         
         
-
+        @:mainLayout = UILayout.new(
+            children: [
+                [UILabel.new(text:'Subcartridges:'), 0.1],
+                [scrollable, 0.9]
+            ]
+        );
 
 
         resetCartridgeList();
 
+        this.addChild(child:mainLayout, sizeRequest:1);
+        @:iconPalette = [
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1]
+        ];        
+        
+        this.events.installHooks(events: {
+            onMove ::(detail) {
+                mainLayout.move(x:this.x, y:this.y);
+            },
+            
+            onResize ::(detail) {
+                mainLayout.resize(width:this.width, height:this.height);
+            },
+            
+            onShow ::(detail) {
+                resetCartridgeList();
+            }
+        });        
         
         this.interface = {
             // All the menus within the 
@@ -111,6 +136,40 @@
             // called when clicking the actions.
             menus : {
                 get :: <- [
+                    // new subcart
+                    [iconPalette, [
+                        4, 4, 4, 4, 4, 4, 4, 0,
+                        4, 0, 0, 0, 0, 0, 4, 0,
+                        4, 0, 0, 4, 0, 0, 4, 0,
+                        4, 0, 4, 4, 4, 0, 4, 0,
+
+                        4, 0, 0, 4, 0, 0, 4, 0,
+                        4, 0, 0, 0, 0, 0, 4, 0,
+                        4, 0, 0, 0, 0, 0, 4, 0,
+                        4, 4, 4, 4, 4, 4, 4, 0,                        
+                    ], ::{
+                        Window.entryDialog(text: 'Add subcartridge:', onEntry::(text) {
+                            Project.newSubcartridge(name:text);
+                            Project.save();
+                        });
+                    }],
+                    [iconPalette, [
+                        1, 1, 1, 1, 1, 1, 1, 0,
+                        1, 1, 0, 0, 0, 1, 1, 0,
+                        1, 0, 1, 0, 1, 0, 1, 0,
+                        1, 0, 0, 1, 0, 0, 1, 0,
+
+                        1, 0, 1, 0, 1, 0, 1, 0,
+                        1, 1, 0, 0, 0, 1, 1, 0,
+                        1, 0, 0, 0, 0, 0, 1, 0,
+                        1, 1, 1, 1, 1, 1, 1, 0,
+                    ], 
+                    ::{
+                        Window.entryDialog(text: 'Remove subcartridge:', onEntry::(text) {
+                            Project.removeSubcartridge(name:text);
+                            Project.save();
+                        });
+                    }],                 
                 ]
             },
 

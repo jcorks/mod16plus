@@ -1,0 +1,36 @@
+// This example shows how to use 
+// debugging tools.
+
+// In Mod16+, debugging is an optional
+// feature where cartridges can bind 
+// functions to call on certain debug 
+// events.
+
+// In the default carts provided, the 
+// debug cartridge will provide basic 
+// behavior that implements these 
+// debug bindings. 
+
+// This project includes the debug 
+// cart, which automatically binds 
+// the debugging features. 
+
+@test = 'Hello!';
+
+// Once bound, debug mode can be 
+// activated by calling the following:
+
+@:Mod16 = import(module:'Mod16Plus.Core');
+Mod16.Debug.enter();
+
+// Once called, this will pause normal 
+// execution at the location where 
+// the funtion was called, allowing 
+// for evaluating expressions in-scope.
+
+test = 'World!';
+
+// Try printing test and notice that 
+// it is still listed as the previous 
+// value, as the 'World!' setting has 
+// not been reached yet.
