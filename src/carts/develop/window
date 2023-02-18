@@ -166,8 +166,10 @@ return class(
             @:promptw = UILabel.new(text:'');
             @:entry = UIEntry.new(text:'');
             @:list = UIList.new(items:[], showCount:3);
+            @:delayedReturnResponse = Fetcher.Oscillator.newID();
 
-
+            @enterInput;
+            
             @:dialog = UIRoot.new(
                 width:200,
                 height:100,
@@ -206,13 +208,15 @@ return class(
                     dialog.show();
                     promptw.text = prompt;
                     if (onYes) ::<= {
-                        yesButton.show();
-                        yesButton.onClick = ::{
+                        @:confirm = ::{
                             dialog.hide();
                             onYes();
                             SETUP_STACK-=1;
                             if (SETUP_STACK == 0) showView();
                         };
+                        yesButton.show();
+                        yesButton.onClick = confirm;
+
                     } else yesButton.hide();
 
                     if (onNo) ::<= {
@@ -226,13 +230,40 @@ return class(
                     } else noButton.hide();
 
                     if (onOK) ::<= {
-                        okButton.show();
-                        okButton.onClick = ::{
+                        @:confirm = ::{
+                            Mod16.Input.removeCallback(id:enterInput, device:Mod16.Input.DEVICES.KEYBOARD);
                             dialog.hide();
                             onOK();
                             SETUP_STACK-=1;
                             if (SETUP_STACK == 0) showView();
                         };
+                        okButton.show();
+                        okButton.onClick = confirm;
+                        enterInput = Mod16.Input.addCallback(
+                            device: Mod16.Input.DEVICES.KEYBOARD,
+                            callback::(key, text, event) {
+                                if (event == Mod16.Input.EVENTS.KEY_DOWN &&
+                                    key == Mod16.Input.KEYS.RETURN) ::<= {
+
+                                    // because shown stuff will capture the Enter signal, we are going 
+                                    // to schedule a response a little bit later using 
+                                    // and oscillator.
+                                    Cartridge.Oscillator.bind(index:delayedReturnResponse);
+                                    Cartridge.Oscillator. = {
+                                        enable: true,
+                                        periodMS: 5,
+                                        onCycle :: {
+                                            Cartridge.Oscillator.bind(index:delayedReturnResponse);
+                                            Cartridge.Oscillator.enable = false;                                                                                    
+                                            confirm();                                    
+                                        }
+                                    };
+
+                                };
+                                    
+                            }
+                        );
+
                     } else okButton.hide();
 
                     if (onEntry) ::<= {
@@ -351,11 +382,10 @@ return class(
                 @:Project = Cartridge.import(source:'project');
 
                 [::] {
-                    this.alert(text: 'Preject Loaded.', onOkay::{
-                        Project.load();                                
-                        views[0].openFile(name:'main');
-                        selectView(view:views[0]);
-                    });
+                    Project.load();                                
+                    views[0].openFile(name:'main');
+                    selectView(view:views[0]);
+                    this.alert(text: 'Preject Loaded.', onOkay::{});
                 } : {
                     onError ::(message) {
                         this.alert(text: 'No existing project.', onOkay: ::<-

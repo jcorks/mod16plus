@@ -124,7 +124,7 @@
                 @:paletteData = data;
                
                 canvas.palette = paletteData; 
-                [1, 5]->for(do:::(i) {
+                [1, 6]->for(do:::(i) {
                     colorChoices[i].palette = paletteData;
                 });               
 

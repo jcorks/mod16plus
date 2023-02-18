@@ -74,7 +74,7 @@
 @:mod16_native__oscillator_attrib__enable = getExternalFunction(name:"mod16_native__oscillator_attrib__enable");
 @:mod16_native__oscillator_attrib__oncycle = getExternalFunction(name:"mod16_native__oscillator_attrib__oncycle");
 @:mod16_native__oscillator_attrib__periodms = getExternalFunction(name:"mod16_native__oscillator_attrib__periodms");
-@:mod16_native__oscillator_attrib__time = getExternalFunction(name:"mod16_native__oscillator_attrib__time");
+@:mod16_native__oscillator_attrib__value = getExternalFunction(name:"mod16_native__oscillator_attrib__value");
 
 
 
@@ -1115,9 +1115,9 @@
                     }
                 },
                 
-                time : {
+                value : {
                     get :: {
-                        return mod16_native__oscillator_attrib__time(a:cartID_, b:bound);                    
+                        return mod16_native__oscillator_attrib__value(a:cartID_, b:bound);                    
                     }
                 }
             };

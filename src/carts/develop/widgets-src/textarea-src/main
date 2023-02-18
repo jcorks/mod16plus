@@ -38,6 +38,22 @@ Cartridge.Tile.set(
     ]
 );
 
+
+@:TILE_CURSOR = 1;
+Cartridge.Tile.set(
+    index: TILE_CURSOR,
+    data: [
+        4, 0, 0, 0, 0, 0, 0, 0,
+        4, 0, 0, 0, 0, 0, 0, 0,
+        4, 0, 0, 0, 0, 0, 0, 0,
+        4, 0, 0, 0, 0, 0, 0, 0,
+        4, 0, 0, 0, 0, 0, 0, 0,
+        4, 0, 0, 0, 0, 0, 0, 0,
+        4, 0, 0, 0, 0, 0, 0, 0,
+        4, 0, 0, 0, 0, 0, 0, 0,
+    ]
+);
+
 @:DEFAULT_PALETTE_ID = 1;
 Cartridge.Palette.set(
     index: DEFAULT_PALETTE_ID,
@@ -54,6 +70,7 @@ Cartridge.Palette.set(
 return class(
     name: 'TextArea',
     define:::(this) {
+        @mutations = [];
         @onChange_;
         @onNavHor_;
         @onNavVer_;
@@ -72,6 +89,8 @@ return class(
         @GLYPH_HEIGHT = 8;
         @completionMode = false;
         @:REDRAW_OSCILLATOR = OSC_POOL;
+        OSC_POOL+=1;
+        @:CURSOR_OSCILLATOR = 1;
         OSC_POOL+=1;
         
 
@@ -95,7 +114,11 @@ return class(
         @refs = [];
         @lastSpriteCount = 0;
 
-
+        @prevCursorX = 0;
+        @prevCursorY = 0;
+        @singleLineMode = false;
+        
+        
 
 
 
@@ -154,11 +177,39 @@ return class(
                 });
             });
             refs = [];
-            [0, lastSpriteCount]->for(do:::(i) {
+            // clear selected
+            [1, lastSpriteCount]->for(do:::(i) {
                 Cartridge.Sprite.bind(index:i);
                 Cartridge.Sprite.show = false;
             });
             lastSpriteCount = 0;
+        };
+        
+        @:CURSOR_SPRITE = 0;
+        @cursorCounterFrames = 0;
+        Cartridge.Oscillator.bind(index:CURSOR_OSCILLATOR);
+        Cartridge.Oscillator. = {
+            enable:true,
+            periodMS:5,
+            onCycle::{
+                if (inputCallbackID != empty) ::<= {
+                    prevCursorX = ((cursorX - scrollX) * GLYPH_WIDTH        + offsetX);
+                    prevCursorY = ((cursorY - scrollY) * GLYPH_HEIGHT+1     + offsetY);
+                    Cartridge.Oscillator.bind(index:CURSOR_OSCILLATOR);
+                    Cartridge.Sprite.bind(index:CURSOR_SPRITE);
+                    Cartridge.Sprite. = {
+                        tile: TILE_CURSOR,
+                        show: cursorCounterFrames < 120,
+                        layer:layer+1,
+                        x: prevCursorX,
+                        y: prevCursorY,
+                        palette:DEFAULT_PALETTE_ID
+                    };                    
+                    cursorCounterFrames += 1;
+                    if (cursorCounterFrames > 200)  
+                        cursorCounterFrames = 0;
+                };
+            }
         };
 
 
@@ -179,9 +230,10 @@ return class(
                         Cartridge.Oscillator.bind(index:REDRAW_OSCILLATOR);
                         Cartridge.Oscillator.enable = false;
                     };
-                    @spr = 0;
+                    @spr = 1;
                     @i = 0;
                     [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
+                        when(index < 0) empty;
                         @:line = lines[index];
                         @:colorPath = colors[index];
                         when(line->length == 0) ::<= {
@@ -239,7 +291,7 @@ return class(
                                     count: (select.toX - scrollX)
                                 );
                             };
-                            if (scrolledLine->length > 0) 
+                            if (scrolledLine != empty && scrolledLine->length > 0) 
                                 spr = drawSelected(
                                     offset:spr, 
                                     x: offsetX + (0-scrollX)*GLYPH_WIDTH,
@@ -250,22 +302,8 @@ return class(
                         });
                     };       
                     
-                    // cursor
-                    if (inputCallbackID != empty) ::<= {
-                        
-                    
-                        Cartridge.Sprite.bind(index:spr);
-                        Cartridge.Sprite. = {
-                            tile: 0,
-                            show:true,
-                            layer:layer,
-                            x: (cursorX - scrollX) * GLYPH_WIDTH     + offsetX,
-                            y: (cursorY - scrollY) * GLYPH_HEIGHT +1 + offsetY,
-                            palette:DEFAULT_PALETTE_ID
-                        };                    
-                        lastSpriteCount = spr+1;
-                    } else 
-                        lastSpriteCount = spr;
+
+                    lastSpriteCount = spr;
 
                     redrawActive = false;
                     Cartridge.Oscillator.bind(index:REDRAW_OSCILLATOR);
@@ -316,6 +354,7 @@ return class(
 
 
         @:movedDown :: {
+            cursorCounterFrames = 0;        
             if (cursorY >= lines->keycount) ::<= {
                 cursorY = lines->keycount-1;
                 cursorX = lines[cursorY]->length;
@@ -338,6 +377,7 @@ return class(
         };
 
         @:movedLeft :: {
+            cursorCounterFrames = 0;
             if (cursorX < 0) ::<= {
                 when (cursorY == 0) cursorX = 0;
                 cursorY -= 1;
@@ -359,7 +399,8 @@ return class(
 
         };
 
-        @:movedUp :: {
+        @:movedUp :: {        
+            cursorCounterFrames = 0;
             if (cursorY < 0) cursorY = 0;
             if (cursorX > lines[cursorY]->length) ::<= {
                 cursorX = lines[cursorY]->length;
@@ -386,6 +427,7 @@ return class(
         };
 
         @:movedRight :: {
+            cursorCounterFrames = 0;        
             if (cursorX > lines[cursorY]->length) ::<= {
                 cursorY += 1;
                 cursorX = 0;
@@ -575,6 +617,7 @@ return class(
                   
                   
                   (Mod16.Input.KEYS.RETURN):::<= {
+                    when(singleLineMode) empty;
                     when(completionMode) if (onEnter_) onEnter_();;
                     if (onEnter_) onEnter_();
                     when (LINE_LIMIT > 0 && lines->keycount >= LINE_LIMIT)  empty;
@@ -619,7 +662,7 @@ return class(
         
     
         
-        
+        @pointerIn = false;
         @pointerCallbackID;
         @scrollCallbackID;
         @ctrlCallbackID;
@@ -823,7 +866,9 @@ return class(
                         inputCallbackID = Mod16.Input.addCallback(
                             device:Mod16.Input.DEVICES.KEYBOARD,
                             callback:keyboardCallback
-                        );            
+                        );  
+                        Cartridge.Sprite.bind(index:CURSOR_SPRITE);
+                        Cartridge.Sprite.show = true;          
                         pointerCallbackID = Mod16.Input.addCallback(
                             device:Mod16.Input.DEVICES.POINTER0,
                             callback:::(event, x, y, button) {
@@ -835,6 +880,11 @@ return class(
 
                                   
                                   (Mod16.Input.EVENTS.POINTER_MOTION): ::<= {
+                                    pointerIn = 
+                                        x >= offsetX && y >= offsetY &&
+                                        x <= offsetX + this.width && y <= offsetY + this.height;
+                                        
+                                    when(ctrlMod) empty; // dont select when in CTRL mode.
                                     when(mouseDownMod == false) empty;
                                     @:p = this.pixelCoordsToCursor(x, y);
                                     if (p.x != cursorX || p.y != cursorY) ::<= {
@@ -854,6 +904,9 @@ return class(
                                     
 
                                   (Mod16.Input.EVENTS.POINTER_BUTTON_DOWN): ::<= {
+                                    // we allow scrolling out if it was already part of 
+                                    // a held movement.
+                                    when(!pointerIn && mouseDownMod == false) empty;
                                     selectActive = false;
                                     mouseDownMod = true;
                                     mouseDownX = x;
@@ -875,6 +928,8 @@ return class(
                     Mod16.Input.removeCallback(id:pointerCallbackID, device:Mod16.Input.DEVICES.POINTER0);
                     Mod16.Input.removeCallback(id:ctrlCallbackID, device:Mod16.Input.DEVICES.KEYBOARD);
                     inputCallbackID = empty;
+                    Cartridge.Sprite.bind(index:CURSOR_SPRITE);
+                    Cartridge.Sprite.show = false;          
                     redrawLines();
                 },
                 
@@ -912,6 +967,7 @@ return class(
                                 };
 
                                 if (event == Mod16.Input.EVENTS.POINTER_SCROLL) ::<= {
+                                    when(!pointerIn) empty;
                                     this.scrollX -= x;
                                     this.scrollY -= y;                                                
                                 };    
@@ -1009,25 +1065,32 @@ return class(
                 // cursor can be [0, line->length]
                 when(cursorX == 0) empty;
                 when(lines[cursorY]->length == 0) empty;
-                
+                cursorCounterFrames = 0;
+
                 @:oldLine = lines[cursorY];
 
                 when(numChars >= lines[cursorY]->length && cursorX >= lines[cursorY]->length) ::<= {
                     lines[cursorY] = '';
                     colors[cursorY] = [];
                     cursorX = 0;
+                    if (onChange_ != empty) onChange_(prevText:oldLine, prevLine:cursorY);
+                    redrawLines();
                 };
 
                 when(numChars >= cursorX) ::<= {
                     colors[cursorY] = colors[cursorY]->subset(from:cursorX, to: lines[cursorY]->length-1);
                     lines[cursorY] = lines[cursorY]->substr(from:cursorX, to: lines[cursorY]->length-1);
                     cursorX = 0;
+                    if (onChange_ != empty) onChange_(prevText:oldLine, prevLine:cursorY);
+                    redrawLines();
                 };
 
                 when(cursorX > lines[cursorY]->length-1) ::<={
                     colors[cursorY] = colors[cursorY]->subset(from:0, to:lines[cursorY]->length-numChars-1);
                     lines[cursorY] = lines[cursorY]->substr(from:0, to:lines[cursorY]->length-numChars-1);
                     cursorX -= numChars;
+                    if (onChange_ != empty) onChange_(prevText:oldLine, prevLine:cursorY);
+                    redrawLines();
                 };
                 
                 colors[cursorY] = [
@@ -1093,10 +1156,45 @@ return class(
                 return {x:x, y:y};
             },
             
+            // Starting from the current cursor, finds a 
+            // substring and returns the cursor position for it.
+            // If no such substring, empty is returned.
+            find ::(text) {
+                @out = [::] {
+                    [cursorY, lines->keycount]->for(
+                        do:::(i) {
+                            @index = lines[i]->search(key:text);
+                            when(index == -1) empty;
+                            
+                            send(message:{x:index, y:i});
+                        }                        
+                    );
+                };
+                when(out != empty) out;
+                @out = [::] {
+                    [0, cursorY]->for(
+                        do:::(i) {
+                            @index = lines[i]->search(key:text);
+                            when(index == -1) empty;
+                            
+                            send(message:{x:index, y:i});
+                        }                        
+                    );
+                };
+                // not found
+                return out;
+            },
+            
             
             moveCursor ::(x, y) {
                 cursorX = if (x == empty) cursorX else x;
                 cursorY = if (y == empty) cursorY else y;
+                
+                movedDown();
+                movedUp();
+                movedLeft();
+                movedRight();
+                
                 redrawLines();
                 if (onNavVer_ != empty) onNavVer_(dir:0);
                 if (onNavHor_ != empty) onNavHor_();
@@ -1119,6 +1217,13 @@ return class(
             completionMode : {
                 set ::(value) <- completionMode = value,
                 get ::(value) <- completionMode
+            },
+            
+            // in singleLineMode, newlines are ignored as input
+            singleLineMode : {
+                set ::(value => Boolean) {
+                    singleLineMode = value;
+                }
             },
             
             defaultPalette : {

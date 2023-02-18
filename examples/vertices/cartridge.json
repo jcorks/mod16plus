@@ -1,8 +1,1 @@
-{
-  "sources": [
-    "main"
-  ],
-  "subcartridges" : [
-    "debug"
-  ]
-}
+{"sources":["main"],"palettes":null,"tiles":null}

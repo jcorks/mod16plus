@@ -38,7 +38,7 @@ void main() {
             front = frontStatic;
             midFront = midFrontStatic;
             midBack = midBackStatic;
-            back = midBack;
+            back = midBackStatic;
             top = topStatic;
         } else {
             front = colorFront_frag;

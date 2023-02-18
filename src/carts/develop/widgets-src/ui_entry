@@ -15,7 +15,8 @@ return class(
         textarea. = {
             editable : true,
             heightChars: 1,
-            layer : this.layer + 1
+            layer : this.layer + 1,
+            singleLineMode : true
         };
 
         @text = '';
@@ -28,7 +29,7 @@ return class(
         
         this.constructor = ::(text) {
             this.foreground = '#ffffff';
-            this.background = '#555555';
+            //this.background = '#555555';
             textarea.text = text;
             this.enableBackground = false;
             readjust();

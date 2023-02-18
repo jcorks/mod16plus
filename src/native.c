@@ -316,7 +316,7 @@ matteValue_t mod16_native_oscillator_attrib__oncycle(matteVM_t * vm, matteValue_
 
 
 
-matteValue_t mod16_native_oscillator_attrib__time(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
+matteValue_t mod16_native_oscillator_attrib__value(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
     matteHeap_t * heap = matte_vm_get_heap(vm);
     mod16Cartridge_Oscillator_t * osc = mod16_native_bind_osc(vm, heap, args);
     float prog = (osc->endMS - mod16_window_get_ticks(mod16.window)) / (double)osc->lengthMS;
@@ -1115,7 +1115,7 @@ void mod16_native_commit_rom(mod16ROM_t * rom, matte_t * m) {
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib__enable"), 3, mod16_native_oscillator_attrib__enable, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib__periodms"), 3, mod16_native_oscillator_attrib__periodms, NULL);
     matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib__oncycle"), 3, mod16_native_oscillator_attrib__oncycle, NULL);
-    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib__time"), 2, mod16_native_oscillator_attrib__time, NULL);
+    matte_vm_set_external_function_autoname(vm, MATTE_VM_STR_CAST(vm, "mod16_native__oscillator_attrib__value"), 2, mod16_native_oscillator_attrib__value, NULL);
 
 
 

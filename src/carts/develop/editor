@@ -96,6 +96,9 @@
         @setSourceData;
         this.background = '#352a41';
         @title;
+        @osc = 0;
+        @inputCallbackID;
+        @ctrlMod = false;
         this.constructor = ::{
 
             @:isNonWordChar = ::<= {
@@ -178,34 +181,41 @@
             @textarea = Textarea.new(
               defaultPalette : PALETTE__NORMAL_TEXT,  
               onChange::(prevLine, prevText) {
-                highlightLine(
-                    textarea,
-                    yIndex:textarea.cursorY
-                );
                 completer.retokenizeLine(index:textarea.cursorY, text:textarea.getLine(index:textarea.cursorY));
 
-                
-                @:word = getCurrentWord();
-                if (word != empty && word.text != empty && word.text->length > 1) ::<= {
-                    lastWord = word;
-                    @:suggestions = completer.getSuggestions(word:word.text);
-                    if (suggestions->keycount > 0) ::<= {
-                        textarea.completionMode = true;
-                        @:screenLoc = textarea.cursorToPixelCoords();
-                        completerBox.update(
-                            x: screenLoc.x ,
-                            y: screenLoc.y+8,
-                            items: suggestions
-                        );
+                Cartridge.Oscillator.bind(index:osc);
+                Cartridge.Oscillator.periodMS = 17;
+                Cartridge.Oscillator.enable = true;
+                Cartridge.Oscillator.onCycle = ::{
+                    highlightLine(
+                        textarea,
+                        yIndex:textarea.cursorY
+                    );
+
+                    
+                    @:word = getCurrentWord();
+                    if (word != empty && word.text != empty && word.text->length > 1) ::<= {
+                        lastWord = word;
+                        @:suggestions = completer.getSuggestions(word:word.text);
+                        if (suggestions->keycount > 0) ::<= {
+                            textarea.completionMode = true;
+                            @:screenLoc = textarea.cursorToPixelCoords();
+                            completerBox.update(
+                                x: screenLoc.x ,
+                                y: screenLoc.y+8,
+                                items: suggestions
+                            );
+                        } else ::<= {
+                            textarea.completionMode = false;
+                            completerBox.update(items:[], x:0, y:0);                    
+                        };
                     } else ::<= {
                         textarea.completionMode = false;
-                        completerBox.update(items:[], x:0, y:0);                    
+                        completerBox.update(items:[], x:0, y:0);
                     };
-                } else ::<= {
-                    textarea.completionMode = false;
-                    completerBox.update(items:[], x:0, y:0);
+                    Cartridge.Oscillator.bind(index:osc);
+                    Cartridge.Oscillator.enable = false;
                 };
-                
 
               },
 
@@ -272,7 +282,33 @@
                 scrollable  : true,
             };
 
-
+            
+            inputCallbackID = Mod16.Input.addCallback(
+                device:Mod16.Input.DEVICES.KEYBOARD,
+                callback::(event, text, key) {
+                    if (key == Mod16.Input.KEYS.LCTRL || key == Mod16.Input.KEYS.RCTRL) ::<= {
+                        ctrlMod = event == Mod16.Input.EVENTS.KEY_DOWN;                    
+                    };
+                    
+                    when(!this.shown || event != Mod16.Input.EVENTS.KEY_DOWN) empty;
+                    if (ctrlMod && key == Mod16.Input.KEYS.F) ::<= {
+                        Window.entryDialog(
+                            text: 'Search for?',
+                            onEntry::(text) {
+                                @loc = textarea.find(text:text);
+                                when (loc == empty) 
+                                    Window.alert(text:'No such text.', onOkay::{});
+                                    
+                                textarea.moveCursor(
+                                    x: loc.x,
+                                    y: loc.y
+                                );
+                            }
+                        );
+                    };
+                    
+                }
+            );       
 
             getSourceData = ::{
                 return textarea.text;
@@ -308,7 +344,7 @@
 
         
         @:newFile ::{
-            @:Window = import(module:'window');
+            @:Window = Cartridge.import(source:'window');
             Window.entryDialog(
                 text: 'New script:',
                 onEntry:::(text){
@@ -326,10 +362,10 @@
         };
         @:removeFile ::{
             when(filename == 'main') ::<= {
-                @:Window = import(module:'window');
+                @:Window = Cartridge.import(source:'window');
                 Window.alert(text:'Cannot remove the main script.');
             };
-            @:Window = import(module:'window');
+            @:Window = Cartridge.import(source:'window');
             Window.question(text: 'Remove ' + filename + '?', onResponse::(which) {
                 when(!which) empty;
                 this.removeFile(name:filename);
@@ -337,7 +373,7 @@
             }); 
         };
         @:switchFile ::{
-            @:Window = import(module:'window');
+            @:Window = Cartridge.import(source:'window');
 
             Window.listDialog(
                 text: 'Open Which',

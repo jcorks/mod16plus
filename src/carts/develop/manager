@@ -52,12 +52,55 @@
         
         @:tile = Fetcher.Tile.newID();
 
+        @:createListEntry = ::{
+            @:out = UIMousable.new(child:UILabel.new(text:'[No Subcartridge]'));
+            out.onClick = ::{
+                Window.entryDialog(text:'Subcartridge:', onEntry::(text) {
+                    out.children[0].text = text;
+                });
+            };
+        };
 
+
+        @:list = UILayout.new(
+            children: [
+                [UILabel.new(text:'[No SubCartridge]'), 0.125],
+                [UILabel.new(text:'[No SubCartridge]'), 0.125],
+                [UILabel.new(text:'[No SubCartridge]'), 0.125],
+                [UILabel.new(text:'[No SubCartridge]'), 0.125],
+                [UILabel.new(text:'[No SubCartridge]'), 0.125],
+                [UILabel.new(text:'[No SubCartridge]'), 0.125],
+                [UILabel.new(text:'[No SubCartridge]'), 0.125],
+                [UILabel.new(text:'[No SubCartridge]'), 0.125]
+            ]
+        );        
+        
+        @:resetCartridgeList = ::(itemTop, itemCount, itemsPerPage) {
+            @:location = scrollable.currentScrollPosition;
+            @:subs = Project.subcartridges;
+            [0, subs->keycount]->for(do:::(i) {
+                @:entry = subs[i+location];
+                if (entry == empty) {
                 
-        this.events.installHooks(events: {
-        });
+                }
+            });
+        };     
+        
+        
+        @:scrollable = UIScrollable.new(
+            child: list,
+            itemsPerPage: 8,
+            itemCount:128
+        );
+        scrollable.onScroll = ::{
+            resetCartridgeList();
+        };
+        
+        
 
 
+
+        resetCartridgeList();
 
         
         this.interface = {

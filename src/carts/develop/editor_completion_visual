@@ -52,11 +52,13 @@ return class(
                 };
             });
             text.text = o;
+            text.widthChars = widthChars + 2; // for > 
             if (bgRef != empty) ::<= {
                 RectangleRenderer.destroy(ref:bgRef);
                 bgRef = empty;
             };
             if (text.text != '') ::<= {
+            
                 bgRef = RectangleRenderer.create(
                     x:text.x,
                     y:text.y,

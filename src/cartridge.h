@@ -13,7 +13,7 @@ typedef struct mod16Cartridge_t mod16Cartridge_t;
 #define MOD16_CARTRIDGE__MAX_SOURCE_COUNT         64
 #define MOD16_CARTRIDGE__MAX_SUBCARTRIDGE_COUNT   128
 #define MOD16_CARTRIDGE__MAX_SPRITE_COUNT         512 
-#define MOD16_CARTRIDGE__MAX_BACKGROUND_COUNT     32
+#define MOD16_CARTRIDGE__MAX_BACKGROUND_COUNT     64
 
 
 // Creates a cartridge based on a ROM

@@ -74,14 +74,12 @@
 @counter = 0;
 Mod16.update = ::{
   
-    particleList->push(value:
-      makeParticle()
-    );
+  particleList->push(value:
+    makeParticle()
+  );
   counter += 1;
   updateParticleList();
   print(message:''+particleList->keycount);
 };
-
-
 
 

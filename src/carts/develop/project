@@ -32,6 +32,8 @@ return class(
         // tile entries. Arrays of id followed by a path to a tile file (plaintext)
         @tiles = [];
     
+        // subcartridges. Array of strings. THe names paths are the
+        @subcartridges = [];
     
         this.interface = {
             isNameAllowed ::(name) {
@@ -39,7 +41,20 @@ return class(
             },
 
         
-        
+            newSubcartridge ::(name) {
+                when(subcartridges->findIndex(key:name)) empty;
+                subcartridges->push(value:name);
+                
+            },
+            
+            removeSubcartridge ::(name) {
+                @index = subcartridges->findIndex(key:name);
+                when(index == -1) empty;
+                subcartridge->remove(key:index);
+            
+            },
+            
+            
         
         
         
@@ -261,6 +276,9 @@ return class(
                 get::<-[...sources]
             },
             
+            subcartridges : {
+                get::<- [...subcartridges]
+            },
             
             palettes : {
                 get::<- [...palettes]
@@ -276,7 +294,8 @@ return class(
                 @obj = {
                     sources: sources,
                     palettes: palettes,
-                    tiles: tiles
+                    tiles: tiles,
+                    subcartridges: subcartridges
                 };
                 // make object for json
                 // save project.json file
@@ -291,6 +310,7 @@ return class(
                 sources = obj.sources;
                 palettes = obj.palettes;
                 tiles = obj.tiles;
+                subcartridges = obj.subcartridges;
             },
             
             package :: {
