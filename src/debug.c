@@ -6,7 +6,7 @@
 #include "matte/src/matte_string.h"
 #include "matte/src/matte_array.h"
 #include "matte/src/matte_table.h"
-#include "matte/src/matte_heap.h"
+#include "matte/src/matte_store.h"
 #include "matte/src/matte_bytecode_stub.h"
 #include "native.h"
 #include <stdlib.h>
@@ -31,7 +31,7 @@ typedef struct {
     matteValue_t onEnter;
     matteValue_t onLeave;
     matteValue_t activateConsole;
-    matteHeap_t * heap;
+    matteStore_t * heap;
     matteVM_t * vm;
     matte_t * matte;
     
@@ -68,22 +68,22 @@ static void debug_println(const char * format, int colorHint, ...) {
     matteString_t * str = matte_string_create_from_c_str(text);
     printf("%s\n", text);
     free(text);text = NULL;
-    matteValue_t strval = matte_heap_new_value(debug.heap);
+    matteValue_t strval = matte_store_new_value(debug.heap);
     matte_value_into_string(debug.heap, &strval, str);
     matte_string_destroy(str);
 
 
     matteString_t * textStr = (matteString_t*)MATTE_VM_STR_CAST(debug.vm, "text");
-    matteValue_t textval = matte_heap_new_value(debug.heap);
+    matteValue_t textval = matte_store_new_value(debug.heap);
     matte_value_into_string(debug.heap, &textval, textStr);
 
 
-    matteValue_t colhnum = matte_heap_new_value(debug.heap);
+    matteValue_t colhnum = matte_store_new_value(debug.heap);
     matte_value_into_number(debug.heap, &colhnum, colorHint);
 
 
     matteString_t * colhStr = (matteString_t*)MATTE_VM_STR_CAST(debug.vm, "colorHint");
-    matteValue_t colhval = matte_heap_new_value(debug.heap);
+    matteValue_t colhval = matte_store_new_value(debug.heap);
     matte_value_into_string(debug.heap, &colhval, colhStr);
 
 
@@ -125,9 +125,9 @@ static void mod16_matte_debug_event(
     if (event == MATTE_VM_DEBUG_EVENT__ERROR_RAISED) {
         if (!debug.active) {
         
-            matte_string_set(debug.promptConsole, matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), matte_value_as_string(matte_vm_get_heap(vm), value)));       
+            matte_string_set(debug.promptConsole, matte_value_string_get_string_unsafe(matte_vm_get_store(vm), matte_value_as_string(matte_vm_get_store(vm), value)));       
             debug.noFakeRoot = 1;
-            mod16_native__debug_context_enter(debug.vm, matte_heap_new_value(debug.heap), NULL, NULL);
+            mod16_native__debug_context_enter(debug.vm, matte_store_new_value(debug.heap), NULL, NULL);
         }
 
     }
@@ -144,7 +144,7 @@ static void mod16_matte_query__error(
     void * data
 ) {
     if (event == MATTE_VM_DEBUG_EVENT__ERROR_RAISED) {
-        if (value.binID == MATTE_VALUE_TYPE_STRING) {
+        if (matte_value_type(value) == MATTE_VALUE_TYPE_STRING) {
             debug_println("Error: %s", MOD16Debug_Color__Error, matte_string_get_c_str(matte_value_string_get_string_unsafe(debug.heap, value)));
         }
         debug_show_text();
@@ -198,7 +198,7 @@ static void mod16_matte_backtrace() {
         if (frame.pc < 0 || frame.pc >= instCount) 
             lineNumber = 0;
         else
-            lineNumber = inst[frame.pc].lineNumber;
+            lineNumber = inst[frame.pc].info.lineOffset;
                 
         
         
@@ -250,7 +250,7 @@ static int mod16_matte_debug_dump() {
     const matteBytecodeStubInstruction_t * inst = matte_bytecode_stub_get_instructions(frame.stub, &numinst);
     uint32_t line = 0;
     if (frame.pc-1 >= 0 && frame.pc-1 < numinst)
-        line = inst[frame.pc-1].lineNumber;
+        line = inst[frame.pc-1].info.lineOffset;
 
     debug_println("<file %s, line %d>", MOD16Debug_Color__Code, 
         matte_string_get_c_str(name),
@@ -332,7 +332,7 @@ static matteValue_t mod16_native__debug_context_enter(matteVM_t * vm, matteValue
     debug.callstackLimit = matte_vm_get_stackframe_size(debug.vm) + (debug.noFakeRoot ? 0 : -1);
     debug.noFakeRoot = 0;
     
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
 
     matte_vm_call(debug.vm, debug.onEnter, matte_array_empty(), matte_array_empty(), NULL);
@@ -373,14 +373,14 @@ static void mod16_debug_unhandled_error(
 ) {
 
     
-    if (val.binID == MATTE_VALUE_TYPE_OBJECT) {
-        matteValue_t s = matte_value_object_access_string(matte_vm_get_heap(vm), val, MATTE_VM_STR_CAST(vm, "summary"));
-        if (s.binID) {
+    if (matte_value_type(val) == MATTE_VALUE_TYPE_OBJECT) {
+        matteValue_t s = matte_value_object_access_string(matte_vm_get_store(vm), val, MATTE_VM_STR_CAST(vm, "summary"));
+        if (matte_value_type(s)) {
             
             debug_println(
                 "Unhandled error: %s\n", 
                 MOD16Debug_Color__Error, 
-                matte_string_get_c_str(matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), s))
+                matte_string_get_c_str(matte_value_string_get_string_unsafe(matte_vm_get_store(vm), s))
             );
             fflush(stdout);
             debug_show_text();
@@ -580,7 +580,7 @@ static matteValue_t mod16_native__debug_context_query(matteVM_t * vm, matteValue
             NULL
         );   
         
-        if (result.binID == MATTE_VALUE_TYPE_STRING) {
+        if (matte_value_type(result) == MATTE_VALUE_TYPE_STRING) {
             const matteString_t * content = matte_value_string_get_string_unsafe(debug.heap, result);
             matteString_t * working = matte_string_create();
 
@@ -605,7 +605,7 @@ static matteValue_t mod16_native__debug_context_query(matteVM_t * vm, matteValue
     debug_show_text();
     free(query);   
     free(arg); 
-    return matte_heap_new_value(debug.heap);
+    return matte_store_new_value(debug.heap);
     
     
 }
@@ -614,8 +614,8 @@ static matteValue_t mod16_native__debug_context_query(matteVM_t * vm, matteValue
 
 
 static matteValue_t mod16_native__debug_context_is_allowed(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    matteValue_t out = matte_heap_new_value(heap);
+    matteStore_t * heap = matte_vm_get_store(vm);
+    matteValue_t out = matte_store_new_value(heap);
     
     matte_value_into_boolean(heap, &out, debug.enabled);
     return out;
@@ -629,7 +629,7 @@ void mod16_debug_init(matte_t * m, int enabled, const char * romPath) {
 
     debug.enabled = enabled;   
     debug.active = 0;
-    debug.heap = matte_vm_get_heap(vm);
+    debug.heap = matte_vm_get_store(vm);
     debug.vm = vm;
     debug.matte = m;
     debug.files = matte_table_create_hash_matte_string();

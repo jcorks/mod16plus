@@ -6,7 +6,7 @@ typedef struct mod16Cartridge_t mod16Cartridge_t;
 
 #include "rom.h"
 #include "graphics_context.h"
-#include "./matte/src/matte_heap.h"
+#include "./matte/src/matte_store.h"
 
 #define MOD16_CARTRIDGE__MAX_OSCILLATOR_COUNT     32
 #define MOD16_CARTRIDGE__MAX_WAVEFORM_COUNT       128 

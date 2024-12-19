@@ -103,9 +103,9 @@ return ::(
         paletteRadio.onChoose = ::(choice) {
             @:paletteData = paletteChoices[choice].children[1].palette;
             onChoosePalette(data:paletteData);
-            [0, 5]->for(do:::(i) {
+            for(0, 5)::(i) {
                 tileChoices[i].children[1].palette = paletteData;
-            });
+            }
             chosenPalettesSlot = paletteScrollable.currentScrollPosition + choice;            
         };
         resetPaletteChoices = ::{
@@ -117,8 +117,8 @@ return ::(
 
             
             @i = 0;
-            [::] {
-                [top, paletteData->keycount]->for(do:::(index) {
+            {:::} {
+                for(top, paletteData->keycount)::(index) {
                     paletteChoices[i].show();
 
                     paletteChoices[i].children[1].palette = readIntoPalette(storedPaletteIndex:paletteData[index][0]);
@@ -127,11 +127,11 @@ return ::(
                     i+=1;
                     
                     when(i == 5) send();
-                });
+                }
                 
-                [i, 5]->for(do:::(index) {
+                for(i, 5)::(index) {
                     paletteChoices[i].hide();
-                });
+                }
             };        
         };
         
@@ -205,7 +205,7 @@ return ::(
 
             when (tileChoices[choice].children[0].text == ' Add Tile') ::<= {
                 Window.entryDialog(text:'Tile ID:', onEntry::(text) {
-                    [::] {
+                    {:::} {
                         Project.newTile(id:Number.parse(string:text));
                     } : {
                         onError ::(message) {
@@ -235,8 +235,8 @@ return ::(
             
             
             @i = 0;
-            [::] {
-                [top, tileData->keycount]->for(do:::(index) {
+            {:::} {
+                for(top, tileData->keycount)::(index) {
                     tileChoices[i].show();
 
 
@@ -249,11 +249,11 @@ return ::(
                     i+=1;
                     
                     when(i == 5) send();
-                });
+                }
                 
-                [i, 5]->for(do:::(index) {
+                for(i, 5)::(index) {
                     tileChoices[i].hide();
-                });
+                }
             };        
         };
         

@@ -129,9 +129,9 @@ content.background = '#251a31';
         };
     });
     
-    [menuItemCount, 6]->for(do:::(i) {
+    for(menuItemCount, 6)::(i) {
         menuButtons[i].hide();
-    });
+    }
 };
 
 @:hideView ::{
@@ -330,12 +330,12 @@ return class(
                         value.hide();
                     });
 
-                    [choiceButtons->keycount, items->keycount]->for(do:::(i) {
+                    for(choiceButtons->keycount, items->keycount)::(i) {
                         @:button = UIButton.new(child:UILabel.new(text:' '));
                         button.hide();
                         choiceButtons->push(value:button);
-                    });
-                    [0, items->keycount]->for(do:::(i) {
+                    }
+                    for(0, items->keycount)::(i) {
                         @:button = choiceButtons[i];
                         button.show();
                         button.children[0].text = items[i] => String;
@@ -350,7 +350,7 @@ return class(
                             };
                         })(str:items[i]);
                         list.addChild(child:button, sizeRequest:1);
-                    });
+                    }
                     list.show();
                 }
                 
@@ -381,7 +381,7 @@ return class(
                 };
                 @:Project = Cartridge.import(source:'project');
 
-                [::] {
+                {:::} {
                     Project.load();                                
                     views[0].openFile(name:'main');
                     selectView(view:views[0]);

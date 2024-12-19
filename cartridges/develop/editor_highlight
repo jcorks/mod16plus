@@ -112,8 +112,8 @@ return ::(textarea, yIndex) {
 
 
     @lastNameStart = -1;
-    [::] {
-        [0, line->length]->for(do:::(i) {
+    {:::} {
+        for(0, line->length)::(i) {
         
             @:ch = line->charAt(index:i);
         
@@ -166,7 +166,7 @@ return ::(textarea, yIndex) {
             
 
 
-        });
+        }
 
         applySearches(string:line, yIndex);    
     };          

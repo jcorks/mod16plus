@@ -72,7 +72,7 @@
         @:resetCartridgeList = ::(itemTop, itemCount, itemsPerPage) {
             @:location = scrollable.currentScrollPosition;
             @:subs = Project.subcartridges;
-            [0, 8]->for(do:::(i) {
+            for(0, 8)::(i) {
                 @:entry = subs[i+location];
                 if (entry == empty) ::<= {
                     list.children[i].text = '[No Subcartridge]';
@@ -81,7 +81,7 @@
                     list.children[i].text = entry;
                     list.children[i].foreground = '#a0faa0';
                 };
-            });
+            }
         };     
         
         

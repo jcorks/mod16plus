@@ -5,7 +5,7 @@
 @:splitWords ::(text) {
     @:out = [];
     @lastStart = empty;
-    [0, text->length]->for(do:::(i) {
+    for(0, text->length)::(i) {
         match(text->charAt(index:i)) {
           ('-', '+', '!', '@', '#', '$', '%', '^', '&',
            '*', '(', ')', ';', '"', "'", '/', '?', ':', 
@@ -24,7 +24,7 @@
                 lastStart = i
         
         };
-    });
+    }
     if (lastStart != empty) ::<= {
         out->push(value:text->substr(from:lastStart, to:text->length-1));
         lastStart = empty;
@@ -35,14 +35,14 @@
 
 
 @:cmprank ::(word, test) {
-    return [::] {
+    return {:::} {
         @:maxrank = if(word->length < test->length) word->length else test->length;
-        [1, maxrank]->for(do:::(i) {
+        for(1, maxrank)::(i) {
             if (word->charAt(index:i) != 
                 test->charAt(index:i))
               send(message:i);
                 
-        });
+        }
         // prioritize shorter words
         //return maxrank + if (test->length == word->length) 0 else 0.4;
         return maxrank;

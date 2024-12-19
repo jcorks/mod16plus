@@ -200,8 +200,8 @@
 
             
             @i = 0;
-            [::] {
-                [top, paletteData->keycount]->for(do:::(index) {
+            {:::} {
+                for(top, paletteData->keycount)::(index) {
                     paletteChoices[i].show();
 
                     if (index != paletteData->keycount-1) ::<= {
@@ -217,11 +217,11 @@
                     i+=1;
                     
                     when(i == 6) send();
-                });
+                }
                 
-                [i, 6]->for(do:::(index) {
+                for(i, 6)::(index) {
                     paletteChoices[i].hide();
-                });
+                }
             };
         };
         
@@ -236,7 +236,7 @@
             // add new palette!
             when (choice == paletteData->keycount) ::<= {
                 Window.entryDialog(text:'Palette ID:', onEntry::(text) {
-                    [::] {
+                    {:::} {
                         Project.newPalette(id:Number.parse(string:text));
                     } : {
                         onError ::(message) {

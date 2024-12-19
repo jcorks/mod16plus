@@ -54,7 +54,7 @@ return class(
             choices : {
                 set ::(value => Object) {
                     if (choiceWidgets->keycount < value->keycount) ::<= {
-                        [choiceWidgets->keycount, value->keycount]->for(do:::(i) {
+                        for(choiceWidgets->keycount, value->keycount)::(i) {
                             @:tick = UILabel.new(text:''); 
                             @:child = UIFlat.new(
                                 children: [
@@ -65,7 +65,7 @@ return class(
                             
                             
                             choiceWidgets->push(value:[button, tick, child]);
-                        });
+                        }
                     };
 
                     layout.clearChildren();                    

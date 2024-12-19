@@ -68,7 +68,7 @@
             // to simulate claiming groups of IDs 
             // that are off-limits to other users.
             claimIDs::(amount) {
-                [count, count+amount]->for(do:::(i) {
+                for(count, count+amount)::(i) {
                     Cartridge.Sprite.bind(index:i);
                     Cartridge.Sprite. = {
                         x:-8,
@@ -76,7 +76,7 @@
                         show:false
                     };
                 
-                });
+                }
                 count += amount;
             }
         };

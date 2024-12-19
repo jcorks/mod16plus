@@ -4,7 +4,7 @@
 #include "matte/src/matte_string.h"
 #include "matte/src/matte_array.h"
 #include "matte/src/matte_compiler.h"
-#include "matte/src/matte_heap.h"
+#include "matte/src/matte_store.h"
 #include "matte/src/matte_vm.h"
 #include "matte/src/matte.h"
 #include "matte/src/matte_bytecode_stub.h"
@@ -97,11 +97,11 @@ static matteString_t * build_path(const matteString_t * file) {
 
 
 static matteValue_t package_native__save_source (matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     const matteString_t * name = matte_value_string_get_string_unsafe(heap, args[0]);
     if (!is_name_allowed(name)) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Name for file not allowed."));
-        return matte_heap_new_value(heap);
+        return matte_store_new_value(heap);
     }
     matteString_t * fullpath = build_path(name);
     
@@ -115,20 +115,20 @@ static matteValue_t package_native__save_source (matteVM_t * vm, matteValue_t fn
         strlen(matte_string_get_c_str(data))
     );
     
-    matteValue_t out = matte_heap_new_value(heap);
+    matteValue_t out = matte_store_new_value(heap);
     matte_value_into_boolean(heap, &out, result);
     return out;
 
 }
 static matteValue_t package_native__open_source (matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    if (args[0].binID != MATTE_VALUE_TYPE_STRING)
-        return matte_heap_new_value(heap);
+    matteStore_t * heap = matte_vm_get_store(vm);
+    if (matte_value_type(args[0]) != MATTE_VALUE_TYPE_STRING)
+        return matte_store_new_value(heap);
     const matteString_t * name = matte_value_string_get_string_unsafe(heap, args[0]);    
 
     if (!is_name_allowed(name)) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Name for file not allowed."));
-        return matte_heap_new_value(heap);
+        return matte_store_new_value(heap);
     }
 
     matteString_t * fullpath = build_path(name);
@@ -142,7 +142,7 @@ static matteValue_t package_native__open_source (matteVM_t * vm, matteValue_t fn
     
     if (!bytes) {
         matte_string_destroy(fullpath);
-        return matte_heap_new_value(heap);
+        return matte_store_new_value(heap);
     }
     
     char * str = malloc(len+1);
@@ -154,7 +154,7 @@ static matteValue_t package_native__open_source (matteVM_t * vm, matteValue_t fn
     free(str);
     
     
-    matteValue_t out = matte_heap_new_value(heap);
+    matteValue_t out = matte_store_new_value(heap);
     matte_value_into_string(heap, &out, strval);
     matte_string_destroy(strval);
     return out;
@@ -252,26 +252,31 @@ static int is_string_empty(const matteString_t * line) {
 // returns empty on failure.
 matteValue_t mod16_package_get_json(matte_t * m, const char * dir) {
     matteVM_t * vm = matte_get_vm(m);
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     
     const char * json_unpack_src =
         "return import(module:'Matte.Core.JSON').decode(string:parameters.json);"
     ;
      
     uint32_t bytecodeLen;   
-    uint8_t * bytecode = matte_compiler_run(
-        json_unpack_src,
-        strlen(json_unpack_src),
+    matteString_t * err = matte_string_create();
+    uint8_t * bytecode = matte_compile_source(
+        m,
         &bytecodeLen,
-        
-        NULL,
-        NULL
+        json_unpack_src,
+        err
     );
-
+    
+    if (matte_string_get_length(err)) {
+        printf(
+            "ERROR while processing JSON: %s\n",
+            matte_string_get_c_str(err)            
+        );
+    }
     
     
     if (!bytecode || !bytecodeLen)
-        return matte_heap_new_value(heap);
+        return matte_store_new_value(heap);
         
     
     uint32_t fileID = matte_vm_get_new_file_id(vm, MATTE_VM_STR_CAST(vm, "JSONPARSE"));
@@ -290,7 +295,7 @@ matteValue_t mod16_package_get_json(matte_t * m, const char * dir) {
     uint32_t srclen = 0;
     uint8_t * srcbytes = dump_bytes(matte_string_get_c_str(fullpath), &srclen);
     if (srclen == 0 || srcbytes == NULL)
-        return matte_heap_new_value(heap);
+        return matte_store_new_value(heap);
     
     uint8_t * srcstring = malloc(srclen+1);
     memcpy(srcstring, srcbytes, srclen);
@@ -299,14 +304,14 @@ matteValue_t mod16_package_get_json(matte_t * m, const char * dir) {
     
     matteString_t * srcstringMatte = matte_string_create_from_c_str("%s", srcstring);
     free(srcstring);
-    matteValue_t srcval = matte_heap_new_value(heap);
+    matteValue_t srcval = matte_store_new_value(heap);
     matte_value_into_string(heap, &srcval, srcstringMatte);
     matte_string_destroy(srcstringMatte);
     
     
-    matteValue_t parameters = matte_heap_new_value(heap);
+    matteValue_t parameters = matte_store_new_value(heap);
     matte_value_into_new_object_ref(heap, &parameters);
-    matteValue_t key = matte_heap_new_value(heap);
+    matteValue_t key = matte_store_new_value(heap);
     matte_value_into_string(heap, &key, MATTE_VM_STR_CAST(vm, "json"));
 
     matte_value_object_set(heap, parameters, key, srcval, 1);
@@ -314,8 +319,7 @@ matteValue_t mod16_package_get_json(matte_t * m, const char * dir) {
     return matte_vm_run_fileid(
         vm,
         fileID,
-        parameters,
-        NULL
+        parameters
     );
 }
 
@@ -331,7 +335,7 @@ void mod16_package_debug_callback(
     if (event == MATTE_VM_DEBUG_EVENT__ERROR_RAISED) {
         printf(
             "ERROR: %s\n",
-            matte_string_get_c_str(matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), matte_value_as_string(matte_vm_get_heap(vm), value)))            
+            matte_string_get_c_str(matte_value_string_get_string_unsafe(matte_vm_get_store(vm), matte_value_as_string(matte_vm_get_store(vm), value)))            
         );
     }
 }
@@ -340,14 +344,14 @@ void mod16_package_debug_callback(
 int mod16_package(const char * dir) {
     matte_t * m = matte_create();
     matteVM_t * vm = matte_get_vm(m);
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     
     
     matte_vm_set_debug_callback(vm, mod16_package_debug_callback, NULL);
     
     
     matteValue_t json = mod16_package_get_json(m, dir);
-    if (json.binID == 0) return 1;
+    if (matte_value_type(json) == 0) return 1;
     int out = 0;
     // for each source, dump
     uint32_t len;
@@ -380,11 +384,11 @@ int mod16_package(const char * dir) {
     
     // waveforms 
     matteValue_t next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "waveforms"));
-    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+    if (matte_value_type(next) == MATTE_VALUE_TYPE_OBJECT) {
         len = matte_value_object_get_number_key_count(heap, next);
         for(i = 0; i < len; ++i) {
             matteValue_t name = matte_value_object_access_index(heap, next, i);
-            if (name.binID != MATTE_VALUE_TYPE_STRING) {
+            if (matte_value_type(name) != MATTE_VALUE_TYPE_STRING) {
                 printf("Error on waveform %d: value is not a string.\n", i+1);
                 goto L_FAIL;
             }
@@ -406,11 +410,11 @@ int mod16_package(const char * dir) {
 
     // tiles 
     next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "tiles"));
-    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+    if (matte_value_type(next) == MATTE_VALUE_TYPE_OBJECT) {
         len = matte_value_object_get_number_key_count(heap, next);
         for(i = 0; i < len; ++i) {
             matteValue_t set = matte_value_object_access_index(heap, next, i);
-            if (set.binID != MATTE_VALUE_TYPE_OBJECT) {
+            if (matte_value_type(set) != MATTE_VALUE_TYPE_OBJECT) {
                 printf("Error on tile %d: value is not an array.\n", i+1);
                 goto L_FAIL;
             }
@@ -418,12 +422,12 @@ int mod16_package(const char * dir) {
             matteValue_t id   = matte_value_object_access_index(heap, set, 0);
             matteValue_t path = matte_value_object_access_index(heap, set, 1);
 
-            if (id.binID != MATTE_VALUE_TYPE_NUMBER) {
+            if (matte_value_type(id) != MATTE_VALUE_TYPE_NUMBER) {
                 printf("Error on tile %d: first array value is not a number.\n", i+1);
                 goto L_FAIL;
             }
 
-            if (path.binID != MATTE_VALUE_TYPE_STRING) {
+            if (matte_value_type(path) != MATTE_VALUE_TYPE_STRING) {
                 printf("Error on tile %d: second array value is not a string.\n", i+1);
                 goto L_FAIL;
             }
@@ -486,11 +490,11 @@ int mod16_package(const char * dir) {
 
     // palettes 
     next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "palettes"));
-    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+    if (matte_value_type(next) == MATTE_VALUE_TYPE_OBJECT) {
         len = matte_value_object_get_number_key_count(heap, next);
         for(i = 0; i < len; ++i) {
             matteValue_t set = matte_value_object_access_index(heap, next, i);
-            if (set.binID != MATTE_VALUE_TYPE_OBJECT) {
+            if (matte_value_type(set) != MATTE_VALUE_TYPE_OBJECT) {
                 printf("Error on palette %d: value is not an array.\n", i+1);
                 goto L_FAIL;
             }
@@ -498,12 +502,12 @@ int mod16_package(const char * dir) {
             matteValue_t id   = matte_value_object_access_index(heap, set, 0);
             matteValue_t path = matte_value_object_access_index(heap, set, 1);
 
-            if (id.binID != MATTE_VALUE_TYPE_NUMBER) {
+            if (matte_value_type(id) != MATTE_VALUE_TYPE_NUMBER) {
                 printf("Error on palette %d: first array value is not a number.\n", i+1);
                 goto L_FAIL;
             }
 
-            if (path.binID != MATTE_VALUE_TYPE_STRING) {
+            if (matte_value_type(path) != MATTE_VALUE_TYPE_STRING) {
                 printf("Error on palette %d: second array value is not a string.\n", i+1);
                 goto L_FAIL;
             }
@@ -518,9 +522,12 @@ int mod16_package(const char * dir) {
                 &byteLen
             );
 
+            uint8_t * bytesNul = malloc(byteLen+1);
+            memcpy(bytesNul, bytes, byteLen);
+            bytesNul[byteLen] = 0;
             
-            float paletteBytes[12];
-            if (sscanf(bytes, 
+            float paletteBytes[15];
+            if (sscanf(bytesNul, 
                     "%f %f %f "            
                     "%f %f %f "            
                     "%f %f %f "            
@@ -548,11 +555,11 @@ int mod16_package(const char * dir) {
     
     // bytecode segments
     next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "sources"));
-    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+    if (matte_value_type(next) == MATTE_VALUE_TYPE_OBJECT) {
         len = matte_value_object_get_number_key_count(heap, next);
         for(i = 0; i < len; ++i) {
             matteValue_t name = matte_value_object_access_index(heap, next, i);
-            if (name.binID != MATTE_VALUE_TYPE_STRING) {
+            if (matte_value_type(name) != MATTE_VALUE_TYPE_STRING) {
                 printf("Error on source %d: value is not a string.\n", i+1);
                 goto L_FAIL;
             }
@@ -563,18 +570,32 @@ int mod16_package(const char * dir) {
                 matte_string_get_c_str(matte_value_string_get_string_unsafe(heap, name)),
                 &byteLen
             );
+            
+            uint8_t * bytesNul = malloc(byteLen+1);
+            memcpy(bytesNul, bytes, byteLen);
+            bytesNul[byteLen] = 0;
+            
             uint8_t * ref = bytes;
 
             // now that we have a source, compile it
             uint32_t segmentLength;
             currentCompiled = matte_value_string_get_string_unsafe(heap, name);
-            bytes = matte_compiler_run(
-                bytes,
-                byteLen,
+            matteString_t * err = matte_string_create();
+            bytes = matte_compile_source(
+                m,
                 &segmentLength,
-                mod16_package__compile_error, 
-                NULL
+                bytesNul,
+                err
             );
+            
+            if (matte_string_get_length(err)) {
+                printf(
+                    "ERROR in %s: %s\n",
+                    matte_string_get_c_str(currentCompiled),
+                    matte_string_get_c_str(err)            
+                );
+            }
+            
             currentCompiled = NULL;
             free(ref);
             const matteString_t * line = matte_value_string_get_string_unsafe(heap, name);
@@ -588,11 +609,11 @@ int mod16_package(const char * dir) {
     
     // subcartridges
     next = matte_value_object_access_string(heap, json, MATTE_VM_STR_CAST(vm, "subcartridges"));
-    if (next.binID == MATTE_VALUE_TYPE_OBJECT) {
+    if (matte_value_type(next) == MATTE_VALUE_TYPE_OBJECT) {
         len = matte_value_object_get_number_key_count(heap, next);
         for(i = 0; i < len; ++i) {
             matteValue_t name = matte_value_object_access_index(heap, next, i);
-            if (name.binID != MATTE_VALUE_TYPE_STRING) {
+            if (matte_value_type(name) != MATTE_VALUE_TYPE_STRING) {
                 printf("Error on subcartridge %d: value is not a string.\n", i+1);
                 goto L_FAIL;
             }

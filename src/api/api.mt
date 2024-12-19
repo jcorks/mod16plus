@@ -1065,11 +1065,11 @@
                         when(value->keycount > count)
                             error(detail:'Vertex out of bounds');
 
-                        value->foreach(do:::(i, v) {
+                        foreach(value) ::(i, v) {
                             when(v->keycount != 9)
                                 error(detail:'Vertex expects array in format: [x, y, z, r, g, b, u , v, tileID] for all vertices');
                             mod16_native__vertices_set(a:cartID_, b:i, c:v);
-                        });
+                        };
                     }   
                 }
                 
@@ -1372,25 +1372,25 @@
                     when (det == 0) empty;
                     det = 1.0 / det;
 
-                    [0, 16]->for(do:::(i) {
+                    for(0, 16) ::(i) {
                         data[i] = inv[i] * det;                    
-                    });
+                    };
                     
                 },
                 
                 
                 multiply::(matrixA => Object, matrixB => Object) {
                     @out = [];
-                    [0, 4]->for(do:::(j) {
-                        [0, 4]->for(do:::(i) {
+                    for(0, 4)::(j) {
+                        for(0, 4)::(i) {
                             @i4 = i*4;
                             out[i4+j] = 
                                 matrixA[i4+0]*matrixB[0+j] +
                                 matrixA[i4+1]*matrixB[4+j] +
                                 matrixA[i4+2]*matrixB[8+j] +
                                 matrixA[i4+3]*matrixB[12+j];
-                        });
-                    });
+                        };
+                    };
 
 
                     return out;                

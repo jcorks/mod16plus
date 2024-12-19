@@ -379,12 +379,12 @@ matteArray_t * mod16_rom_pack(const mod16ROM_t * rom) {
         PUSHCOPY(uint32_t, length);
 
         matteString_t * name = seg.name;
-        uint32_t nameLen = matte_string_get_byte_length(name);
+        uint32_t nameLen = matte_string_get_utf8_length(name);
         PUSHCOPY(uint32_t, nameLen);
         
         PUSHN(
             nameLen,
-            matte_string_get_byte_data(name)
+            matte_string_get_utf8_data(name)
         );
 
 
@@ -403,12 +403,12 @@ matteArray_t * mod16_rom_pack(const mod16ROM_t * rom) {
         PUSHCOPY(uint32_t, length);
 
         matteString_t * name = sub.name;
-        uint32_t nameLen = matte_string_get_byte_length(name);
+        uint32_t nameLen = matte_string_get_utf8_length(name);
         PUSHCOPY(uint32_t, nameLen);
         
         PUSHN(
             nameLen,
-            matte_string_get_byte_data(name)
+            matte_string_get_utf8_data(name)
         );
 
 

@@ -139,7 +139,7 @@ static void mod16_native_render() {
 
 
 
-mod16GraphicsContext_Sprite_t * mod16_native_bind_sprite(matteVM_t * vm, matteHeap_t * heap, const matteValue_t * args) {
+mod16GraphicsContext_Sprite_t * mod16_native_bind_sprite(matteVM_t * vm, matteStore_t * heap, const matteValue_t * args) {
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -157,84 +157,84 @@ mod16GraphicsContext_Sprite_t * mod16_native_bind_sprite(matteVM_t * vm, matteHe
 
 
 matteValue_t mod16_native_sprite_attrib__rotation(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->rotation = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_sprite_attrib__scaleX(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->scaleX = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_sprite_attrib__scaleY(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->scaleY = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_sprite_attrib__positionx(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->x = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_sprite_attrib__positiony(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->y = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_sprite_attrib__centerx(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->centerX = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_sprite_attrib__centery(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->centerY = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_sprite_attrib__layer(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->layer = matte_value_as_number(heap, args[2]);
     if (spr->layer > MOD16_GRAPHICS_CONTEXT__LAYER_MAX) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MAX;
     if (spr->layer < MOD16_GRAPHICS_CONTEXT__LAYER_MIN) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MIN;
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_sprite_attrib__tile(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->tile = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_sprite_attrib__effect(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->effect = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_sprite_attrib__palette(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Sprite_t * spr = mod16_native_bind_sprite(vm, heap, args);
     spr->palette = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
@@ -245,14 +245,14 @@ matteValue_t mod16_native_sprite_attrib__palette(matteVM_t * vm, matteValue_t fn
 
 
 matteValue_t mod16_native_sprite_attrib__show(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
     uint32_t id = matte_value_as_number(heap, args[1]);
 
     mod16_cartridge_enable_sprite(cart, id, matte_value_as_number(heap, args[2]));
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
@@ -263,7 +263,7 @@ matteValue_t mod16_native_sprite_attrib__show(matteVM_t * vm, matteValue_t fn, c
 
 
 
-mod16Cartridge_Oscillator_t * mod16_native_bind_osc(matteVM_t * vm, matteHeap_t * heap, const matteValue_t * args) {
+mod16Cartridge_Oscillator_t * mod16_native_bind_osc(matteVM_t * vm, matteStore_t * heap, const matteValue_t * args) {
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -281,47 +281,47 @@ mod16Cartridge_Oscillator_t * mod16_native_bind_osc(matteVM_t * vm, matteHeap_t 
 
 
 matteValue_t mod16_native_oscillator_attrib__enable(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16Cartridge_Oscillator_t * spr = mod16_native_bind_osc(vm, heap, args);
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
     uint32_t id = matte_value_as_number(heap, args[1]);
     mod16_cartridge_enable_oscillator(cart, id, matte_value_as_boolean(heap, args[2]), mod16_window_get_ticks(mod16.window));
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 
 matteValue_t mod16_native_oscillator_attrib__periodms(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16Cartridge_Oscillator_t * osc = mod16_native_bind_osc(vm, heap, args);
     osc->lengthMS = matte_value_as_number(heap, args[2]);
     osc->endMS = osc->startMS + osc->lengthMS;
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_oscillator_attrib__oncycle(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16Cartridge_Oscillator_t * osc = mod16_native_bind_osc(vm, heap, args);
 
-    if (osc->function.value.id == args[2].value.id) return matte_heap_new_value(heap);
-    if (osc->function.binID) {
+    if (osc->function.value.id == args[2].value.id) return matte_store_new_value(heap);
+    if (matte_value_type(osc->function)) {
         matte_value_object_pop_lock(heap, osc->function);
     }
     osc->function = args[2];
     matte_value_object_push_lock(heap, osc->function);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 
 matteValue_t mod16_native_oscillator_attrib__value(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16Cartridge_Oscillator_t * osc = mod16_native_bind_osc(vm, heap, args);
     float prog = (osc->endMS - mod16_window_get_ticks(mod16.window)) / (double)osc->lengthMS;
     double frac = 0.5*(1+sin((prog) * (2*M_PI)));
-    matteValue_t fracVal = matte_heap_new_value(heap);
+    matteValue_t fracVal = matte_store_new_value(heap);
     matte_value_into_number(heap, &fracVal, frac);
     return fracVal;
 }
@@ -331,7 +331,7 @@ matteValue_t mod16_native_oscillator_attrib__value(matteVM_t * vm, matteValue_t 
 
 
 matteValue_t mod16_native_vertices_set_count(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -343,13 +343,13 @@ matteValue_t mod16_native_vertices_set_count(matteVM_t * vm, matteValue_t fn, co
         matte_value_as_number(heap, args[1])
     );        
     
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 
 matteValue_t mod16_native_vertices_set_shape(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -358,12 +358,12 @@ matteValue_t mod16_native_vertices_set_shape(matteVM_t * vm, matteValue_t fn, co
     mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
     settings->shape = matte_value_as_number(heap, args[1]);
     
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_vertices_set_transform(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -378,12 +378,12 @@ matteValue_t mod16_native_vertices_set_transform(matteVM_t * vm, matteValue_t fn
         tf->data[i] = matte_value_as_number(heap, v);
     }
     
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_vertices_set_effect(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -392,11 +392,11 @@ matteValue_t mod16_native_vertices_set_effect(matteVM_t * vm, matteValue_t fn, c
     mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
     settings->effect = matte_value_as_number(heap, args[1]);
     
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_vertices_set_layer(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -405,12 +405,12 @@ matteValue_t mod16_native_vertices_set_layer(matteVM_t * vm, matteValue_t fn, co
     mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
     settings->layer = matte_value_as_number(heap, args[1]);
     
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_vertices_set_palette(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -419,12 +419,12 @@ matteValue_t mod16_native_vertices_set_palette(matteVM_t * vm, matteValue_t fn, 
     mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
     settings->palette = matte_value_as_number(heap, args[1]);
     
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_vertices_set_textured(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -433,12 +433,12 @@ matteValue_t mod16_native_vertices_set_textured(matteVM_t * vm, matteValue_t fn,
     mod16GraphicsContext_VertexSettings_t * settings = mod16_cartridge_get_vertex_settings(cart);
     settings->textured = matte_value_as_number(heap, args[1]);
     
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_vertices_set(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -460,12 +460,12 @@ matteValue_t mod16_native_vertices_set(matteVM_t * vm, matteValue_t fn, const ma
 
 
     mod16_graphics_context_storage_set_vertex(storage, index, &vertex);    
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_vertices_get(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -479,15 +479,15 @@ matteValue_t mod16_native_vertices_get(matteVM_t * vm, matteValue_t fn, const ma
     
     const mod16GraphicsContext_Vertex_t * v = mod16_graphics_context_storage_get_vertex(storage, index);    
 
-    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->x); matte_array_push(arr, m);
-    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->y); matte_array_push(arr, m);
-    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->z); matte_array_push(arr, m);
-    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->r); matte_array_push(arr, m);
-    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->g); matte_array_push(arr, m);
-    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->b); matte_array_push(arr, m);
-    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->u); matte_array_push(arr, m);
-    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->v); matte_array_push(arr, m);
-    m = matte_heap_new_value(heap); matte_value_into_number(heap, &m, v->tile); matte_array_push(arr, m);
+    m = matte_store_new_value(heap); matte_value_into_number(heap, &m, v->x); matte_array_push(arr, m);
+    m = matte_store_new_value(heap); matte_value_into_number(heap, &m, v->y); matte_array_push(arr, m);
+    m = matte_store_new_value(heap); matte_value_into_number(heap, &m, v->z); matte_array_push(arr, m);
+    m = matte_store_new_value(heap); matte_value_into_number(heap, &m, v->r); matte_array_push(arr, m);
+    m = matte_store_new_value(heap); matte_value_into_number(heap, &m, v->g); matte_array_push(arr, m);
+    m = matte_store_new_value(heap); matte_value_into_number(heap, &m, v->b); matte_array_push(arr, m);
+    m = matte_store_new_value(heap); matte_value_into_number(heap, &m, v->u); matte_array_push(arr, m);
+    m = matte_store_new_value(heap); matte_value_into_number(heap, &m, v->v); matte_array_push(arr, m);
+    m = matte_store_new_value(heap); matte_value_into_number(heap, &m, v->tile); matte_array_push(arr, m);
 
 
 
@@ -515,7 +515,7 @@ typedef enum {
 
 
 matteValue_t mod16_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     printf("ENGINE   ID: %d\n",
         (int)matte_value_as_number(heap, args[0])
     );  
@@ -535,7 +535,7 @@ matteValue_t mod16_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const m
 
 
       case MOD16NEA_CLIPBOARDGET: {
-        matteValue_t strOut = matte_heap_new_value(heap);
+        matteValue_t strOut = matte_store_new_value(heap);
         matteString_t * strVal = mod16_window_get_clipboard(mod16.window);
         matte_value_into_string(heap, &strOut, strVal);
         matte_string_destroy(strVal);
@@ -553,7 +553,7 @@ matteValue_t mod16_native_engine_attrib(matteVM_t * vm, matteValue_t fn, const m
         
     }
     
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
@@ -567,7 +567,7 @@ typedef enum {
 } MOD16Native_PaletteAttribs_t;
 
 matteValue_t mod16_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -581,7 +581,7 @@ matteValue_t mod16_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const 
     );
     if (!pin) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Palette accessed beyond limit"));
-        return matte_heap_new_value(heap);
+        return matte_store_new_value(heap);
     }
     mod16GraphicsContext_Palette_t p = *pin;
 
@@ -628,7 +628,7 @@ matteValue_t mod16_native_palette_attrib(matteVM_t * vm, matteValue_t fn, const 
         id,
         &p
     );
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 typedef enum {
@@ -638,7 +638,7 @@ typedef enum {
 
 
 matteValue_t mod16_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -654,7 +654,7 @@ matteValue_t mod16_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const mat
     
     if (!tilep) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Tile accessed beyond limit"));
-        return matte_heap_new_value(heap);    
+        return matte_store_new_value(heap);    
     }
 
     mod16GraphicsContext_Tile_t tile = *tilep;
@@ -667,7 +667,7 @@ matteValue_t mod16_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const mat
         int pixelCount = MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS*MOD16_GRAPHICS_CONTEXT__TILE_SIZE_PIXELS;
         if (matte_value_object_get_number_key_count(heap, array) != pixelCount) {
             matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Tile data is not the correct number of members."));
-            return matte_heap_new_value(heap);    
+            return matte_store_new_value(heap);    
         }
         
         int i;
@@ -698,7 +698,7 @@ matteValue_t mod16_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const mat
         );
         if (!tilet) {
             matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Tile (target of copy) accessed beyond limit"));
-            return matte_heap_new_value(heap);    
+            return matte_store_new_value(heap);    
         }
         
         mod16_graphics_context_storage_set_tile(
@@ -714,7 +714,7 @@ matteValue_t mod16_native_tile_attrib(matteVM_t * vm, matteValue_t fn, const mat
       }
 
     }
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
@@ -724,7 +724,7 @@ typedef enum {
 } MOD16Native_InputAction_t;
 
 matteValue_t mod16_native_input_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     printf("INPUT    ID: %d, ATTRIB: %d\n",
         (int)matte_value_as_number(heap, args[0]),
         (int)matte_value_as_number(heap, args[1])
@@ -734,7 +734,7 @@ matteValue_t mod16_native_input_attrib(matteVM_t * vm, matteValue_t fn, const ma
       case MOD16NIA_ADD: {
         MOD16_InputCallbackSet * set = &mod16.mainContext.inputs[(int)matte_value_as_number(heap, args[1])];
 
-        matteValue_t out = matte_heap_new_value(heap);
+        matteValue_t out = matte_store_new_value(heap);
         uint32_t id;
         if (matte_array_get_size(set->dead)) {
             id = matte_array_at(set->dead, uint32_t, matte_array_get_size(set->dead)-1);
@@ -755,10 +755,10 @@ matteValue_t mod16_native_input_attrib(matteVM_t * vm, matteValue_t fn, const ma
         uint32_t id = matte_value_as_number(heap, args[2]);      
         
         if (id > matte_array_get_size(set->callbacks) ||
-            matte_array_at(set->callbacks, matteValue_t, id).binID == 0) {
+            matte_value_type(matte_array_at(set->callbacks, matteValue_t, id)) == 0) {
             break;   
         }
-        matte_array_at(set->callbacks, matteValue_t, id).binID = 0;
+        matte_array_at(set->callbacks, matteValue_t, id) = matte_store_new_value(heap);
         matte_array_push(set->dead, id);
       }
             
@@ -766,20 +766,20 @@ matteValue_t mod16_native_input_attrib(matteVM_t * vm, matteValue_t fn, const ma
 
 
 
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 matteValue_t mod16_native_audio_attrib(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    return matte_heap_new_value(heap);
+    matteStore_t * heap = matte_vm_get_store(vm);
+    return matte_store_new_value(heap);
 }
 
 
 
 matteValue_t mod16_native_get_context_cartridge_id(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
 
-    matteValue_t v = matte_heap_new_value(matte_vm_get_heap(vm));
+    matteValue_t v = matte_store_new_value(matte_vm_get_store(vm));
     matte_value_into_number(
-        matte_vm_get_heap(vm), 
+        matte_vm_get_store(vm), 
         &v, 
         mod16_cartridge_get_id(
             mod16_cartridge_get_active_boot_context()
@@ -791,9 +791,9 @@ matteValue_t mod16_native_get_context_cartridge_id(matteVM_t * vm, matteValue_t 
 
 matteValue_t mod16_native_has_boot_context(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
 
-    matteValue_t v = matte_heap_new_value(matte_vm_get_heap(vm));
+    matteValue_t v = matte_store_new_value(matte_vm_get_store(vm));
     matte_value_into_boolean(
-        matte_vm_get_heap(vm), 
+        matte_vm_get_store(vm), 
         &v, 
         mod16_cartridge_get_active_boot_context() != NULL
     );
@@ -803,13 +803,13 @@ matteValue_t mod16_native_has_boot_context(matteVM_t * vm, matteValue_t fn, cons
 
 
 matteValue_t mod16_native_get_source(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    uint32_t id = matte_value_as_number(matte_vm_get_heap(vm), args[0]);
-    const matteString_t * name = matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), args[1]);
+    uint32_t id = matte_value_as_number(matte_vm_get_store(vm), args[0]);
+    const matteString_t * name = matte_value_string_get_string_unsafe(matte_vm_get_store(vm), args[1]);
 
     mod16Cartridge_t * cart = mod16_cartridge_from_id(id);
     
     
-    matteValue_t out = matte_heap_new_value(matte_vm_get_heap(vm));
+    matteValue_t out = matte_store_new_value(matte_vm_get_store(vm));
     if (!cart) return out;
     return mod16_cartridge_get_source(cart, name);
 }
@@ -818,8 +818,8 @@ matteValue_t mod16_native_get_source(matteVM_t * vm, matteValue_t fn, const matt
 
 
 matteValue_t mod16_native_get_sub_cartridge_main(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    uint32_t id = matte_value_as_number(matte_vm_get_heap(vm), args[0]);
-    const matteString_t * name = matte_value_string_get_string_unsafe(matte_vm_get_heap(vm), args[1]);
+    uint32_t id = matte_value_as_number(matte_vm_get_store(vm), args[0]);
+    const matteString_t * name = matte_value_string_get_string_unsafe(matte_vm_get_store(vm), args[1]);
 
     mod16Cartridge_t * cart = mod16_cartridge_get_subcartridge(
         mod16_cartridge_from_id(id),
@@ -827,14 +827,14 @@ matteValue_t mod16_native_get_sub_cartridge_main(matteVM_t * vm, matteValue_t fn
     );
     
     
-    matteValue_t out = matte_heap_new_value(matte_vm_get_heap(vm));
+    matteValue_t out = matte_store_new_value(matte_vm_get_store(vm));
     if (!cart) return out;
     return mod16_cartridge_get_main(cart);
 }
 
 
 
-mod16GraphicsContext_Background_t * mod16_native_bind_bg(matteVM_t * vm, matteHeap_t * heap, const matteValue_t * args) {
+mod16GraphicsContext_Background_t * mod16_native_bind_bg(matteVM_t * vm, matteStore_t * heap, const matteValue_t * args) {
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -853,86 +853,86 @@ mod16GraphicsContext_Background_t * mod16_native_bind_bg(matteVM_t * vm, matteHe
 
 
 matteValue_t mod16_native_bg_attrib__rotation(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->rotation = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_bg_attrib__scaleX(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->scaleX = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_bg_attrib__scaleY(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->scaleY = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_bg_attrib__positionx(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->x = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_bg_attrib__positiony(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->y = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_bg_attrib__centerx(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->centerX = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 matteValue_t mod16_native_bg_attrib__centery(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->centerY = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_bg_attrib__layer(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->layer = matte_value_as_number(heap, args[2]);
     if (spr->layer > MOD16_GRAPHICS_CONTEXT__LAYER_MAX) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MAX;
     if (spr->layer < MOD16_GRAPHICS_CONTEXT__LAYER_MIN) spr->layer = MOD16_GRAPHICS_CONTEXT__LAYER_MIN;
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
 
 matteValue_t mod16_native_bg_attrib__effect(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->effect = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_bg_attrib__palette(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->palette = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 matteValue_t mod16_native_bg_attrib__show(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     mod16GraphicsContext_Background_t * spr = mod16_native_bind_bg(vm, heap, args);
     spr->enabled = matte_value_as_number(heap, args[2]);
-    return matte_heap_new_value(heap);
+    return matte_store_new_value(heap);
 }
 
 
@@ -946,7 +946,7 @@ matteValue_t mod16_native_bg_attrib__show(matteVM_t * vm, matteValue_t fn, const
 
 
 matteValue_t mod16_native_palette_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
+    matteStore_t * heap = matte_vm_get_store(vm);
     printf("P.QUERY  ID: %d, ATTRIB: %d\n",
         (int)matte_value_as_number(heap, args[0]),
         (int)matte_value_as_number(heap, args[1])
@@ -963,7 +963,7 @@ matteValue_t mod16_native_palette_query(matteVM_t * vm, matteValue_t fn, const m
     );
     if (!p) {
         matte_vm_raise_error_string(vm, MATTE_VM_STR_CAST(vm, "Palette accessed beyond limit"));
-        return matte_heap_new_value(heap);
+        return matte_store_new_value(heap);
     }   
 
     const mod16Vector_t * color;
@@ -987,10 +987,10 @@ matteValue_t mod16_native_palette_query(matteVM_t * vm, matteValue_t fn, const m
         color = &p->top;
         break;
 
-      default:    return matte_heap_new_value(heap);
+      default:    return matte_store_new_value(heap);
     }
     
-    matteValue_t out = matte_heap_new_value(heap);
+    matteValue_t out = matte_store_new_value(heap);
     
     switch((int)matte_value_as_number(heap, args[3])) {
       case 0: matte_value_into_number(heap, &out, color->x); break;
@@ -1004,8 +1004,8 @@ matteValue_t mod16_native_palette_query(matteVM_t * vm, matteValue_t fn, const m
 
 }
 matteValue_t mod16_native_tile_query(matteVM_t * vm, matteValue_t fn, const matteValue_t * args, void * userData) {
-    matteHeap_t * heap = matte_vm_get_heap(vm);
-    matteValue_t out = matte_heap_new_value(heap);
+    matteStore_t * heap = matte_vm_get_store(vm);
+    matteValue_t out = matte_store_new_value(heap);
 
     uint32_t cartID = matte_value_as_number(heap, args[0]);
     mod16Cartridge_t * cart = mod16_cartridge_from_id(cartID);
@@ -1026,7 +1026,7 @@ matteValue_t mod16_native_tile_query(matteVM_t * vm, matteValue_t fn, const matt
     matteArray_t * arr = matte_array_create(sizeof(matteValue_t));    
     
     for(i = 0; i < count; ++i) {
-        matteValue_t m = matte_heap_new_value(heap);
+        matteValue_t m = matte_store_new_value(heap);
         matte_value_into_number(heap, &m, tilep->data[i]);
         matte_array_push(arr, m);
     }
@@ -1158,7 +1158,7 @@ void mod16_native_swap_context() {
 
 
 static void push_motion_callback() {
-    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    matteStore_t * heap = matte_vm_get_store(mod16.vm);
     uint32_t i;
     uint32_t len = matte_array_get_size(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks);
     if (len == 0) return;
@@ -1172,18 +1172,18 @@ static void push_motion_callback() {
     matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
-    matteValue_t x = matte_heap_new_value(heap);
-    matteValue_t y = matte_heap_new_value(heap);
-    matteValue_t event = matte_heap_new_value(heap);
+    matteValue_t x = matte_store_new_value(heap);
+    matteValue_t y = matte_store_new_value(heap);
+    matteValue_t event = matte_store_new_value(heap);
     
     matte_value_into_string(heap, &x, xStr);
     matte_value_into_string(heap, &y, yStr);
     matte_value_into_string(heap, &event, eventStr);
     
     
-    matteValue_t xval = matte_heap_new_value(heap);
-    matteValue_t yval = matte_heap_new_value(heap);
-    matteValue_t eventVal = matte_heap_new_value(heap);                
+    matteValue_t xval = matte_store_new_value(heap);
+    matteValue_t yval = matte_store_new_value(heap);
+    matteValue_t eventVal = matte_store_new_value(heap);                
     
     int wr, hr;
     mod16_graphics_context_get_render_size(mod16.graphics, &wr, &hr);
@@ -1199,7 +1199,7 @@ static void push_motion_callback() {
     
     for(i = 0; i < len; ++i) {
         matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks, matteValue_t, i);    
-        if (val.binID == 0) continue;
+        if (matte_value_type(val) == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 3);
@@ -1212,7 +1212,7 @@ static void push_motion_callback() {
 
 
 static void push_scroll_callback() {
-    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    matteStore_t * heap = matte_vm_get_store(mod16.vm);
     uint32_t i;
     uint32_t len = matte_array_get_size(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks);
     if (len == 0) return;
@@ -1222,18 +1222,18 @@ static void push_scroll_callback() {
     matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
-    matteValue_t x = matte_heap_new_value(heap);
-    matteValue_t y = matte_heap_new_value(heap);
-    matteValue_t event = matte_heap_new_value(heap);
+    matteValue_t x = matte_store_new_value(heap);
+    matteValue_t y = matte_store_new_value(heap);
+    matteValue_t event = matte_store_new_value(heap);
     
     matte_value_into_string(heap, &x, xStr);
     matte_value_into_string(heap, &y, yStr);
     matte_value_into_string(heap, &event, eventStr);
     
     
-    matteValue_t xval = matte_heap_new_value(heap);
-    matteValue_t yval = matte_heap_new_value(heap);
-    matteValue_t eventVal = matte_heap_new_value(heap);
+    matteValue_t xval = matte_store_new_value(heap);
+    matteValue_t yval = matte_store_new_value(heap);
+    matteValue_t eventVal = matte_store_new_value(heap);
     
     
     
@@ -1249,7 +1249,7 @@ static void push_scroll_callback() {
     
     for(i = 0; i < len; ++i) {
         matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks, matteValue_t, i);    
-        if (val.binID == 0) continue;
+        if (matte_value_type(val) == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 3);
@@ -1272,7 +1272,7 @@ static void mod16_native_update__key_callback(
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    matteStore_t * heap = matte_vm_get_store(mod16.vm);
     mod16Window_Event_Key_t * evt = eventData;
     
     uint32_t i;
@@ -1283,15 +1283,15 @@ static void mod16_native_update__key_callback(
     matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
-    matteValue_t text = matte_heap_new_value(heap);
-    matteValue_t event = matte_heap_new_value(heap);
+    matteValue_t text = matte_store_new_value(heap);
+    matteValue_t event = matte_store_new_value(heap);
     
     matte_value_into_string(heap, &text, textStr);
     matte_value_into_string(heap, &event, eventStr);
     
     
-    matteValue_t textval = matte_heap_new_value(heap);
-    matteValue_t eventVal = matte_heap_new_value(heap);
+    matteValue_t textval = matte_store_new_value(heap);
+    matteValue_t eventVal = matte_store_new_value(heap);
     
     double xcon, ycon;
     int w, h;
@@ -1307,7 +1307,7 @@ static void mod16_native_update__key_callback(
     
     for(i = 0; i < len; ++i) {
         matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
-        if (val.binID == 0) continue;
+        if (matte_value_type(val) == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 2);
@@ -1326,7 +1326,7 @@ static void mod16_native_update__text_callback(
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    matteStore_t * heap = matte_vm_get_store(mod16.vm);
     mod16Window_Event_Text_t * evt = eventData;
 
     uint32_t i;
@@ -1337,15 +1337,15 @@ static void mod16_native_update__text_callback(
     matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
-    matteValue_t text = matte_heap_new_value(heap);
-    matteValue_t event = matte_heap_new_value(heap);
+    matteValue_t text = matte_store_new_value(heap);
+    matteValue_t event = matte_store_new_value(heap);
     
     matte_value_into_string(heap, &text, textStr);
     matte_value_into_string(heap, &event, eventStr);
     
     
-    matteValue_t textval = matte_heap_new_value(heap);
-    matteValue_t eventVal = matte_heap_new_value(heap);
+    matteValue_t textval = matte_store_new_value(heap);
+    matteValue_t eventVal = matte_store_new_value(heap);
     
     double xcon, ycon;
     int w, h;
@@ -1361,7 +1361,7 @@ static void mod16_native_update__text_callback(
     
     for(i = 0; i < len; ++i) {
         matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__KEYBOARD].callbacks, matteValue_t, i);    
-        if (val.binID == 0) continue;
+        if (matte_value_type(val) == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 2);
@@ -1383,7 +1383,7 @@ static void mod16_native_update__pointer_button_callback(
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    matteStore_t * heap = matte_vm_get_store(mod16.vm);
     mod16Window_Event_Pointer_t * evt = eventData;
 
     uint32_t i;
@@ -1396,10 +1396,10 @@ static void mod16_native_update__pointer_button_callback(
     matteString_t * eventStr = (matteString_t*)MATTE_VM_STR_CAST(mod16.vm, "event");
     
     
-    matteValue_t x = matte_heap_new_value(heap);
-    matteValue_t y = matte_heap_new_value(heap);
-    matteValue_t event = matte_heap_new_value(heap);
-    matteValue_t button = matte_heap_new_value(heap);
+    matteValue_t x = matte_store_new_value(heap);
+    matteValue_t y = matte_store_new_value(heap);
+    matteValue_t event = matte_store_new_value(heap);
+    matteValue_t button = matte_store_new_value(heap);
     
     matte_value_into_string(heap, &x, xStr);
     matte_value_into_string(heap, &y, yStr);
@@ -1407,10 +1407,10 @@ static void mod16_native_update__pointer_button_callback(
     matte_value_into_string(heap, &event, eventStr);
     
     
-    matteValue_t xval = matte_heap_new_value(heap);
-    matteValue_t yval = matte_heap_new_value(heap);
-    matteValue_t buttonval = matte_heap_new_value(heap);
-    matteValue_t eventVal = matte_heap_new_value(heap);
+    matteValue_t xval = matte_store_new_value(heap);
+    matteValue_t yval = matte_store_new_value(heap);
+    matteValue_t buttonval = matte_store_new_value(heap);
+    matteValue_t eventVal = matte_store_new_value(heap);
     
     double xcon, ycon;
     int w, h;
@@ -1441,7 +1441,7 @@ static void mod16_native_update__pointer_button_callback(
     
     for(i = 0; i < len; ++i) {
         matteValue_t val = matte_array_at(mod16.mainContext.inputs[MOD16_DEVICE__POINTER0].callbacks, matteValue_t, i);    
-        if (val.binID == 0) continue;
+        if (matte_value_type(val) == 0) continue;
 
         // for safety
         matteArray_t names = MATTE_ARRAY_CAST(namesArr, matteValue_t, 4);
@@ -1460,7 +1460,7 @@ static void mod16_native_update__pointer_scroll_callback(
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    matteStore_t * heap = matte_vm_get_store(mod16.vm);
     mod16Window_Event_Pointer_t * evt = eventData;
 
     mod16.hasPointerScrollEvent = 1;            
@@ -1477,7 +1477,7 @@ static void mod16_native_update__pointer_motion_callback(
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    matteStore_t * heap = matte_vm_get_store(mod16.vm);
     mod16Window_Event_Pointer_t * evt = eventData;
 
     mod16.hasPointerMotionEvent = 1;
@@ -1493,10 +1493,10 @@ static void mod16_native_update__frame_render_callback(
     void * userData    
 ) {
 
-    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    matteStore_t * heap = matte_vm_get_store(mod16.vm);
     mod16Window_Event_Pointer_t * evt = eventData;
 
-    if (mod16.mainContext.updateFunc.binID) {
+    if (matte_value_type(mod16.mainContext.updateFunc)) {
         matte_vm_call(
             mod16.vm,
             mod16.mainContext.updateFunc,
@@ -1526,7 +1526,7 @@ static void mod16_native_update__frame_render_callback(
 
 int mod16_native_update(matte_t * m) {
     mod16.vm = matte_get_vm(m);
-    matteHeap_t * heap = matte_vm_get_heap(mod16.vm);
+    matteStore_t * heap = matte_vm_get_store(mod16.vm);
     mod16_window_resolve_events(mod16.window);
     if (!mod16.swapped)
         mod16_cartridge_poll_oscillators(mod16.mainCart, mod16_window_get_ticks(mod16.window));

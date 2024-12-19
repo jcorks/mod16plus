@@ -58,7 +58,7 @@ return class(
             children->foreach(do:::(i, child) <- child.hide());
             @last = 0;
             @max = if (iter+count > children->keycount) children->keycount else iter+count;
-            [iter, max]->for(do:::(i) {
+            for(iter, max)::(i) {
                 @:child = children[i];                
                 child.show();
                 child.move(x: padding + this.x, y: padding + this.y + last);
@@ -67,7 +67,7 @@ return class(
                     height:(1/count)*this.height - padding*2
                 );
                 last += (1/count)*this.height;
-            });
+            }
 
             if (children->keycount > count) ::<={
                 Cartridge.Sprite.bind(index:scrollbar);

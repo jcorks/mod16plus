@@ -68,7 +68,7 @@
             this.release();
             
             @i = 0;
-            [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
+            for(scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT))::(index) {
                 @:line = lines[index];
                 @:color = colors[index];
                 when(line->length == 0) ::<= {
@@ -83,7 +83,7 @@
 
                 lineVisuals->push(value:StringRenderer.create(layer:64, x:offsetX, y: i*8 + offsetY, string:scrolledLine, color));
                 i+=1;
-            });
+            }
             
             if (inputCallbackID != empty) ::<= {
                 @:color = colors[cursorY];
@@ -569,10 +569,10 @@
                         colors = [[1, 1, 1]];
                     } else ::<= {                                                                       
                         lines = value->split(token:'\n');
-                        [0, lines->keycount]->for(do:::(i) {
+                        for(0, lines->keycount)::(i) {
                             @:line = lines[i];
                             colors[i] = [1, 1, 1];
-                        });
+                        }
                     };
 
                     if (LINE_LIMIT > 0) ::<= {

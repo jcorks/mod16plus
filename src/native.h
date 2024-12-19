@@ -2,7 +2,7 @@
 #define MOD16_NATIVE_INCLUDED
 
 #include "matte/src/matte_vm.h"
-#include "matte/src/matte_heap.h"
+#include "matte/src/matte_store.h"
 #include "linear.h"
 #include "rom.h"
 

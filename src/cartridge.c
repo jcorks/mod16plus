@@ -1,5 +1,5 @@
 #include "cartridge.h"
-#include "matte/src/matte_heap.h"
+#include "matte/src/matte_store.h"
 #include "matte/src/matte_vm.h"
 #include "matte/src/matte_bytecode_stub.h"
 #include <stdlib.h>
@@ -92,7 +92,7 @@ mod16Cartridge_t * mod16_cartridge_create(matteVM_t * vm, mod16ROM_t * rom, mod1
     cart->graphics = graphics;
     cart->rom = rom;
     cart->storage =  mod16_graphics_context_create_storage(graphics);
-    cart->main = matte_heap_new_value(matte_vm_get_heap(vm));   
+    cart->main = matte_store_new_value(matte_vm_get_store(vm));   
     cart->children = matte_array_create(sizeof(mod16Cartridge_t *));
     cart->uniqueID = matte_array_get_size(ALL_CARTRIDGES);
     cart->sourceValues = calloc(mod16_rom_get_bytecode_segment_count(rom), sizeof(matteValue_t));
@@ -283,7 +283,7 @@ void mod16_cartridge_enable_oscillator(mod16Cartridge_t * cart, uint16_t index, 
     if (index >= MOD16_CARTRIDGE__MAX_OSCILLATOR_COUNT) return;
     mod16Cartridge_Oscillator_t * osc = &cart->osc.all[index];
 
-    matteHeap_t * heap = matte_vm_get_heap(cart->vm);
+    matteStore_t * heap = matte_vm_get_store(cart->vm);
     int n;
     if (osc->active && enabled) {
         // resets the oscillator when re-enabled
@@ -326,7 +326,7 @@ void mod16_cartridge_poll_oscillators(mod16Cartridge_t * cart, double ticks) {
     for(i = 0; i < len; ++i) {
         mod16Cartridge_Oscillator_t * alarm = cart->osc.active[i];
         if (ticks >= alarm->endMS) {
-            if (alarm->function.binID) {
+            if (matte_value_type(alarm->function)) {
                 matte_vm_call(
                     cart->vm,
                     alarm->function,
@@ -390,14 +390,14 @@ static matteValue_t compile_run_bytes(const matteString_t * name, matteVM_t * vm
     uint32_t fileid = matte_vm_get_new_file_id(vm, name);
     
     matteArray_t * stubs = matte_bytecode_stubs_from_bytecode(
-        matte_vm_get_heap(vm),
+        matte_vm_get_store(vm),
         fileid,
         bytes,
         len
     );
     
     matte_vm_add_stubs(vm, stubs);
-    return matte_vm_run_fileid(vm, fileid, matte_heap_new_value(matte_vm_get_heap(vm)), MATTE_VM_STR_CAST(vm,""));
+    return matte_vm_run_fileid(vm, fileid, matte_store_new_value(matte_vm_get_store(vm)));
 }
 
 
@@ -485,7 +485,7 @@ matteValue_t mod16_cartridge_get_source(mod16Cartridge_t * cart, const matteStri
     matte_string_destroy(name);
     if (!found) {
         matte_vm_raise_error_string(cart->vm, MATTE_VM_STR_CAST(cart->vm, "Could not get source: does not exist"));
-        return matte_heap_new_value(matte_vm_get_heap(cart->vm));
+        return matte_store_new_value(matte_vm_get_store(cart->vm));
     }
     
     if (!cart->sourcesRun[id]) {
@@ -502,7 +502,7 @@ matteValue_t mod16_cartridge_get_source(mod16Cartridge_t * cart, const matteStri
         );   
         matte_string_destroy(fname);
         // for safety
-        matte_value_object_push_lock(matte_vm_get_heap(cart->vm), cart->sourceValues[id]);
+        matte_value_object_push_lock(matte_vm_get_store(cart->vm), cart->sourceValues[id]);
         cart->sourcesRun[id] = 1;
     }
     return cart->sourceValues[id];

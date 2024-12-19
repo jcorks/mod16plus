@@ -29,12 +29,12 @@
         
         @:isRooted = ::{
             @p = this;
-            return [::] {
-                forever(do::{
+            return {:::} {
+                forever ::{
                     when(p == empty) send(message:false);
                     when(p.isRoot) send(message:true);
                     p = p.parent;
-                });
+                }
             };
         };
 

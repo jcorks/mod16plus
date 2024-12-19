@@ -130,7 +130,7 @@ return class(
             @chY = 0;
 
             
-            [0, count]->for(do:::(i) {
+            for(0, count)::(i) {
                 Cartridge.Sprite.bind(index:spr);
                 Cartridge.Sprite. = {
                     tile: TILE_HIGHLIGHT,
@@ -142,7 +142,7 @@ return class(
                 };
                 spr += 1;
                 chX += 1;
-            });
+            }
             return spr;            
         };
 
@@ -153,7 +153,7 @@ return class(
             @chY = 0;
 
 
-            [0, string->length]->for(do:::(i) {
+            for(0, string->length)::(i) {
                 refs->push(value:
                     AsciiRenderer.create(
                         string: string->charAt(index:i),
@@ -164,7 +164,7 @@ return class(
                     )
                 );
                 chX += 1;
-            });
+            }
             return refs;
         };
 
@@ -178,10 +178,10 @@ return class(
             });
             refs = [];
             // clear selected
-            [1, lastSpriteCount]->for(do:::(i) {
+            for(1, lastSpriteCount)::(i) {
                 Cartridge.Sprite.bind(index:i);
                 Cartridge.Sprite.show = false;
-            });
+            }
             lastSpriteCount = 0;
         };
         
@@ -232,7 +232,7 @@ return class(
                     };
                     @spr = 1;
                     @i = 0;
-                    [scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT)]->for(do:::(index) {
+                    for(scrollY, MIN(a:lines->keycount, b:scrollY + TEXT_AREA_HEIGHT))::(index) {
                         when(index < 0) empty;
                         @:line = lines[index];
                         @:colorPath = colors[index];
@@ -250,7 +250,7 @@ return class(
                         if (scrolledColor != empty)
                             refs->push(value:drawString(x:offsetX, y: i*GLYPH_HEIGHT + offsetY, string:scrolledLine, colors:scrolledColor));
                         i+=1;
-                    });
+                    }
                     
 
                     // use from/t select bounds to draw a tile on each character
@@ -269,7 +269,7 @@ return class(
                         };
 
 
-                        [select.fromY, select.toY+1]->for(do:::(i) {
+                        for(select.fromY, select.toY+1)::(i) {
                             @:line = lines[i];
                             when(line->length == 0) empty;
                             @scrolledLine = line->substr(from:scrollX, to:MIN(a:line->length-1, b:scrollX+TEXT_AREA_WIDTH));
@@ -299,7 +299,7 @@ return class(
                                     count: ((scrolledLine->length - 0) - scrollX)
                                 );
                             
-                        });
+                        }
                     };       
                     
 
@@ -321,15 +321,15 @@ return class(
             @src = lines[line];
             lines[line] = ::<= {
                 when(at > src->length-1) ::<= {
-                    [0, text->length]->for(do:::(i) {
+                    for(0, text->length)::(i) {
                         colors[line]->push(value:defaultPalette_);
-                    });
+                    }
                     return src + text;
                 };
                 when(at == 0) ::<= {
-                    [0, text->length]->for(do:::(i) {
+                    for(0, text->length)::(i) {
                         colors[line]->insert(at:i, value:defaultPalette_);
-                    });
+                    }
                     return text + src;
                 };                   
                 colors[line] = [
@@ -497,7 +497,7 @@ return class(
                         };
 
                         @index = bounds.fromY;
-                        [bounds.fromY, bounds.toY+1]->for(do:::(i) {
+                        for(bounds.fromY, bounds.toY+1)::(i) {
                             @line = lines[i];
                             when(i == bounds.fromY) ::<= {
                                 cursorX = lines[index]->length;
@@ -516,7 +516,7 @@ return class(
                             colors->remove(key:index);
                                 
 
-                        });
+                        }
 
                         this.moveCursor(x:bounds.fromX, y:bounds.fromY);
                         redrawLines();
@@ -831,7 +831,7 @@ return class(
 
 
 
-                [bounds.fromY, bounds.toY+1]->for(do:::(i) {
+                for(bounds.fromY, bounds.toY+1)::(i) {
                     when(i == bounds.fromY) ::<= {
                         out = out + lines[i]->substr(from:bounds.fromX, to:lines[i]->length-1);
                     };
@@ -843,7 +843,7 @@ return class(
 
                     out = out + '\n' + lines[i];
 
-                });
+                }
                 return out;                
             },
             
@@ -1008,15 +1008,15 @@ return class(
                         colors = [[]];
                     } else ::<= {                                                                       
                         lines = value->split(token:'\n');
-                        [0, lines->keycount]->for(do:::(i) {
+                        for(0, lines->keycount)::(i) {
                             @:color = [];;
                             @:line = lines[i];                            
-                            [0, line->length]->for(do:::(n) {
+                            for(0, line->length)::(n) {
                                 color->push(value:defaultPalette_);
-                            });
+                            }
                             
                             colors[i] = color;
-                        });
+                        }
 
                         lines->foreach(do:::(i, text) {
                             if (onChange_ != empty) onChange_(prevLine:i, prevText:'');
@@ -1160,26 +1160,22 @@ return class(
             // substring and returns the cursor position for it.
             // If no such substring, empty is returned.
             find ::(text) {
-                @out = [::] {
-                    [cursorY, lines->keycount]->for(
-                        do:::(i) {
-                            @index = lines[i]->search(key:text);
-                            when(index == -1) empty;
-                            
-                            send(message:{x:index, y:i});
-                        }                        
-                    );
+                @out = {:::} {
+                    for(cursorY, lines->keycount) ::(i) {
+                        @index = lines[i]->search(key:text);
+                        when(index == -1) empty;
+                        
+                        send(message:{x:index, y:i});
+                    }                        
                 };
                 when(out != empty) out;
-                @out = [::] {
-                    [0, cursorY]->for(
-                        do:::(i) {
-                            @index = lines[i]->search(key:text);
-                            when(index == -1) empty;
-                            
-                            send(message:{x:index, y:i});
-                        }                        
-                    );
+                @out = {:::} {
+                    for(0, cursorY) ::(i) {
+                        @index = lines[i]->search(key:text);
+                        when(index == -1) empty;
+                        
+                        send(message:{x:index, y:i});
+                    }
                 };
                 // not found
                 return out;
@@ -1252,30 +1248,30 @@ return class(
                 when(toY < 0) empty;
                 when(fromY == toY) ::<= {
                     @color = colors[fromY];
-                    [fromX, toX+1]->for(do:::(x) {
+                    for(fromX, toX+1) ::(x) {
                         color[x] = paletteColor;
-                    });
+                    }
                 };
                 
                 
                 when(fromY < toY) ::<= {
                     @color = colors[fromY];
-                    [fromX, color->length]->for(do:::(x) {
+                    for(fromX, color->length)::(x) {
                         color[x] = paletteColor;
-                    });
+                    }
 
 
-                    [fromY, toY]->for(do:::(y) {
+                    for(fromY, toY)::(y) {
                         color = colors[y];
-                        [0, color->length]->for(do:::(x) {
+                        for(0, color->length)::(x) {
                             color[x] = paletteColor;
-                        });
-                    });
+                        }
+                    }
 
                     color = colors[toY];
-                    [0, toX+1]->for(do:::(x) {
+                    for(0, toX+1) ::(x) {
                         color[x] = paletteColor;
-                    });
+                    }
 
                 };
             

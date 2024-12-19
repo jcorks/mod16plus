@@ -6,6 +6,7 @@
 #include "matte/src/matte_vm.h"
 #include "matte/src/matte.h"
 #include "matte/src/matte_string.h"
+#include "matte/src/matte_bytecode_stub.h"
 
 #include "rom.h"
 #include "dump.h"
@@ -20,24 +21,40 @@
 #include "api/api_rom"
 //#include "debug/debug_rom"
 static int IS_DEBUG = 0;
-static uint8_t * mod16_native__import(
+static uint32_t mod16_native__import(
     matteVM_t * vm,
     const matteString_t * importPath,
-    uint32_t * preexistingFileID,
-    uint32_t * dataLength,
-    void * rom
+    const matteString_t * alias,
+    void * m
 ) {
     // Import is ONLY used for MOD16.Core
     // 
     if (matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "Mod16Plus.Core"))) {
-        *dataLength = API_ROM_SIZE;
-        *preexistingFileID = matte_vm_get_new_file_id(vm, importPath);
-        uint8_t * out = malloc(API_ROM_SIZE);
-        memcpy(out, API_ROM_DATA, API_ROM_SIZE);
-        return out;       
-    } else {
-        *dataLength = 0;    
-        return NULL;
+        uint32_t dataLength;
+        uint32_t id = matte_vm_get_new_file_id(vm, importPath);
+
+
+        char * realSrc = malloc(API_ROM_SIZE+1);
+        memcpy(realSrc, API_ROM_DATA, API_ROM_SIZE);
+        realSrc[API_ROM_SIZE] = 0;            
+        matteString_t * err = matte_string_create();
+        uint8_t * data = matte_compile_source(m, &dataLength, realSrc, err);
+        
+        if (matte_string_get_length(err)) {
+            printf("Error compiling core: %s\n", matte_string_get_c_str(err));
+            return 0;
+        }
+        matte_vm_add_stubs(
+            vm,
+            matte_bytecode_stubs_from_bytecode(
+                matte_vm_get_store(vm),
+                id,
+                data, 
+                dataLength 
+            )
+        );
+        free(realSrc);
+        return id;
     }
     /*
     else if (IS_DEBUG && matte_string_test_eq(importPath, MATTE_VM_STR_CAST(vm, "MOD16.Debug"))) {
@@ -50,7 +67,7 @@ static uint8_t * mod16_native__import(
     */
     
  
-    return NULL;
+    return 0;
 }
 
 
@@ -157,7 +174,7 @@ int main(int argc, char ** argv) {
     matte_vm_set_import(
         vm,
         mod16_native__import,
-        rom
+        m
     );
     
     // enable extra features needed for development 
@@ -169,7 +186,9 @@ int main(int argc, char ** argv) {
     matte_vm_import(
         vm,
         MATTE_VM_STR_CAST(vm, "Mod16Plus.Core"),
-        matte_heap_new_value(matte_vm_get_heap(vm))
+        MATTE_VM_STR_CAST(vm, "Mod16Plus.Core"),
+        0,
+        matte_store_new_value(matte_vm_get_store(vm))
     );    
 
 

@@ -4,13 +4,13 @@
 
 @:checkNameAllowed = ::(name) {
     when(name == '') false;
-    return [::] {
-        [0, name->length]->for(do:::(i) {
+    return {:::} {
+        for(0, name->length)::(i) {
             match(name->charAt(index:i)) {
               (',', '.', '/', '\\', '\n', '\t'): 
                 send(message:false)
             };
-        });
+        }
         return true;
     };
 };
@@ -72,7 +72,7 @@ return class(
             
             savePalette ::(id => Number, paletteColors => Object) {
                 @entry;
-                when([::] {
+                when({:::} {
                     palettes->foreach(do:::(index, value) {
                         when(value[0] == id) ::<= {
                             entry = value;
@@ -95,7 +95,7 @@ return class(
             
             openPalette ::(id => Number) {
                 @entry;
-                when([::] {
+                when({:::} {
                     palettes->foreach(do:::(index, value) {
                         when(value[0] == id) ::<= {
                             entry = value[1];
@@ -118,7 +118,7 @@ return class(
         
             removePalette ::(id => Number) {
                 @entry;
-                when([::] {
+                when({:::} {
                     palettes->foreach(do:::(index, value) {
                         when(value[0] == id) ::<= {
                             entry = index;
@@ -171,7 +171,7 @@ return class(
             
             saveTile ::(id => Number, data => Object) {
                 @entry;
-                when([::] {
+                when({:::} {
                     tiles->foreach(do:::(index, value) {
                         when(value[0] == id) ::<= {
                             entry = value;
@@ -200,7 +200,7 @@ return class(
             
             openTile ::(id => Number) {
                 @entry;
-                when([::] {
+                when({:::} {
                     tiles->foreach(do:::(index, value) {
                         when(value[0] == id) ::<= {
                             entry = value[1];
@@ -224,7 +224,7 @@ return class(
         
             removeTile ::(id => Number) {
                 @entry;
-                when([::] {
+                when({:::} {
                     tiles->foreach(do:::(index, value) {
                         when(value[0] == id) ::<= {
                             entry = index;
